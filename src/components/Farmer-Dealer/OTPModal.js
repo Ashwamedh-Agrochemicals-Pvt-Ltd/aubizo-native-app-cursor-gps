@@ -13,7 +13,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons"; // ✅ import icon
 import apiClient from "../../api/client";
 import DESIGN from "../../theme";
 
-function OTPModal({ visible, dealerId, onClose, onVerified }) {
+function OTPModal({ visible, dealerId, onClose, onVerified, phone }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -95,13 +95,13 @@ function OTPModal({ visible, dealerId, onClose, onVerified }) {
         otp: code,
       });
 
-      if (resp?.data?.is_verified === true) {
+      if (resp?.data?.is_phone_verified === true) {
         Alert.alert("Success", "OTP verified successfully.");
         if (typeof onVerified === "function") onVerified();
       } else {
         Alert.alert("Error", resp?.data?.message || "Invalid OTP");
       }
-       if (typeof onVerified === "function") onVerified();
+      if (typeof onVerified === "function") onVerified();
     } catch (err) {
       console.error("Verify OTP error:", err.response?.data || err.message);
       const msg =
@@ -129,7 +129,10 @@ function OTPModal({ visible, dealerId, onClose, onVerified }) {
 
           <Text style={modalStyles.title}>Verify Mobile Number</Text>
           <Text style={modalStyles.info}>
-            Enter the 6-digit OTP sent to dealer's phone.
+            Enter the 6-digit OTP sent to{" "}
+            <Text style={{ fontWeight: "bold", color: DESIGN.colors.textPrimary }}>
+              {phone || "dealer's phone"}
+            </Text>.
           </Text>
 
           <View style={modalStyles.otpRow}>
@@ -165,8 +168,8 @@ function OTPModal({ visible, dealerId, onClose, onVerified }) {
                 <Text style={modalStyles.btnText}>
                   {resendCooldown > 0
                     ? `Resend (${Math.floor(resendCooldown / 60)}:${String(
-                        resendCooldown % 60
-                      ).padStart(2, "0")})`
+                      resendCooldown % 60
+                    ).padStart(2, "0")})`
                     : "Resend"}
                 </Text>
               )}

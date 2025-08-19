@@ -2,7 +2,9 @@ import axios from "axios";
 import * as Location from "expo-location";
 import { Alert, BackHandler } from "react-native";
 
-const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
+import Constants from "expo-constants";
+
+const GOOGLE_API_KEY = Constants.expoConfig.extra.googleApiKey||process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
 const GOOGLE_URL = process.env.EXPO_PUBLIC_GOOGLE_URL;
 
 // Cache for GPS coordinates and geocoding results
@@ -10,7 +12,7 @@ let gpsCache = {
   coordinates: null,
   address: null,
   timestamp: null,
-  maxAge: 1 * 60 * 1000, // 5 minutes cache
+  maxAge: 30 * 1000, // 1/2 minutes cache
 };
 
 const getCurrentLocationDetails = async () => {

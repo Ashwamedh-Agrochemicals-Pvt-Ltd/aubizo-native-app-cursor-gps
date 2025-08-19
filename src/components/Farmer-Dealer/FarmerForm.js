@@ -680,11 +680,6 @@ export default function FarmerForm({
                           <ActivityIndicator size="small" color={DESIGN.colors.surface} />
                         ) : (
                           <>
-                            <MaterialCommunityIcons
-                              name="check"
-                              size={24}
-                              color={DESIGN.colors.surface}
-                            />
                             <Text style={modernStyles.submitButtonText}>
                               Submit Farmer Details
                             </Text>

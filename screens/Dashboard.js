@@ -91,48 +91,59 @@ function Dashboard() {
     }
   }, [user, checkPunchStatus]);
 
-  const handleInpunch = useCallback(async () => {
-    if (isPunchInLoading) return; // Prevent double-clicks
-    
-    setIsPunchInLoading(true);
-    try {
-      const { latitude, longitude } =
-        await Location.getCurrentLocationDetails();
+const handleInpunch = useCallback(async () => {
+  if (isPunchInLoading) return; // Prevent double-clicks
 
-      const payload = {
-        inpunch_latitude: Number(latitude.toFixed(6)),
-        inpunch_longitude: Number(longitude.toFixed(6)),
-      };
+  setIsPunchInLoading(true);
+  try {
+    const { latitude, longitude } = await Location.getCurrentLocationDetails();
 
-      const response = await apiClient.post(INPUNCH_URL, payload);
-      const id = String(response.data.id);
+    const payload = {
+      latitude: Number(latitude.toFixed(6)),
+      longitude: Number(longitude.toFixed(6)),
+    };
 
-      // Use consistent storage approach - only use storage utility
-      await storage.set("punchId", id);
-      setInpunchId(id);
-      setHasInpunch(true);
-      Alert.alert(
-        "Success",
-        "Inpunch recorded successfully",
+    const response = await apiClient.post(INPUNCH_URL, payload);
+    const id = String(response.data.id);
+
+    // Use consistent storage approach
+    await storage.set("punchId", id);
+    setInpunchId(id);
+    setHasInpunch(true);
+
+    Alert.alert(
+      "Success",
+      "Inpunch recorded successfully",
+      [{ text: "OK" }],
+      { cancelable: true }
+    );
+  } catch (error) {
+    logger.error("Punch in error:", error);
+
+    if (error.response?.status === 401) {
+      Alert.alert("Session Expired", MESSAGES.SESSION_EXPIRED);
+    } else if (!error.response) {
+       Alert.alert(
+        "Punch In Restricted",
+        "You can only record one inpunch per day", // Proper message
         [{ text: "OK" }],
         { cancelable: true }
       );
-    } catch (error) {
-      logger.error("Punch in error:", error);
-      
-      if (error.response?.status === 401) {
-        Alert.alert("Session Expired", MESSAGES.SESSION_EXPIRED);
-      } else if (!error.response) {
-        Alert.alert("Network Error", MESSAGES.NETWORK_ERROR);
-      } else if (error.response?.status === 400) {
-        Alert.alert("Punch In Restricted", MESSAGES.PUNCH_IN_RESTRICTED);
-      } else {
-        Alert.alert("Error", MESSAGES.GENERIC_ERROR);
-      }
-    } finally {
-      setIsPunchInLoading(false);
+    } else if (error.response?.status === 400) {
+      Alert.alert(
+        "Punch In Restricted",
+        "You can only record one inpunch per day", // Proper message
+        [{ text: "OK" }],
+        { cancelable: true }
+      );
+    } else {
+      Alert.alert("Error", MESSAGES.GENERIC_ERROR);
     }
-  }, [isPunchInLoading]);
+  } finally {
+    setIsPunchInLoading(false);
+  }
+}, [isPunchInLoading]);
+
 
   const handleOutpunch = useCallback(async () => {
     if (isPunchOutLoading) return; // Prevent double-clicks
@@ -144,8 +155,8 @@ function Dashboard() {
       );
 
       const payload = {
-        outpunch_latitude: Number(latitude.toFixed(6)),
-        outpunch_longitude: Number(longitude.toFixed(6)),
+        latitude: Number(latitude.toFixed(6)),
+        longitude: Number(longitude.toFixed(6)),
       };
 
       await apiClient.patch(`${OUTPUNCH_URL}${inpunchId}/`, payload);

@@ -16,9 +16,9 @@ import { checkDeveloperOptions } from "./src/components/checkDeveloperOptions";
 
 // Disable console logs in production
 if (__DEV__ === false) {
-  console.log = () => {};
-  console.warn = () => {};
-  console.error = () => {};
+  console.log = () => { };
+  console.warn = () => { };
+  console.error = () => { };
 }
 
 SplashScreen.setOptions({
@@ -46,9 +46,9 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <View style={{ 
-          flex: 1, 
-          justifyContent: "center", 
+        <View style={{
+          flex: 1,
+          justifyContent: "center",
           alignItems: "center",
           padding: 20
         }}>
@@ -99,7 +99,7 @@ export default function App() {
 
         await loadToken();
         // Only request location permission when needed, not on app start
-        // await location.getStrictLocation();
+        await location.getStrictLocation();
       } catch (error) {
         if (__DEV__) {
           console.error("App init failed:", error);

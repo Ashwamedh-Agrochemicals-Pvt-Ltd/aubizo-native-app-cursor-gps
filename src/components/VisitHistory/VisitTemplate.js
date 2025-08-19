@@ -12,6 +12,7 @@ import DESIGN from "../../theme";
 import { useState } from "react";
 import logger from "../../utility/logger";
 
+
 const validationSchema = Yup.object().shape({
   remark: Yup.string()
     .trim()
@@ -53,6 +54,7 @@ const VisitForm = ({ storageKey, navigateTo }) => {
         resetForm();
         await storage.remove(storageKey);
         await storage.remove(storageKey.replace("VISIT", "START"));
+        
         Alert.alert("Success", "Visit ended successfully.");
         navigation.navigate(navigateTo);
       } else {

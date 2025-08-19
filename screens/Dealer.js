@@ -39,6 +39,9 @@ const DealerScreen = () => {
     };
 
     getData();
+    console.log("DealerScreen punchId:", punchId);
+
+
 
     return () => {
       isMounted = false;

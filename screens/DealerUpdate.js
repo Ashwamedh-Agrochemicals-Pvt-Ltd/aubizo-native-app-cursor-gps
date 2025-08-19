@@ -73,7 +73,7 @@ const DealerUpdateScreen = () => {
     const fetchDealer = async () => {
       try {
         setLoading(true);
-        
+
         // Create abort controller for this request
         abortControllerRef.current = new AbortController();
 
@@ -160,34 +160,34 @@ const DealerUpdateScreen = () => {
           // Request was cancelled, do nothing
           return;
         }
-        
+
         if (__DEV__) {
           console.error("Error fetching dealer:", error);
         }
-        
+
         if (error.response?.status === 401) {
           Alert.alert("Session Expired", "Please log in again.");
           return;
         }
-        
+
         if (error.response?.status === 404) {
           Alert.alert("Error", "Dealer not found");
           navigation.goBack();
           return;
         }
-        
+
         if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
           Alert.alert("Connection Timeout", "Can't reach server. Please check your connection and try again.");
           navigation.goBack();
           return;
         }
-        
+
         if (!error.response) {
           Alert.alert("Network Error", "Can't reach server. Please check your internet connection.");
           navigation.goBack();
           return;
         }
-        
+
         Alert.alert("Error", "Failed to load dealer data");
         navigation.goBack();
       } finally {
@@ -197,7 +197,7 @@ const DealerUpdateScreen = () => {
     };
 
     fetchDealer();
-    
+
     // Cleanup function to abort any pending requests
     return () => {
       if (abortControllerRef.current) {
@@ -208,10 +208,10 @@ const DealerUpdateScreen = () => {
 
   const handleSubmit = useCallback(async (values) => {
     if (updating) return;
-    
+
     try {
       setUpdating(true);
-      
+
       // Create abort controller for this request
       abortControllerRef.current = new AbortController();
 
@@ -219,7 +219,7 @@ const DealerUpdateScreen = () => {
         shop_name: values.shopeName.trim(),
         owner_name: values.ownerName.trim(),
         phone: values.mobile.trim(),
-        gst_number: dealer.gst_number || "",
+        gst_number: values.gst_number|| "",
         remark: values.remark.trim(),
         agreement_status: formState.agreement_status,
         billing_address: location.trim(),
@@ -250,41 +250,41 @@ const DealerUpdateScreen = () => {
         // Request was cancelled, do nothing
         return;
       }
-      
+
       if (__DEV__) {
         console.error("Error updating dealer:", error);
       }
-      
+
       if (error.response?.status === 401) {
         Alert.alert("Session Expired", "Please log in again.");
         return;
       }
-      
+
       if (error.response?.status >= 400 && error.response?.status < 500) {
         // Validation error
         const errorMessage = error.response?.data?.detail || error.response?.data?.message || "Please fix the highlighted fields.";
         Alert.alert("Validation Error", errorMessage);
         return;
       }
-      
+
       if (error.response?.status >= 500) {
         Alert.alert("Server Error", "Something went wrong. Please try again later.");
         return;
       }
-      
+
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         Alert.alert("Connection Timeout", "Can't reach server. Please check your connection and try again.");
         return;
       }
-      
+
       if (!error.response) {
         Alert.alert("Network Error", "Can't reach server. Please check your internet connection.");
         return;
       }
-      
+
       // Generic error
       Alert.alert("Error", "Something went wrong while updating dealer.");
-      
+
     } finally {
       setUpdating(false);
       abortControllerRef.current = null;
@@ -302,6 +302,7 @@ const DealerUpdateScreen = () => {
           shopeName: dealer.shop_name || "",
           ownerName: dealer.owner_name || "",
           mobile: dealer.phone || "",
+          gst_number: dealer.gst_number || "",
           remark: dealer.remark || "",
         }}
         validationSchema={dealerSchema}
@@ -312,7 +313,7 @@ const DealerUpdateScreen = () => {
       >
         {({ handleChange, handleBlur, handleSubmit, values, errors, touched, dirty }) => {
           const canSubmit = dirty && !updating;
-          
+
           return (
             <View style={modernStyles.formContent}>
               {/* Business Information */}
@@ -360,30 +361,30 @@ const DealerUpdateScreen = () => {
 
                 <View style={modernStyles.inputContainer}>
                   <TextInput
-                    style={modernStyles.input}
+                    style={[modernStyles.input, modernStyles.disabledInput]}
                     placeholder="Phone *"
                     keyboardType="phone-pad"
                     maxLength={10}
-                    onChangeText={handleChange("mobile")}
-                    onBlur={handleBlur("mobile")}
                     value={values.mobile}
-                    accessibilityLabel="Phone number input"
-                    accessibilityHint="Enter 10-digit phone number"
+                    editable={false}  // 👈 makes it read-only
+                    accessibilityLabel="Phone number display"
+                    accessibilityHint="Shows the phone number (read-only)"
                   />
+
                   {touched.mobile && errors.mobile && (
                     <Text style={modernStyles.error}>{errors.mobile}</Text>
                   )}
                 </View>
-
                 <View style={modernStyles.inputContainer}>
                   <TextInput
-                    style={modernStyles.input}
                     placeholder="GST Number"
-                    value={dealer.gst_number || ""}
-                    editable={false}
-                    style={[modernStyles.input, modernStyles.disabledInput]}
-                    accessibilityLabel="GST number display"
-                    accessibilityHint="Shows the GST number (read-only)"
+                    value={values.gst_number}
+                    style={modernStyles.input}
+                    onChangeText={handleChange("gst_number")}   // 👈 updates form state
+                    onBlur={handleBlur("gst_number")}           // 👈 triggers validation on blur
+                    editable={true}                             // 👈 makes it editable
+                    accessibilityLabel="GST number input"
+                    accessibilityHint="Enter the GST number"
                   />
                 </View>
               </View>

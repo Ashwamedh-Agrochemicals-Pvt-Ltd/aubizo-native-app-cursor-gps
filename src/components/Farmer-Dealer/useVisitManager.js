@@ -41,29 +41,18 @@ export default function useVisitManager(type) {
     })();
   }, []);
 
-  const startVisit = async (entityId, location_id, punch_id, endpoint) => {
+  const startVisit = async (entityId, location_id, punch_id, endpoint,type = "Dealer") => {
     try {
-      const existingFarmerVisit = await storage.get("VISIT_ID_Farmer");
-      const existingDealerVisit = await storage.get("VISIT_ID_Dealer");
-      const activeType = await storage.get("ACTIVE_TYPE_KEY");
 
-      // Global check
-      // if ((existingFarmerVisit || existingDealerVisit) && activeType !== type) {
-      //   return Alert.alert(
-      //     "Visit Already Active",
-      //     `A ${activeType} visit is already active. Please end it before starting a ${type} visit.`
+      // const existingVisitId = await storage.get(VISIT_ID_KEY);
+
+      // if (existingVisitId) {
+      //   Alert.alert(
+      //     "Visit Already Started",
+      //     "You have already started a visit. Please end it before starting a new one."
       //   );
+      //   return { error: "Visit already started." };
       // }
-
-      const existingVisitId = await storage.get(VISIT_ID_KEY);
-
-      if (existingVisitId) {
-        Alert.alert(
-          "Visit Already Started",
-          "You have already started a visit. Please end it before starting a new one."
-        );
-        return { error: "Visit already started." };
-      }
 
       if (!punch_id) {
         Alert.alert(

@@ -39,6 +39,8 @@ function EntityVisitList({
   const renderItem = ({ item, index }) => {
     const isActive = activeStartId === item.id;
     const displayName = item.farmer_name || item.owner_name || "Unnamed";
+   console.log("DealerScreen punchId:", punch_id,);
+   console.log("EntityVisitList startVisit params:", { itemId: item.id, location_id: item.location_id, punch_id, type });
 
     const handleStartVisit = async () => {
       const visitKeys = ["VISIT_ID_Farmer", "VISIT_ID_Dealer"];
@@ -71,7 +73,8 @@ function EntityVisitList({
         item.id,
         item.location_id,
         punch_id,
-        endpoint
+        endpoint,
+          type
       );
 
       if (result?.error) {
