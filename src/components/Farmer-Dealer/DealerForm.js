@@ -122,11 +122,15 @@ function DealerForm({ location, stateDealerForm }) {
 
       if (phone) {
         const payload = { phone: phone.trim() };
-        await apiClient.patch(
+        const resp= await apiClient.patch(
           `dealer/${dealerId}/`,
           payload,
           { signal: abortControllerRef.current.signal }
         );
+         if (resp?.data?.phone) {
+         setPhoneForOTP(resp.data.phone);
+      }
+
       }
 
       await apiClient.post(`dealer/${dealerId}/send-otp/`, {}, {

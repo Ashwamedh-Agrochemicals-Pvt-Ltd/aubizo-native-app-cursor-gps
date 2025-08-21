@@ -1,7 +1,6 @@
 import axios from "axios";
 import AuthStorage from "../auth/storage";
 import cache from "../utility/cache";
-import Toast from "react-native-toast-message";
 import { navigation } from "../../navigation/NavigationService";
 import { handleError, ERROR_TYPES } from "../utility/errorHandler";
 
@@ -73,30 +72,30 @@ apiClient.interceptors.response.use(
   }
 );
 
-const originalGet = apiClient.get;
+// const originalGet = apiClient.get;
 
-apiClient.get = async (url, config = {}) => {
-  try {
-    const response = await originalGet(url, config);
+// apiClient.get = async (url, config = {}) => {
+//   try {
+//     const response = await originalGet(url, config);
 
-    if (response.status === 200) {
-      await cache.store(url, response.data);
-      return { ok: true, data: response.data };
-    }
+//     if (response.status === 200) {
+//       await cache.store(url, response.data);
+//       return { ok: true, data: response.data };
+//     }
 
-    return { ok: false, data: null };
-  } catch (error) {
-    const cachedData = await cache.get(url);
-    if (cachedData) {
-      if (__DEV__) {
-        console.warn("Serving cached data due to error:", error.message);
-      }
-      return { ok: true, data: cachedData };
-    }
+//     return { ok: false, data: null };
+//   } catch (error) {
+//     const cachedData = await cache.get(url);
+//     if (cachedData) {
+//       if (__DEV__) {
+//         console.warn("Serving cached data due to error:", error.message);
+//       }
+//       return { ok: true, data: cachedData };
+//     }
 
-    return { ok: false, error };
-  }
-};
+//     return { ok: false, error };
+//   }
+// };
 // Add a centralized HTTP wrapper function
 const http = {
   get: async (url, config = {}) => {
