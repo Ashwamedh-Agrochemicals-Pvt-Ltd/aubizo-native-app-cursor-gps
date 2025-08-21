@@ -104,8 +104,8 @@ const handleInpunch = useCallback(async () => {
     };
 
     const response = await apiClient.post(INPUNCH_URL, payload);
-    const id = String(response.data.id);
-
+    const id = String(response.data.data.id);
+    console.log("DashBoard punch Id:",id)
     // Use consistent storage approach
     await storage.set("punchId", id);
     setInpunchId(id);

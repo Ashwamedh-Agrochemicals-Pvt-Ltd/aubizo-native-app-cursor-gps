@@ -74,7 +74,6 @@ function EntityVisitList({
         item.location_id,
         punch_id,
         endpoint,
-          type
       );
 
       if (result?.error) {

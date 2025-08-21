@@ -41,9 +41,8 @@ export default function useVisitManager(type) {
     })();
   }, []);
 
-  const startVisit = async (entityId, location_id, punch_id, endpoint,type = "Dealer") => {
+  const startVisit = async (entityId, location_id, punch_id, endpoint) => {
     try {
-
       // const existingVisitId = await storage.get(VISIT_ID_KEY);
 
       // if (existingVisitId) {

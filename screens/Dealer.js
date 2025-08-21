@@ -23,7 +23,10 @@ const DealerScreen = () => {
     try {
       const id1 = await storage.get("id");
       const id2 = await storage.get("punchId");
+      console.log("idddd",id1,id2);
+      
       return id1 || id2 || null;
+      
     } catch (error) {
       console.error("Error retrieving inpunch id:", error);
       return null;
