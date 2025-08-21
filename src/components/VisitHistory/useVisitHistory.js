@@ -25,7 +25,7 @@ const useVisitHistory = (location_id) => {
           logger.info("Visit History Response:", response.data);
         }
 
-        if (response.ok && response.data) {
+        if (response.status==200 && response.data) {
           const sorted = [...response.data.visit_history].sort(
             (a, b) =>
               new Date(b.visit_start_time) - new Date(a.visit_start_time)
