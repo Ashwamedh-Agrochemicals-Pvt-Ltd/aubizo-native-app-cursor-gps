@@ -129,6 +129,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: DESIGN.colors.background,
+    margin:DESIGN.spacing.md
   },
   loader: {
     flex: 1,

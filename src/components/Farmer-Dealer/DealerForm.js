@@ -30,7 +30,8 @@ function DealerForm({ location, stateDealerForm }) {
   const { states, districts, talukas, loadStates, loadDistricts, loadTalukas } =
     useMasterData();
 
-      const [phoneForOTP, setPhoneForOTP] = useState("");
+  const [phoneForOTP, setPhoneForOTP] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [dropdowns, setDropdowns] = useState({
     state: false,
@@ -59,7 +60,7 @@ function DealerForm({ location, stateDealerForm }) {
 
       const response = await apiClient.post('dealer/create/', payload, {
         signal: abortControllerRef.current.signal,
-        timeout: 10000, // 10 second timeout
+        timeout: 0, // 10 second timeout
       });
       return response.data;
     },
@@ -122,14 +123,14 @@ function DealerForm({ location, stateDealerForm }) {
 
       if (phone) {
         const payload = { phone: phone.trim() };
-        const resp= await apiClient.patch(
+        const resp = await apiClient.patch(
           `dealer/${dealerId}/`,
           payload,
           { signal: abortControllerRef.current.signal }
         );
-         if (resp?.data?.phone) {
-         setPhoneForOTP(resp.data.phone);
-      }
+        if (resp?.data?.phone) {
+          setPhoneForOTP(resp.data.phone);
+        }
 
       }
 
@@ -188,19 +189,20 @@ function DealerForm({ location, stateDealerForm }) {
     }
   }, []);
   const handleSubmit = useCallback(async (values, { resetForm }) => {
-    
+
     if (__DEV__) {
       console.log("🏪 [DealerForm] Starting handleSubmit...");
     }
-
     // Prevent double submission
-    if (createDealerMutation.isPending || sendOTPMutation.isPending) {
+    if (isSubmitting || createDealerMutation.isPending && sendOTPMutation.isPending) {
       return;
     }
-
+      setIsSubmitting(true);
     // --- Case 1: Dealer already exists → Only resend OTP ---
     if (createdDealerId) {
-      sendOTPMutation.mutate({ dealerId: createdDealerId, phone: values.phone });
+      sendOTPMutation.mutate({ dealerId: createdDealerId, phone: values.phone },
+        { onSettled: () => setIsSubmitting(false) } 
+      );
       return;
     }
     // --- Case 2: First time dealer creation ---
@@ -231,17 +233,20 @@ function DealerForm({ location, stateDealerForm }) {
       longitude: locationData?.longitude ? Number(locationData.longitude.toFixed(6)) : null,
     };
 
-    
-    
+
+
     const startTime = Date.now();
-    setPhoneForOTP(payload.phone); 
-    createDealerMutation.mutate(payload);
+    setPhoneForOTP(payload.phone);
+    createDealerMutation.mutate(payload,
+      {
+      onSettled: () => setIsSubmitting(false)
+    });
 
     const totalTime = Date.now() - startTime;
     if (__DEV__) {
       console.log(`🏪 [DealerForm] handleSubmit total time: ${totalTime}ms`);
     }
-  }, [createdDealerId, formState, location, getCurrentLocation, createDealerMutation, sendOTPMutation]);
+  }, [isSubmitting,createdDealerId, formState, location, getCurrentLocation, createDealerMutation, sendOTPMutation]);
 
   // Cleanup on unmount
   const cleanup = useCallback(() => {
@@ -529,7 +534,7 @@ function DealerForm({ location, stateDealerForm }) {
                   accessibilityState={{ disabled: !canSubmit }}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  {createDealerMutation.isPending || sendOTPMutation.isPending ? (
+                  {isSubmitting || createDealerMutation.isPending || sendOTPMutation.isPending ? (
                     <ActivityIndicator size="small" color={DESIGN.colors.surface} />
                   ) : (
                     <>
@@ -569,7 +574,7 @@ function DealerForm({ location, stateDealerForm }) {
         visible={otpModalVisible}
         dealerId={createdDealerId}
         onClose={() => setOtpModalVisible(false)}
-        phone={phoneForOTP} 
+        phone={phoneForOTP}
         onVerified={() => {
           setOtpModalVisible(false);
           stateDealerForm(false);

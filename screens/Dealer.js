@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Text, View } from "react-native";
 import apiClient from "../src/api/client";
 import DealerForm from "../src/components/Farmer-Dealer/DealerForm";
@@ -90,7 +90,7 @@ const DealerScreen = () => {
     }
   };
 
-  const fetchDealers = async () => {
+  const fetchDealers = useCallback(async () => {
     const startTime = Date.now();
     
     if (__DEV__) {
@@ -123,10 +123,7 @@ const DealerScreen = () => {
       };
 
       const apiStart = Date.now();
-      const response = await apiClient.post("track/nearby-dealers/", payload, {
-        cancelToken: cancelTokenRef.current.token,
-        timeout: 5000,
-      });
+      const response = await apiClient.post("track/nearby-dealers/", payload,{ timeout: 20000});
       const apiTime = Date.now() - apiStart;
 
       if (__DEV__) {
@@ -151,11 +148,11 @@ const DealerScreen = () => {
         console.log(`🏪 [Dealer] fetchDealers total time: ${totalTime}ms`);
       }
     }
-  };
+  },[]);
 
   useEffect(() => {
     fetchDealers();
-  }, []);
+  }, [fetchDealers]);
 
   return (
     <View style={{ flex:1,paddingBottom: insets.bottom  }}>

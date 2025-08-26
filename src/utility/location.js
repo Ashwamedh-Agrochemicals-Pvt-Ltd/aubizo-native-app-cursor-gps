@@ -8,6 +8,8 @@ const GOOGLE_API_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
 const GOOGLE_URL = process.env.EXPO_PUBLIC_GOOGLE_URL;
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 // ✅ Get current location and address
 const getCurrentLocationDetails = async () => {
   try {
@@ -25,9 +27,15 @@ const getCurrentLocationDetails = async () => {
       return { latitude: null, longitude: null, address: null };
     }
 
+     await sleep(2000);
+
     // Step 2: Get GPS coordinates
     const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
+      accuracy: Location.Accuracy.Highest,
+      mayShowUserSettingsDialog:true,
+      maximumAge:0,
+      timeout:10000,
+
     });
     const { latitude, longitude } = location.coords;
 
@@ -44,6 +52,7 @@ const getCurrentLocationDetails = async () => {
       address = null;
     }
 
+     await sleep(1000);
     return { latitude, longitude, address };
   } catch (error) {
     Alert.alert("Location Error", "Unable to fetch location. Please try again.");

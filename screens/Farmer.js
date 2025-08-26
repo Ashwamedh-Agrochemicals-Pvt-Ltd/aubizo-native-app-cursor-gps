@@ -119,7 +119,7 @@ const FarmerScreen = () => {
       const apiStart = Date.now();
       const response = await apiClient.post("track/nearby-farmers/", payload, {
         cancelToken: cancelTokenRef.current.token,
-        timeout: 5000,
+        timeout: 20000,
       });
       const apiTime = Date.now() - apiStart;
 

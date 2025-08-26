@@ -188,12 +188,6 @@ function OTPModal({ visible, dealerId, onClose, onVerified, phone }) {
               )}
             </TouchableOpacity>
           </View>
-
-          {verifying && (
-            <View style={{ marginTop: 10 }}>
-              <ActivityIndicator size="large" color={DESIGN.colors.primary} />
-            </View>
-          )}
         </View>
       </View>
     </Modal>

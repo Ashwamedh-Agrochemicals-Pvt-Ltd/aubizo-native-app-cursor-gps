@@ -44,6 +44,10 @@ export default {
       edgeToEdgeEnabled: true,
       package: getUniqueIdentifier(),
       runtimeVersion: "1.0.0",
+      permissions: [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+      ],
     },
     web: {
       favicon: "./assets/images/favicon.png",
@@ -57,7 +61,19 @@ export default {
           image: "./assets/images/splash-icon-light.png",
           imageWidth: 200,
         },
+       
       ],
+       [
+          "expo-location",
+          {
+            isAndroidBackgroundLocationEnabled: true,
+            locationAlwaysAndWhenInUsePermission:
+              "Allow AUBIZO to use your location even when the app is in the background.",
+            locationWhenInUsePermission:
+              "Allow AUBIZO to access your location while you are using the app.",
+          }
+        ]
+
     ],
     extra: {
       appVariant: APP_VARIANT,

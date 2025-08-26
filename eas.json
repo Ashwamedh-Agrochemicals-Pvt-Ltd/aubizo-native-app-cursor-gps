@@ -21,8 +21,12 @@
       "environment": "production"
     }
   },
-  "submit": {
-    "production": {}
-  
+   "submit": {
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./ServiceAccountAubizo.json",
+        "track": "internal"
+      }
+    }
   }
 }
