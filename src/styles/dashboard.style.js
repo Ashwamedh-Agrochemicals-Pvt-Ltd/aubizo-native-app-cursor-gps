@@ -5,6 +5,7 @@ export const styles = {
     flex: 1,
     backgroundColor: DESIGN.colors.background,
     paddingTop: DESIGN.spacing.lg,
+
   },
 
   mainContent: {

@@ -13,7 +13,7 @@ if (__DEV__ === false) {
 // Lazy load screens for better performance
 const LoginScreen = lazyLoadScreen(() => import('../screens/Login'));
 // Import TabNavigation normally since it's a named export
-import { TabNavigation } from './AppNavigation';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -35,10 +35,6 @@ export default function AuthNavigator() {
           </ScreenWrapper>
         )}
         options={{ headerShown: false }}
-      />
-      <Stack.Screen 
-        name="Main" 
-        component={TabNavigation} 
       />
     </Stack.Navigator>
   );

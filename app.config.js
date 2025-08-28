@@ -48,6 +48,7 @@ export default {
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
       ],
+      jsEngine: "hermes",
     },
     web: {
       favicon: "./assets/images/favicon.png",
@@ -61,18 +62,18 @@ export default {
           image: "./assets/images/splash-icon-light.png",
           imageWidth: 200,
         },
-       
+
       ],
-       [
-          "expo-location",
-          {
-            isAndroidBackgroundLocationEnabled: true,
-            locationAlwaysAndWhenInUsePermission:
-              "Allow AUBIZO to use your location even when the app is in the background.",
-            locationWhenInUsePermission:
-              "Allow AUBIZO to access your location while you are using the app.",
-          }
-        ]
+      [
+        "expo-location",
+        {
+          isAndroidBackgroundLocationEnabled: true,
+          locationAlwaysAndWhenInUsePermission:
+            "Allow AUBIZO to use your location even when the app is in the background.",
+          locationWhenInUsePermission:
+            "Allow AUBIZO to access your location while you are using the app.",
+        }
+      ]
 
     ],
     extra: {

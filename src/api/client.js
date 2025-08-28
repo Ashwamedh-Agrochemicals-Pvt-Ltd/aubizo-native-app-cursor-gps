@@ -1,8 +1,7 @@
 import axios from "axios";
-import AuthStorage from "../auth/storage";
-import cache from "../utility/cache";
 import { navigation } from "../../navigation/NavigationService";
-import { handleError, ERROR_TYPES } from "../utility/errorHandler";
+import AuthStorage from "../auth/storage";
+import { handleError } from "../utility/errorHandler";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -12,7 +11,7 @@ if (__DEV__) {
 
 const apiClient = axios.create({
   baseURL: `${API_URL}`,
-  timeout: 30000, // 30 second timeout
+  timeout: 3000, // 30 second timeout
   headers: {
     'Content-Type': 'application/json',
   }
@@ -72,30 +71,6 @@ apiClient.interceptors.response.use(
   }
 );
 
-// const originalGet = apiClient.get;
-
-// apiClient.get = async (url, config = {}) => {
-//   try {
-//     const response = await originalGet(url, config);
-
-//     if (response.status === 200) {
-//       await cache.store(url, response.data);
-//       return { ok: true, data: response.data };
-//     }
-
-//     return { ok: false, data: null };
-//   } catch (error) {
-//     const cachedData = await cache.get(url);
-//     if (cachedData) {
-//       if (__DEV__) {
-//         console.warn("Serving cached data due to error:", error.message);
-//       }
-//       return { ok: true, data: cachedData };
-//     }
-
-//     return { ok: false, error };
-//   }
-// };
 // Add a centralized HTTP wrapper function
 const http = {
   get: async (url, config = {}) => {
@@ -108,7 +83,7 @@ const http = {
       throw error;
     }
   },
-  
+
   post: async (url, data = {}, config = {}) => {
     try {
       const response = await apiClient.post(url, data, config);
@@ -120,7 +95,7 @@ const http = {
       return { ok: false, error };
     }
   },
-  
+
   put: async (url, data = {}, config = {}) => {
     try {
       const response = await apiClient.put(url, data, config);
@@ -132,7 +107,7 @@ const http = {
       return { ok: false, error };
     }
   },
-  
+
   delete: async (url, config = {}) => {
     try {
       const response = await apiClient.delete(url, config);
@@ -148,3 +123,4 @@ const http = {
 
 export default apiClient;
 export { http };
+

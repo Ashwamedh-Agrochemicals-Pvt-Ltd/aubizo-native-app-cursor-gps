@@ -221,7 +221,7 @@ function DealerForm({ location, stateDealerForm }) {
       shop_name: values.shop_name.trim(),
       owner_name: values.owner_name.trim(),
       phone: values.phone.trim(),
-      gst_number: values.gst_number ? values.gst_number.trim() : "",
+      gst_number: values.gst_number ? values.gst_number.trim() : "NA",
       remark: values.remark ? values.remark.trim() : "",
       agreement_status: values.agreement_status,
       billing_address: (location || "").trim(),

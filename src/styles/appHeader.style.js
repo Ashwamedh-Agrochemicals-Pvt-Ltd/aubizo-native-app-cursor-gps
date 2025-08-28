@@ -9,6 +9,8 @@ export default StyleSheet.create({
   headerContainer: {
     backgroundColor: DESIGN.colors.primary,
     ...DESIGN.shadows.subtle,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   headerContent: {
     height: Platform.OS === 'ios' ? 70 : 80,
@@ -16,7 +18,7 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: DESIGN.spacing.lg,
-   
+
   },
   headerTitle: {
     ...DESIGN.typography.title,
@@ -62,7 +64,7 @@ export default StyleSheet.create({
     marginBottom: DESIGN.spacing.md,
   },
   modalHeader: {
-    flexDirection: 'row', 
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: DESIGN.spacing.lg,

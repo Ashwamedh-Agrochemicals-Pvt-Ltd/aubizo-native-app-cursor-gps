@@ -50,11 +50,6 @@ function LoginScreen() {
       const token = response.data.data.token;
       await logIn(token);
 
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "Main" }],
-      });
-
       showToast.success(
         "You have logged in successfully.",
         "✅ Login Successful!"

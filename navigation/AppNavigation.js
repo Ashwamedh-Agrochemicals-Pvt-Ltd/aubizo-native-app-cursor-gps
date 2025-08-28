@@ -1,121 +1,172 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Platform, Keyboard } from "react-native";
-import React, { useEffect, useState } from "react";
-import { tabNavigatorOptions } from "../src/styles/appNavigation.style";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { lazyLoadScreen } from "../src/utility/performance";
-
-// Disable console logs in production
-if (__DEV__ === false) {
-  console.log = () => {};
-  console.warn = () => {};
-  console.error = () => {};
-}
-
-// Lazy load screens for better performance
-const Dashboard = lazyLoadScreen(() => import("../screens/Dashboard"));
-const PaymentScreen = lazyLoadScreen(() => import("../screens/Payments"));
-const OrderScreen = lazyLoadScreen(() => import("../screens/Orders"));
-const ProductScreen = lazyLoadScreen(() => import("../screens/Pruducts"));
-const FarmerScreen = lazyLoadScreen(() => import("../screens/Farmer"));
-const FarmerVisitScreen = lazyLoadScreen(() => import("../screens/FarmerVisit"));
-const DealerScreen = lazyLoadScreen(() => import("../screens/Dealer"));
-const DealerUpdateScreen = lazyLoadScreen(() => import("../screens/DealerUpdate"));
-const DealerVisitScreen = lazyLoadScreen(() => import("../screens/DealerVisit"));
-const ProductDetailScreen = lazyLoadScreen(() => import("../screens/ProductDetails"));
-const FarmerUpdateScreen = lazyLoadScreen(() => import("../screens/FarmerUpdate"));
-
-// Import CustomHeader normally since it's used in header
+import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
+import Dashboard from "../screens/Dashboard";
+import PaymentScreen from "../screens/Payments";
+import OrderScreen from "../screens/Orders";
+import ProductScreen from "../screens/Pruducts";
+import FarmerScreen from "../screens/Farmer";
+import FarmerVisitScreen from "../screens/FarmerVisit";
+import DealerScreen from "../screens/Dealer";
+import DealerUpdateScreen from "../screens/DealerUpdate";
+import DealerVisitScreen from "../screens/DealerVisit";
+import ProductDetailScreen from "../screens/ProductDetails";
+import FarmerUpdateScreen from "../screens/FarmerUpdate";
 import CustomHeader from "../src/components/appHeader/CustomHeader";
 import ScreenWrapper from "../src/components/ScreenWrapper";
+import LoginScreen from "../screens/Login"
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const AUTHENTICATED_MENU_ITEMS = [
   { id: "products", label: "Products", route: "Product", icon: "leaf" },
-  { id: "logout", label: "Logout", route: "Login", icon: "logout" },
+  { id: "logout", label: "Logout", route: "Login", icon: "logout" }, 
 ];
 
-export function TabNavigation() {
-  const insets = useSafeAreaInsets();
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => {
-        setKeyboardVisible(true);
-      }
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        setKeyboardVisible(false);
-      }
-    );
-
-    return () => {
-      keyboardDidShowListener?.remove();
-      keyboardDidHideListener?.remove();
-    };
-  }, []);
-
-  // Calculate tab bar height with safe area
-  const tabBarHeight = 60; // Base height
-  const safeAreaBottom = insets.bottom || 10; // Minimum 10px for devices with no inset
-  const totalHeight = tabBarHeight + safeAreaBottom;
-  
+function DashboardStack() {
   return (
-    <Tab.Navigator
-      initialRouteName="DashboardTab"
-      screenOptions={{
-        ...tabNavigatorOptions,
-        tabBarStyle: {
-          ...tabNavigatorOptions.tabBarStyle,
-          height: totalHeight,
-          paddingBottom: safeAreaBottom,
-          paddingTop: 8,
-          // Hide tab bar when keyboard is visible
-          display: keyboardVisible ? 'none' : 'flex',
-          // Solid background to avoid transparent gaps
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 0,
-          elevation: 10,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: 0.08,
-          shadowRadius: 8,
-        },
-        // Add lazy loading for tab screens
-        lazy: true,
-        lazyPlaceholder: () => null,
-      }}
-    >
-      <Tab.Screen
-        name="DashboardTab"
-        component={(props) => (
+    <Stack.Navigator
+     screenOptions={{
+        statusBarStyle: "dark",        // for Expo (use "dark-content" if pure RN)
+        statusBarColor: "#FFFFFF",     // Android background
+      }}>
+      <Stack.Screen
+        name="DashboardHome"
+        options={{
+          header: () => (
+            <CustomHeader
+              userType="auth"
+              menuItems={AUTHENTICATED_MENU_ITEMS}
+            />
+          ),
+        }}
+      >
+        {(props) => (
           <ScreenWrapper>
             <Dashboard {...props} />
           </ScreenWrapper>
         )}
-        options={{
-          tabBarLabel: "Dashboard",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="home" size={size} color={color} />
-          ),
-        }}
-      />
+      </Stack.Screen>
+      <Stack.Screen name="Product" component={ProductScreen} />
+      <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+      <Stack.Screen name="Farmer" component={FarmerScreen} />
+      <Stack.Screen name="FarmerUpdate" component={FarmerUpdateScreen} />
+      <Stack.Screen name="FarmerVisit" component={FarmerVisitScreen} />
+      <Stack.Screen name="Dealer" component={DealerScreen} />
+      <Stack.Screen name="DealerVisit" component={DealerVisitScreen} />
+      <Stack.Screen name="DealerUpdate" component={DealerUpdateScreen} />
+      <Stack.Screen name="Login" component={LoginScreen}/>
+    </Stack.Navigator>
+  );
+}
 
-      <Tab.Screen
-        name="Orders"
-        component={(props) => (
+function OrdersStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="OrdersHome"
+        options={{
+          statusBarStyle: "dark",        
+          statusBarColor: "#FFFFFF",    
+        }}
+      >
+        {(props) => (
           <ScreenWrapper>
             <OrderScreen {...props} />
           </ScreenWrapper>
         )}
+      </Stack.Screen>
+    </Stack.Navigator>
+  );
+}
+
+
+function PaymentsStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="PaymentsHome"
+        options={{
+          statusBarStyle: "dark",        
+          statusBarColor: "#FFFFFF",     
+        }}>
+        {(props) => (
+          <ScreenWrapper>
+            <PaymentScreen {...props} />
+          </ScreenWrapper>
+        )}
+      </Stack.Screen>
+    </Stack.Navigator>
+  );
+}
+
+//
+// 🔹 Tab Navigator (Root)
+//
+export function AppNavigation() {
+  const insets = useSafeAreaInsets()
+
+  const tabBarHeight = 60;
+  const safeAreaBottom = insets.bottom || 10;
+  const totalHeight = tabBarHeight + safeAreaBottom;
+
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: "#00796B",
+        tabBarInactiveTintColor: "#B0BEC5",
+        tabBarStyle: {
+          height: totalHeight,
+          paddingBottom: safeAreaBottom,
+          backgroundColor: "#FFFFFF",
+          borderTopWidth: 2,
+          headerShown: false,
+        },
+      }}
+    >
+      <Tab.Screen
+        name="DashboardTab"
+        component={DashboardStack}
+        options={({ route }) => {
+          // 👇 get the active route inside DashboardStack
+          const routeName = getFocusedRouteNameFromRoute(route) ?? "DashboardHome";
+
+          // hide tab bar if not on DashboardHome
+          const hideOnScreens = [
+            "Farmer",
+            "FarmerUpdate",
+            "FarmerVisit",
+            "Dealer",
+            "DealerUpdate",
+            "DealerVisit",
+            "Product",
+            "ProductDetail",
+          ];
+
+          return {
+            tabBarLabel: "Home",
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons name="home" size={size} color={color} />
+            ),
+            headerShown: false,
+            tabBarStyle: hideOnScreens.includes(routeName)
+              ? { display: "none" }
+              : {
+                height: totalHeight,
+                paddingBottom: safeAreaBottom,
+                backgroundColor: "#FFFFFF",
+                borderTopWidth: 2,
+              },
+          };
+        }}
+      />
+
+      <Tab.Screen
+        name="OrdersTab"
+        component={OrdersStack}
         options={{
           tabBarLabel: "Orders",
           tabBarIcon: ({ color, size }) => (
@@ -125,16 +176,13 @@ export function TabNavigation() {
               color={color}
             />
           ),
+          headerShown: false,
         }}
       />
 
       <Tab.Screen
-        name="Payments"
-        component={(props) => (
-          <ScreenWrapper>
-            <PaymentScreen {...props} />
-          </ScreenWrapper>
-        )}
+        name="PaymentsTab"
+        component={PaymentsStack}
         options={{
           tabBarLabel: "Payments",
           tabBarIcon: ({ color, size }) => (
@@ -144,39 +192,10 @@ export function TabNavigation() {
               color={color}
             />
           ),
+          headerShown: false,
         }}
       />
     </Tab.Navigator>
-  );
-}
-
-function AppNavigation() {
-  return (
-    <Stack.Navigator
-      initialRouteName="Main"
-      screenOptions={{
-        header: () => (
-          <CustomHeader userType="auth" menuItems={AUTHENTICATED_MENU_ITEMS} />
-        ),
-        headerMode: "screen",
-        animation:
-          Platform.OS === "ios" ? "slide_from_right" : "fade_from_bottom",
-        // Add lazy loading for stack screens
-        lazy: true,
-        lazyPlaceholder: () => null,
-      }}
-    >
-      <Stack.Screen name="Dashboard" component={Dashboard} />
-      <Stack.Screen name="Main" component={TabNavigation} />
-      <Stack.Screen name="Product" component={ProductScreen} />
-      <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
-      <Stack.Screen name="Farmer" component={FarmerScreen} />
-      <Stack.Screen name="Dealer" component={DealerScreen} />
-      <Stack.Screen name="FarmerUpdate" component={FarmerUpdateScreen} />
-      <Stack.Screen name="FarmerVisit" component={FarmerVisitScreen} />
-      <Stack.Screen name="DealerVisit" component={DealerVisitScreen} />
-      <Stack.Screen name="DealerUpdate" component={DealerUpdateScreen} />
-    </Stack.Navigator>
   );
 }
 

@@ -7,7 +7,7 @@ const showToast = {
       text1: title,
       text2: message,
      position,
-      visibilityTime: 3000,
+      visibilityTime: 1000,
     });
   },
   error: (message, title = "Error") => {
@@ -16,7 +16,7 @@ const showToast = {
       text1: title,
       text2: message,
       position,
-      visibilityTime: 3000,
+      visibilityTime: 1000,
     });
   },
   info: (message, title = "Information") => {
@@ -25,7 +25,7 @@ const showToast = {
       text1: title, 
       text2: message,
       position,
-      visibilityTime: 3000,
+      visibilityTime: 1000,
     });
   },
 };

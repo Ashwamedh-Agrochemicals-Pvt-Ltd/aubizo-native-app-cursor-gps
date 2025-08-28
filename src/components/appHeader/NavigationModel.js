@@ -9,23 +9,18 @@ import {
   Platform,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import styles from "../../styles/appHeader.style" // Ensure this path is correct
+import styles from "../../styles/appHeader.style"; 
 import DESIGN from "../../theme";
 import AnimatedMenuItem from "./AnimatedMenuItem";
-// import { navigation } from "../../../navigation/NavigationService"
 import { useNavigation } from "@react-navigation/native";
-
-
-// import useAuth from "../../Auth/useAuth";
 import useAuth from "../../auth/useAuth";
-import logoutApi from "../../api/logout";
 import showToast from "../../utility/showToast";
 
-const NavigationModel = ({ visible, onClose, userType,item, menuItems }) => {
+const NavigationModel = ({ visible, onClose, userType, menuItems }) => {
   const { logOut } = useAuth();
   const slideAnim = useRef(new Animated.Value(100)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
-  const navigation =useNavigation();
+  const navigation = useNavigation();
 
   useEffect(() => {
     if (visible) {
@@ -97,7 +92,7 @@ const NavigationModel = ({ visible, onClose, userType,item, menuItems }) => {
       visible={visible}
       onRequestClose={onClose}
       statusBarTranslucent
-  
+
     >
       <Animated.View style={[styles.modalOverlay]}>
         <TouchableWithoutFeedback onPress={onClose}>
@@ -110,11 +105,11 @@ const NavigationModel = ({ visible, onClose, userType,item, menuItems }) => {
 
         {/* Header with close button */}
         <View style={styles.modalHeader}>
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <View style={styles.statusDot} />
-          <Text style={styles.statusText}>
-            {userType === "auth" ? "Logged in" : "Guest User"}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={styles.statusDot} />
+            <Text style={styles.statusText}>
+              {userType === "auth" ? "Logged in" : "Guest User"}
+            </Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <MaterialCommunityIcons
@@ -130,7 +125,7 @@ const NavigationModel = ({ visible, onClose, userType,item, menuItems }) => {
         <TouchableOpacity
           style={styles.homeButton}
           onPress={() =>
-            handleNavigation(userType === "auth" ? "Main" : "Login")
+            handleNavigation(userType === "auth" ? "DashboardHome" : "Login")
           }
         >
           <View style={styles.homeButtonContent}>

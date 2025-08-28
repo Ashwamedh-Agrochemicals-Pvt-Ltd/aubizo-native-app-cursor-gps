@@ -205,7 +205,7 @@ function EntityVisitList({
   return (
     <View style={modernStyles.container}>
       {/* Header Section */}
-      <View style={modernStyles.header}>
+      {/* <View style={modernStyles.header}>
         <View style={modernStyles.headerContent}>
           <Text style={modernStyles.headerTitle}>{type} Management</Text>
           <Text style={modernStyles.headerSubtitle}>
@@ -213,7 +213,7 @@ function EntityVisitList({
             {data.length !== 1 ? "s" : ""} nearby
           </Text>
         </View>
-      </View>
+      </View> */}
 
       {/* Table Header */}
       <View style={modernStyles.tableHeader}>
@@ -270,7 +270,7 @@ function EntityVisitList({
             size={24}
             color={DESIGN.colors.surface}
           />
-          <Text style={modernStyles.addButtonText}>Add {type}</Text>
+          {/* <Text style={modernStyles.addButtonText}>Add {type}</Text> */}
         </TouchableOpacity>
       </View>
 
@@ -496,33 +496,25 @@ const modernStyles = StyleSheet.create({
   },
 
   bottomButtonContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: DESIGN.colors.surface,
-    paddingHorizontal: DESIGN.spacing.xl,
-    paddingBottom:
-      Platform.OS === "ios" ? DESIGN.spacing.xl : DESIGN.spacing.md,
+  position: "absolute",
+  bottom: Platform.OS === "ios" ? DESIGN.spacing.xl : DESIGN.spacing.lg,
+  right: DESIGN.spacing.lg,
+},
 
+addButton: {
+  backgroundColor: DESIGN.colors.primary,
+  width: 56,
+  height: 56,
+  borderRadius: 28, // perfect circle
+  alignItems: "center",
+  justifyContent: "center",
+  ...DESIGN.shadows.medium,
+},
 
-  },
+addButtonText: {
+  display: "none", // FAB usually has only an icon
+},
 
-  addButton: {
-    backgroundColor: DESIGN.colors.primary,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: DESIGN.spacing.md,
-    borderRadius: DESIGN.borderRadius.md,
-    ...DESIGN.shadows.medium,
-  },
-
-  addButtonText: {
-    ...DESIGN.typography.subtitle,
-    color: DESIGN.colors.surface,
-    marginLeft: DESIGN.spacing.sm,
-  },
 
   loadingOverlay: {
     position: "absolute",

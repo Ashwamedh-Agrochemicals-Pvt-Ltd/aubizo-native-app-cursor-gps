@@ -117,7 +117,7 @@ export default function App() {
         navigation.current?.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{ name: "Main" }],
+            routes: [{ name: "DashboardHome" }],
           })
         );
       } else {

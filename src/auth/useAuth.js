@@ -4,7 +4,6 @@ import authContext from "./context";
 import authStorage from "./storage"
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import showToast from "../utility/showToast";
-import navigation from "../../navigation/NavigationService"
 import logger from "../utility/logger";
 
 const useAuth = () => {

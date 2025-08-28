@@ -931,7 +931,7 @@ const modernStyles = StyleSheet.create({
   },
 
   submitContainer: {
-    marginTop: DESIGN.spacing.lg,
+    
   },
 
   submitButton: {
