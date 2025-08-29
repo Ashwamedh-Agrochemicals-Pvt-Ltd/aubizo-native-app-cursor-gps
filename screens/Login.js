@@ -9,10 +9,8 @@ import {
   View,
   Platform,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
 import authApi from "../src/api/auth";
 import useAuth from "../src/auth/useAuth";
 import {
@@ -28,33 +26,34 @@ import styles from "../src/styles/login.style";
 function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
+  const [formError, setFormError] = useState("");
   const { logIn } = useAuth();
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
   const handleSubmit = async ({ username, password }) => {
     setLoading(true);
-
+    setFormError(""); // Reset previous error
     try {
       const response = await authApi.login(username, password);
 
-      if (response.status !== 200 || !response.data?.data?.token) {
-        showToast.error(
-          "Something went wrong. Please try again.",
-          "Login Error"
-        );
+      // Handle invalid credentials
+      if (response.status === 400 || response.data?.status === false) {
+        setFormError(response.data?.message || "Invalid credentials");
         return;
       }
 
-      const token = response.data.data.token;
-      await logIn(token);
+      // Handle missing token
+      const token = response.data?.data?.token;
+      if (!token) {
+        setFormError("Something went wrong. Please try again.");
+        return;
+      }
 
-      showToast.success(
-        "You have logged in successfully.",
-        "✅ Login Successful!"
-      );
+      // Successful login
+      await logIn(token);
+      showToast.success("You have logged in successfully.", "✅ Login Successful!");
     } catch (error) {
+      setFormError("Something went wrong. Please try again.");
       showToast.error("Something went wrong. Please try again.", "Login Error");
     } finally {
       setLoading(false);
@@ -67,9 +66,7 @@ function LoginScreen() {
       <StatusBar
         translucent
         barStyle="light-content"
-        backgroundColor={
-          Platform.OS === "android" ? DESIGN.colors.primary : "transparent"
-        }
+        backgroundColor={Platform.OS === "android" ? DESIGN.colors.primary : "transparent"}
       />
 
       {/* Main Container */}
@@ -98,6 +95,9 @@ function LoginScreen() {
               <View style={styles.welcomeSection}>
                 <Text style={styles.welcomeTitle}>Welcome back</Text>
               </View>
+
+              {/* Form Error */}
+              {formError ? <Text style={styles.formError}>{formError}</Text> : null}
 
               {/* Form */}
               <AppForm

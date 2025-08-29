@@ -9,8 +9,6 @@ export default StyleSheet.create({
   headerContainer: {
     backgroundColor: DESIGN.colors.primary,
     ...DESIGN.shadows.subtle,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
   },
   headerContent: {
     height: Platform.OS === 'ios' ? 70 : 80,

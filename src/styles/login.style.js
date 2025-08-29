@@ -52,7 +52,7 @@ export default StyleSheet.create({
 
   welcomeSection: {
     alignItems: "center",
-    marginBottom: DESIGN.spacing.lg,
+    marginBottom: DESIGN.spacing.md,
     paddingBottom: DESIGN.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: DESIGN.colors.borderLight,
@@ -175,4 +175,10 @@ export default StyleSheet.create({
     color: DESIGN.colors.primary,
     fontWeight: "600",
   },
+  formError: {
+  color: DESIGN.colors.error,
+  fontSize: 14,
+  marginBottom: DESIGN.spacing.md,
+  textAlign: "center",
+},
 });
