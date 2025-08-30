@@ -4,12 +4,15 @@ import { ActivityIndicator, Alert, Animated, Text, TouchableHighlight, View } fr
 import apiClient from "../src/api/client"
 import authContext from "../src/auth/context"
 import authStorage from "../src/auth/storage";
-import {navigation} from "../navigation/NavigationService"
+import { navigation } from "../navigation/NavigationService"
 import { styles } from "../src/styles/dashboard.style";
 import Location from "../src/utility/location";
 import storage from "../src/utility/storage";
 import logger from "../src/utility/logger";
-import { debounce } from "../src/utility/performance";
+import SwipePunchButton from "../src/components/dashboard/SwipePunchButton";
+import showToast from "../src/utility/showToast";
+import TodayDashboard from "../src/components/TodayDashboard";
+
 
 
 const INPUNCH_URL = process.env.EXPO_PUBLIC_INPUNCH_URL;
@@ -31,23 +34,26 @@ function Dashboard() {
   const [inpunchId, setInpunchId] = useState(null);
   const [isPunchInLoading, setIsPunchInLoading] = useState(false);
   const [isPunchOutLoading, setIsPunchOutLoading] = useState(false);
-  const { user, setUser } = useContext(authContext); 
+  const { user, setUser } = useContext(authContext);
+  const swipeRef = useRef(null);
+  const [dashboardData, setDashboardData] = useState(null);
 
 
-  // Check punch status and maintain login state
+
   const checkPunchStatus = useCallback(async () => {
     try {
-      // First, try to load existing punch ID from storage
-      const existingPunchId = await storage.get("punchId");
-      
-      const response = await apiClient.get("/track/punch-in/");
-      const { punched_in, punched_out, punch_id } = response.data;
-
-      if (punched_in == true && punched_out == false) {
+    
+      const response = await apiClient.get("track/dashboard/today/");
+      setDashboardData(response.data);
+      const { punched_in, punched_out, punch_id } = response.data.punch_status;
+      console.log("Data punch Status:", punch_id, punched_in, punched_out);
+      if (punched_in== true && punched_out == false) {
         const punchId = String(punch_id);
         // Sync local storage with server state
         await storage.set("punchId", punchId);
         setInpunchId(punchId);
+        console.log(inpunchId);
+        
         setHasInpunch(true);
 
         // Ensure user stays logged in
@@ -68,7 +74,7 @@ function Dashboard() {
       }
     } catch (error) {
       logger.error("Error checking punch status:", error);
-      
+
       if (error.response?.status === 401) {
         Alert.alert("Session Expired", MESSAGES.SESSION_EXPIRED);
       } else if (!error.response) {
@@ -91,228 +97,145 @@ function Dashboard() {
     }
   }, [user, checkPunchStatus]);
 
-const handleInpunch = useCallback(async () => {
-  if (isPunchInLoading) return; // Prevent double-clicks
-
-  setIsPunchInLoading(true);
-  try {
-    const { latitude, longitude } = await Location.getCurrentLocationDetails();
-
-    const payload = {
-      latitude: Number(latitude.toFixed(6)),
-      longitude: Number(longitude.toFixed(6)),
-    };
-
-    const response = await apiClient.post(INPUNCH_URL, payload);
-    const id = String(response.data.data.id);
-    console.log("DashBoard punch Id:",id)
-    // Use consistent storage approach
-    await storage.set("punchId", id);
-    setInpunchId(id);
-    setHasInpunch(true);
+  const handleInpunch = useCallback(() => {
+    if (isPunchInLoading) return; // Prevent double-clicks
 
     Alert.alert(
-      "Success",
-      "Inpunch recorded successfully",
-      [{ text: "OK" }],
-      { cancelable: true }
-    );
-  } catch (error) {
-    logger.error("Punch in error:", error);
+      "Confirm Punch In",
+      "Are you sure you want to punch in?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+          onPress: () => {
+            swipeRef.current?.reset();
+          },
+        },
+        {
+          text: "Yes",
+          onPress: async () => {
+            setIsPunchInLoading(true);
+            try {
+              const { latitude, longitude } = await Location.getCurrentLocationDetails();
 
-    if (error.response?.status === 401) {
-      Alert.alert("Session Expired", MESSAGES.SESSION_EXPIRED);
-    } else if (!error.response) {
-       Alert.alert(
-        "Punch In Restricted",
-        "You can only record one inpunch per day", // Proper message
-        [{ text: "OK" }],
-        { cancelable: true }
-      );
-    } else if (error.response?.status === 400) {
-      Alert.alert(
-        "Punch In Restricted",
-        "You can only record one inpunch per day", // Proper message
-        [{ text: "OK" }],
-        { cancelable: true }
-      );
-    } else {
-      Alert.alert("Error", MESSAGES.GENERIC_ERROR);
-    }
-  } finally {
-    setIsPunchInLoading(false);
-  }
-}, [isPunchInLoading]);
+              const payload = {
+                latitude: Number(latitude.toFixed(6)),
+                longitude: Number(longitude.toFixed(6)),
+              };
 
+              const response = await apiClient.post(INPUNCH_URL, payload);
+              const id = String(response.data.data.id);
+              console.log("Dashboard punch Id:", id);
 
-  const handleOutpunch = useCallback(async () => {
-    if (isPunchOutLoading) return; // Prevent double-clicks
-    
-    setIsPunchOutLoading(true);
-    try {
-      const { latitude, longitude } = await Location.getCurrentLocationDetails(
-        {}
-      );
+              await storage.set("puncId", id);
+              setInpunchId(id);
+              setHasInpunch(true);
+              await checkPunchStatus();
+              // ✅ Success toast (same style as outpunch)
+              showToast.success(
+                "Punch In Successful",
+                "Your inpunch was recorded successfully"
+              );
+            } catch (error) {
+              logger.error("Punch in error:", error);
+              Alert.alert("Punch In Restricted", "You can only record one inpunch per day");
 
-      const payload = {
-        latitude: Number(latitude.toFixed(6)),
-        longitude: Number(longitude.toFixed(6)),
-      };
-
-      await apiClient.patch(`${OUTPUNCH_URL}${inpunchId}/`, payload);
-
-      // Clear punch state after successful punch out
-      // User should not have access to Farmer/Dealer after punching out
-      setHasInpunch(false);
-      setInpunchId(null);
-      await storage.remove("punchId");
-      
-      Alert.alert(
-        "Success",
-        "Outpunch recorded successfully",
-         [{ text: "OK"}],
-        { cancelable: true }
-      );
-    } catch (error) {
-      logger.error("Punch out error:", error);
-      
-      if (error.response?.status === 401) {
-        Alert.alert("Session Expired", MESSAGES.SESSION_EXPIRED);
-      } else if (!error.response) {
-        Alert.alert("Network Error", MESSAGES.NETWORK_ERROR);
-      } else {
-        Alert.alert("Error", MESSAGES.PUNCH_OUT_FAILED);
+            } finally {
+              setIsPunchInLoading(false);
+            }
+          },
+        },
+      ],
+      {
+        cancelable: true,
+        onDismiss: () => {
+          swipeRef.current?.reset(); // reset if dismissed by tapping outside
+        },
       }
-    } finally {
-      setIsPunchOutLoading(false);
-    }
-  }, [isPunchOutLoading, inpunchId]);
-
-  // Debounced handlers to prevent rapid taps
-  const debouncedHandleInpunch = useCallback(
-    debounce(() => {
-      handleInpunch();
-    }, 300),
-    [handleInpunch]
-  );
-
-  const debouncedHandleOutpunch = useCallback(
-    debounce(() => {
-      handleOutpunch();
-    }, 300),
-    [handleOutpunch]
-  );
-
-  const AnimatedSubContainer = ({ children, delay = 0 }) => {
-    const scaleAnim = useRef(new Animated.Value(0)).current;
-    const opacityAnim = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          useNativeDriver: true,
-          friction: 8,
-          tension: 100,
-          delay,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 400,
-          delay,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }, []);
-
-    return (
-      <Animated.View
-        style={{
-          transform: [{ scale: scaleAnim }],
-          opacity: opacityAnim,
-        }}
-      >
-        {children}
-      </Animated.View>
     );
-  };
+  }, [isPunchInLoading, swipeRef]);
+
+
+
+
+  const handleOutpunch = useCallback(() => {
+    if (isPunchOutLoading) return; // Prevent double-clicks
+
+    Alert.alert(
+      "Confirm Punch Out",
+      "Are you sure you want to punch out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+          onPress: () => {
+            // Reset swipe thumb if cancelled
+            swipeRef.current?.reset();
+          },
+        },
+        {
+          text: "Yes",
+          onPress: async () => {
+            setIsPunchOutLoading(true);
+            try {
+              const { latitude, longitude } = await Location.getCurrentLocationDetails();
+
+              const payload = {
+                latitude: Number(latitude.toFixed(6)),
+                longitude: Number(longitude.toFixed(6)),
+              };
+
+              await apiClient.patch(`${OUTPUNCH_URL}${inpunchId}/`, payload);
+
+              // Clear punch state after successful punch out
+              setHasInpunch(false);
+              setInpunchId(null);
+              await storage.remove("punchId");
+              await checkPunchStatus();
+
+              // ✅ Success Toast instead of Alert
+              showToast.success(
+
+                "Punch Out Successful",
+                "Your outpunch was recorded successfully",
+              );
+            } catch (error) {
+              logger.error("Punch out error:", error);
+
+              if (error.response?.status === 401) {
+                Alert.alert("Session Expired", MESSAGES.SESSION_EXPIRED);
+              } else if (!error.response) {
+                Alert.alert("Network Error", MESSAGES.NETWORK_ERROR);
+              } else {
+                Alert.alert("Error", MESSAGES.PUNCH_OUT_FAILED);
+              }
+            } finally {
+              setIsPunchOutLoading(false);
+            }
+          },
+        },
+      ],
+      {
+        cancelable: true,
+        onDismiss: () => {
+          swipeRef.current?.reset(); // reset if dismissed by tapping outside
+        },
+      }
+    );
+  }, [isPunchOutLoading, swipeRef]);
+
 
   return (
-    <View style={styles.container}>
-      
-      {/* Status Badge */}
-      <View
-        style={[
-          styles.statusBadge,
-          hasInpunch
-            ? styles.statusBadgeActive
-            : styles.statusBadgeInactive,
-        ]}
-      >
-        <Ionicons
-          name={hasInpunch ? "checkmark-circle" : "time-outline"}
-          size={16}
-          color={hasInpunch ? "#2E7D32" : "#FF8F00"}
-        />
-        <Text
-          style={[
-            styles.statusText,
-            hasInpunch
-              ? styles.statusTextActive
-              : styles.statusTextInactive,
-          ]}
-        >
-          {hasInpunch ? "Punched In" : "Not Punched"}
-        </Text>
-      </View>
 
+    <>
+
+      <TodayDashboard dashboardData={dashboardData} />
       {/* Main Content */}
       <View style={styles.mainContent}>
-        {/* Punch Button Section */}
-        <AnimatedSubContainer delay={100}>
-          <View style={styles.punchSection}>
-            <TouchableHighlight
-              style={[
-                styles.punchButton,
-                hasInpunch
-                  ? styles.punchButtonActive
-                  : styles.punchButtonInactive,
-                (isPunchInLoading || isPunchOutLoading) && styles.punchButtonDisabled,
-              ]}
-              onPress={hasInpunch ? debouncedHandleOutpunch : debouncedHandleInpunch}
-              underlayColor={hasInpunch ? "#45A049" : "#E53935"}
-              activeOpacity={0.8}
-              disabled={isPunchInLoading || isPunchOutLoading}
-            >
-              <View style={{ alignItems: "center" }}>
-                {(isPunchInLoading || isPunchOutLoading) ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
-                    <Text style={styles.punchButtonText}>
-                      {isPunchInLoading ? "Processing..." : "Processing..."}
-                    </Text>
-                  </View>
-                ) : (
-                  <>
-                    <Ionicons
-                      name={hasInpunch ? "log-out-outline" : "log-in-outline"}
-                      size={32}
-                      color="#FFFFFF"
-                      style={styles.punchIcon}
-                    />
-                    <Text style={styles.punchButtonText}>
-                      {hasInpunch ? "Punch Out" : "Punch In"}
-                    </Text>
-                  </>
-                )}
-              </View>
-            </TouchableHighlight>
-          </View>
-        </AnimatedSubContainer>
 
         {/* Action Cards Grid */}
         <View style={styles.actionsGrid}>
-          <AnimatedSubContainer delay={200}>
+       
             <TouchableHighlight
               style={[
                 styles.actionCard,
@@ -348,9 +271,9 @@ const handleInpunch = useCallback(async () => {
                 </Text>
               </View>
             </TouchableHighlight>
-          </AnimatedSubContainer>
+         
 
-          <AnimatedSubContainer delay={300}>
+        
             <TouchableHighlight
               style={[
                 styles.actionCard,
@@ -386,12 +309,20 @@ const handleInpunch = useCallback(async () => {
                 </Text>
               </View>
             </TouchableHighlight>
-          </AnimatedSubContainer>
+        
         </View>
       </View>
-    </View>
+      {/* Punch Button Section */}
+
+      <SwipePunchButton
+        ref={swipeRef}
+        hasInpunch={hasInpunch}
+        loading={isPunchInLoading || isPunchOutLoading}
+        onSwipe={hasInpunch ? handleOutpunch : handleInpunch}
+      />
+
+    </>
   );
 }
 
 export default Dashboard;
-

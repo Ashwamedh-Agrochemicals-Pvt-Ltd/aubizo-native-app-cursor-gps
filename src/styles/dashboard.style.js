@@ -11,46 +11,10 @@ export const styles = {
   mainContent: {
     flex: 1,
     paddingHorizontal: DESIGN.spacing.md,
-    paddingTop: DESIGN.spacing.md,
+    paddinTop: DESIGN.spacing.md,
+    
   },
 
-  punchSection: {
-    alignItems: "center",
-    marginBottom: DESIGN.spacing.xxl,
-  },
-
-  punchButton: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    justifyContent: "center",
-    alignItems: "center",
-    ...DESIGN.shadows.medium,
-  },
-
-  punchButtonActive: {
-    backgroundColor: DESIGN.colors.accent,
-  },
-
-  punchButtonInactive: {
-    backgroundColor: "#F44336", // ❗ You might want to add this to theme if reused
-  },
-
-  punchButtonDisabled: {
-    opacity: 0.6,
-    backgroundColor: "#9E9E9E", // Grayed out when disabled
-  },
-
-  punchButtonText: {
-    color: DESIGN.colors.surface,
-    fontSize: DESIGN.typography.bodyLarge.fontSize,
-    fontWeight: DESIGN.typography.subtitle.fontWeight,
-    marginTop: DESIGN.spacing.sm,
-  },
-
-  punchIcon: {
-    marginBottom: DESIGN.spacing.xs,
-  },
 
   actionsGrid: {
     flexDirection: "row",
