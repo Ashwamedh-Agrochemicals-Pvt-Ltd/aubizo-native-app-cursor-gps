@@ -11,7 +11,7 @@ export const styles = {
   mainContent: {
     flex: 1,
     paddingHorizontal: DESIGN.spacing.md,
-    paddinTop: DESIGN.spacing.md,
+    marginTop: DESIGN.spacing.lg,
     
   },
 

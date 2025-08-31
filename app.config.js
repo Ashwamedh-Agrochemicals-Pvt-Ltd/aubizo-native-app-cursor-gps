@@ -45,8 +45,11 @@ export default {
       package: getUniqueIdentifier(),
       runtimeVersion: "1.0.0",
       permissions: [
-        "ACCESS_COARSE_LOCATION",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "FOREGROUND_SERVICE",
         "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION"
       ],
       jsEngine: "hermes",
     },
