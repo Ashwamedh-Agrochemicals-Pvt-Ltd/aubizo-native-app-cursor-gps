@@ -17,6 +17,7 @@ import FarmerUpdateScreen from "../screens/FarmerUpdate";
 import CustomHeader from "../src/components/appHeader/CustomHeader";
 import ScreenWrapper from "../src/components/ScreenWrapper";
 import LoginScreen from "../screens/Login"
+import OrderForm from "../src/components/orders/OrderForm"
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -65,21 +66,19 @@ function DashboardStack() {
 
 function OrdersStack() {
   return (
-    <Stack.Navigator>
-      <Stack.Screen
-        name="OrdersHome"
-        options={{
-          statusBarStyle: "dark",        
-          statusBarColor: "#FFFFFF",    
-        }}
-      >
-        {(props) => (
-          <ScreenWrapper>
-            <OrderScreen {...props} />
-          </ScreenWrapper>
-        )}
-      </Stack.Screen>
-    </Stack.Navigator>
+     <Stack.Navigator>
+        <Stack.Screen
+          name="OrdersHome"
+          options={{ headerShown: true }}
+        >
+          {(props) => (
+            <ScreenWrapper>
+              <OrderScreen {...props} />
+            </ScreenWrapper>
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="OrderForm"  component={OrderForm} />
+      </Stack.Navigator>
   );
 }
 
