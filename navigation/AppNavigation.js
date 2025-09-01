@@ -67,16 +67,11 @@ function DashboardStack() {
 function OrdersStack() {
   return (
      <Stack.Navigator>
-        <Stack.Screen
-          name="OrdersHome"
-          options={{ headerShown: true }}
-        >
-          {(props) => (
-            <ScreenWrapper>
-              <OrderScreen {...props} />
-            </ScreenWrapper>
-          )}
-        </Stack.Screen>
+       <Stack.Screen
+  name="OrderScreen"
+  component={OrderScreen}
+  options={{ headerShown: false }} // ✅ disable React Navigation header
+/>
         <Stack.Screen name="OrderForm"  component={OrderForm} />
       </Stack.Navigator>
   );
@@ -88,10 +83,7 @@ function PaymentsStack() {
     <Stack.Navigator>
       <Stack.Screen
         name="PaymentsHome"
-        options={{
-          statusBarStyle: "dark",        
-          statusBarColor: "#FFFFFF",     
-        }}>
+       >
         {(props) => (
           <ScreenWrapper>
             <PaymentScreen {...props} />

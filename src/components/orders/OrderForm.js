@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   TextInput,
+  FlatList,
   Text,
   TouchableOpacity,
   StyleSheet,
@@ -9,11 +10,13 @@ import {
   Keyboard,
   ScrollView,
   Alert,
+  Dimensions,
+  KeyboardAvoidingView, Platform,
 } from "react-native";
 import apiClient from "../../api/client";
 
-
-
+const DROPDOWN_ROW_HEIGHT = 56;
+const MAX_DROPDOWN_HEIGHT = Math.round(Dimensions.get("window").height * 0.5);
 
 // ================= DiscountPriceInput Component =================
 function DiscountPriceInput({ dealerPriceNoGst, value, onChange }) {
@@ -21,73 +24,18 @@ function DiscountPriceInput({ dealerPriceNoGst, value, onChange }) {
   const [localDiscount, setLocalDiscount] = useState(value.discount ?? "");
   const [note, setNote] = useState("");
 
-
-
-
   useEffect(() => {
     setLocalPrice(value.price ?? "");
     setLocalDiscount(value.discount ?? "");
   }, [value]);
 
-
-
-
   const round2 = (num) => Math.round(num * 100) / 100;
 
-
-
-
   const handleDiscountChange = (text) => {
-   // Remove % symbol if user types it
-   const cleanText = text.replace('%', '');
-   const num = cleanText === "" ? "" : Number(cleanText);
-   setLocalDiscount(cleanText);
-
-
-
-
-
-
-
-
-   if (num === "" || isNaN(num)) {
-     onChange({ price: null, discount: null });
-     setNote("");
-     return;
-   }
-
-
-
-
-
-
-
-
-    let d = Math.min(Math.max(num, 0), 100);
-    let newPrice = round2(dealerPriceNoGst * (1 - d / 100));
-
-
-
-
-    if (d !== num) setNote("Discount must be between 0% and 100%");
-    else setNote("");
-
-
-
-
-    setLocalPrice(String(newPrice));
-    onChange({ price: newPrice, discount: d });
-  };
-
-
-
-
-  const handlePriceChange = (text) => {
-    const num = text === "" ? "" : Number(text);
-    setLocalPrice(text);
-
-
-
+    // Remove % symbol if user types it
+    const cleanText = text.replace('%', '');
+    const num = cleanText === "" ? "" : Number(cleanText);
+    setLocalDiscount(cleanText);
 
     if (num === "" || isNaN(num)) {
       onChange({ price: null, discount: null });
@@ -95,43 +43,48 @@ function DiscountPriceInput({ dealerPriceNoGst, value, onChange }) {
       return;
     }
 
+    let d = Math.min(Math.max(num, 0), 100);
+    let newPrice = round2(dealerPriceNoGst * (1 - d / 100));
 
+    if (d !== num) setNote("Discount must be between 0% and 100%");
+    else setNote("");
 
+    setLocalPrice(String(newPrice));
+    onChange({ price: newPrice, discount: d });
+  };
+
+  const handlePriceChange = (text) => {
+    const num = text === "" ? "" : Number(text);
+    setLocalPrice(text);
+
+    if (num === "" || isNaN(num)) {
+      onChange({ price: null, discount: null });
+      setNote("");
+      return;
+    }
 
     let p = Math.min(Math.max(num, 0), dealerPriceNoGst);
     let newDiscount = round2((1 - p / dealerPriceNoGst) * 100);
 
-
-
-
     if (p !== num) setNote(`Price must be between 0 and ${dealerPriceNoGst}`);
     else setNote("");
-
-
-
 
     setLocalDiscount(String(newDiscount));
     onChange({ price: p, discount: newDiscount });
   };
 
-
-
-
   return (
     <View style={{ marginBottom: 15 }}>
       <View style={styles.inputWithIcon}>
-     
-       <TextInput
-         style={[styles.input, styles.inputWithIconText]}
-         placeholder="Enter Discount"
-         keyboardType="numeric"
-         value={localDiscount ? `${localDiscount}%` : ""}
-         onChangeText={handleDiscountChange}
-       />
-     </View>
 
-
-
+        <TextInput
+          style={[styles.input, styles.inputWithIconText]}
+          placeholder="Enter Discount"
+          keyboardType="numeric"
+          value={localDiscount ? `${localDiscount}%` : ""}
+          onChangeText={handleDiscountChange}
+        />
+      </View>
 
       <TextInput
         style={styles.input}
@@ -147,18 +100,8 @@ function DiscountPriceInput({ dealerPriceNoGst, value, onChange }) {
   );
 }
 
-
-
-
-
-
-
-
 // ================= QuantityInput Component =================
 const QUANTITY_UNIT_CHOICES = ["units", "case"];
-
-
-
 
 function QuantityInput({ value, onChange }) {
   const handleQuantityChange = (num) => {
@@ -166,43 +109,38 @@ function QuantityInput({ value, onChange }) {
     onChange({ ...value, quantity: parsed });
   };
 
-
-
-
   const handleUnitChange = (unit) => {
     onChange({ ...value, quantity_unit: unit });
   };
 
-
-
-
   return (
-    <View style={styles.quantityRow}>
-      <TextInput
-        style={[styles.input, { flex: 1 }]}
-        placeholder="Quantity"
-        keyboardType="numeric"
-        value={value.quantity !== null ? String(value.quantity) : ""}
-        onChangeText={handleQuantityChange}
-      />
-      {QUANTITY_UNIT_CHOICES.map((unit) => (
-        <TouchableOpacity
-          key={unit}
-          style={[
-            styles.option,
-            value.quantity_unit === unit && styles.optionSelected,
-          ]}
-          onPress={() => handleUnitChange(unit)}
-        >
-          <Text>{unit}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <View style={styles.quantityRow}>
+
+        <TextInput
+          style={[styles.input, { flex: 1, marginRight: 8, marginBottom: 0 }]}
+          placeholder="Quantity"
+          keyboardType="numeric"
+          value={value.quantity !== null ? String(value.quantity) : ""}
+          onChangeText={handleQuantityChange}
+        />
+
+        {QUANTITY_UNIT_CHOICES.map((unit) => (
+          <TouchableOpacity
+            key={unit}
+            style={[
+              styles.option,
+              value.quantity_unit === unit && styles.optionSelected,
+            ]}
+            onPress={() => handleUnitChange(unit)}
+          >
+            <Text>{unit}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </KeyboardAvoidingView>
   );
 }
-
-
-
 
 // ================= OrderTypePicker Component =================
 const orderTypes = [
@@ -212,25 +150,16 @@ const orderTypes = [
   { label: "Other", value: "other" },
 ];
 
-
-
-
 function OrderTypePicker({ productId, value, onChange }) {
   const [schemes, setSchemes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showSchemeList, setShowSchemeList] = useState(false);
-
-
-
 
   useEffect(() => {
     if (productId) {
       fetchSchemes(productId);
     }
   }, [productId]);
-
-
-
 
   const fetchSchemes = async (id) => {
     try {
@@ -249,9 +178,6 @@ function OrderTypePicker({ productId, value, onChange }) {
     }
   };
 
-
-
-
   const handleSelectOrderType = (type) => {
     if (type === "scheme") {
       onChange({ order_type: "scheme", scheme_id: null });
@@ -260,47 +186,40 @@ function OrderTypePicker({ productId, value, onChange }) {
     }
   };
 
-
-
-
   const handleSelectScheme = (scheme) => {
     onChange({ order_type: "scheme", scheme_id: scheme.id });
     setShowSchemeList(false);
   };
 
-
-
-
   return (
     <View style={{ marginBottom: 15 }}>
       {/* Order Type Picker */}
       <View style={styles.dropdown}>
-        {orderTypes.map((t) => {
-          const isSchemeDisabled =
-            t.value === "scheme" && (!schemes || schemes.length === 0);
-          return (
-            <TouchableOpacity
-              key={t.value}
-              style={[
-                styles.option,
-                value?.order_type === t.value && styles.optionSelected,
-                isSchemeDisabled && styles.optionDisabled,
-              ]}
-              onPress={() => !isSchemeDisabled && handleSelectOrderType(t.value)}
-              disabled={isSchemeDisabled}
-            >
-              <Text
-                style={isSchemeDisabled ? styles.optionDisabledText : {}}
+        <View style={styles.orderTypeRow}>
+          {orderTypes.map((t) => {
+            const isSchemeDisabled =
+              t.value === "scheme" && (!schemes || schemes.length === 0);
+            return (
+              <TouchableOpacity
+                key={t.value}
+                style={[
+                  styles.option,
+                  value?.order_type === t.value && styles.optionSelected,
+                  isSchemeDisabled && styles.optionDisabled,
+                ]}
+                onPress={() => !isSchemeDisabled && handleSelectOrderType(t.value)}
+                disabled={isSchemeDisabled}
               >
-                {t.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+                <Text
+                  style={isSchemeDisabled ? styles.optionDisabledText : {}}
+                >
+                  {t.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
-
-
-
 
       {/* Scheme Dropdown */}
       {value?.order_type === "scheme" && (
@@ -320,15 +239,15 @@ function OrderTypePicker({ productId, value, onChange }) {
               </TouchableOpacity>
               {showSchemeList && (
                 <View style={styles.list}>
-                  {schemes.map((item) => (
+                  {schemes.map((scheme) => (
                     <TouchableOpacity
-                      key={item.id}
+                      key={scheme.id}
                       style={styles.item}
-                      onPress={() => handleSelectScheme(item)}
+                      onPress={() => handleSelectScheme(scheme)}
                     >
-                      <Text style={styles.text}>{item.name}</Text>
+                      <Text style={styles.text}>{scheme.name}</Text>
                       <Text style={styles.subtext}>
-                        {item.from_date} → {item.to_date}
+                        {scheme.from_date} → {scheme.to_date}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -345,9 +264,6 @@ function OrderTypePicker({ productId, value, onChange }) {
   );
 }
 
-
-
-
 // ================= Main OrderForm =================
 export default function OrderForm() {
   // Order State
@@ -355,35 +271,29 @@ export default function OrderForm() {
   const [orderRemark, setOrderRemark] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-
   // Dealer State
+  const [dealerDisplayValue, setDealerDisplayValue] = useState("");
   const [dealerQuery, setDealerQuery] = useState("");
   const [dealers, setDealers] = useState([]);
   const [loadingDealer, setLoadingDealer] = useState(false);
   const [showDealerList, setShowDealerList] = useState(false);
   const [selectedDealer, setSelectedDealer] = useState(null);
-
-
-
+  const suppressDealerFetchRef = useRef(false);
 
   // Product State
+  const [productDisplayValue, setProductDisplayValue] = useState("");
   const [productQuery, setProductQuery] = useState("");
   const [products, setProducts] = useState([]);
   const [loadingProduct, setLoadingProduct] = useState(false);
   const [showProductList, setShowProductList] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-
-
-
+  const suppressProductFetchRef = useRef(false);
 
   // Packing State
   const [packings, setPackings] = useState([]);
   const [loadingPacking, setLoadingPacking] = useState(false);
   const [selectedPacking, setSelectedPacking] = useState(null);
   const [showPackingList, setShowPackingList] = useState(false);
-
-
-
 
   // Price State
   const [price, setPrice] = useState("");
@@ -393,36 +303,17 @@ export default function OrderForm() {
   const [caseSize, setCaseSize] = useState("");
   const [itemTotal, setItemTotal] = useState("0.00");
 
-
-
-
-   
-
-
-
-
   // Order Type State
   const [orderType, setOrderType] = useState({
     order_type: "net-rate",
     scheme_id: null,
   });
 
-
-
-
   // Quantity State
   const [quantity, setQuantity] = useState({
     quantity: null,
     quantity_unit: "units",
   });
-
-
-
-
- 
-
-
-
 
   // ========== Dealer Search ==========
   const fetchDealers = async (search) => {
@@ -450,28 +341,52 @@ export default function OrderForm() {
     }
   };
 
-
-
-
   useEffect(() => {
+    if (suppressDealerFetchRef.current) {
+      return;
+    }
     const delayDebounce = setTimeout(() => {
       fetchDealers(dealerQuery);
     }, 400);
     return () => clearTimeout(delayDebounce);
   }, [dealerQuery]);
 
+  const handleDealerInputChange = (text) => {
+    setDealerDisplayValue(text);
 
+    if (suppressDealerFetchRef.current) {
+      return;
+    }
 
+    if (text === selectedDealer?.shop_name) {
+      setDealerQuery("");
+      setShowDealerList(false);
+      return;
+    }
 
-  const handleSelectDealer = (dealer) => {
-    setDealerQuery(dealer.shop_name);
-    setSelectedDealer(dealer);
-    setShowDealerList(false);
-    Keyboard.dismiss();
+    if (text.length < 2) {
+      setDealers([]);
+      setShowDealerList(false);
+      return;
+    }
+
+    setDealerQuery(text);
   };
 
 
-
+  const handleSelectDealer = (dealer) => {
+    setDealerDisplayValue(dealer.shop_name);
+    setSelectedDealer(dealer);
+    setShowDealerList(false);
+    setDealers([]); // Clear suggestions array
+    setDealerQuery(""); // Clear query
+    suppressDealerFetchRef.current = true;
+    // Reset suppress flag after microtask
+    setTimeout(() => {
+      suppressDealerFetchRef.current = false;
+    }, 0);
+    Keyboard.dismiss();
+  };
 
   // ========== Product Search ==========
   const fetchProducts = async (search) => {
@@ -499,30 +414,54 @@ export default function OrderForm() {
     }
   };
 
-
-
-
   useEffect(() => {
+    if (suppressProductFetchRef.current) {
+      return;
+    }
     const delayDebounce = setTimeout(() => {
       fetchProducts(productQuery);
     }, 400);
     return () => clearTimeout(delayDebounce);
   }, [productQuery]);
 
+  const handleProductInputChange = (text) => {
+    setProductDisplayValue(text);
 
+    if (suppressProductFetchRef.current) {
+      return;
+    }
+
+    if (text === selectedProduct?.name) {
+      setProductQuery("");
+      setShowProductList(false);
+      return;
+    }
+
+    if (text.length < 2) {
+      setProducts([]);
+      setShowProductList(false);
+      return;
+    }
+
+    setProductQuery(text);
+  };
 
 
   const handleSelectProduct = async (product) => {
-    setProductQuery(product.name);
+    setProductDisplayValue(product.name);
     setSelectedProduct(product);
     setShowProductList(false);
+    setProducts([]); // Clear suggestions array
+    setProductQuery(""); // Clear query
     setSelectedPacking(null);
     setDealerPriceNoGst("");
     setGstRate(""); // reset dealer price
+    suppressProductFetchRef.current = true;
+    // Reset suppress flag after microtask
+    setTimeout(() => {
+      suppressProductFetchRef.current = false;
+    }, 0);
     Keyboard.dismiss();
-
-
-
 
     try {
       setLoadingPacking(true);
@@ -543,13 +482,12 @@ export default function OrderForm() {
     }
   };
 
-
-
-
   // ========== Packing Select ==========
   const handleSelectPacking = async (packing) => {
     setSelectedPacking(packing);
     setShowPackingList(false);
+
+
 
 
     try {
@@ -574,6 +512,8 @@ export default function OrderForm() {
   };
 
 
+
+
   // ========== Item Total Calculation ==========
   const calculateItemTotal = () => {
     // Return 0.00 if any required input is missing/invalid
@@ -582,11 +522,12 @@ export default function OrderForm() {
     }
 
 
+
+
     // Case size validation for case quantity unit
     if (quantity.quantity_unit === "case" && (!caseSize || caseSize <= 0)) {
       return "0.00";
     }
-
 
     try {
       const quantityValue = parseFloat(quantity.quantity);
@@ -595,11 +536,9 @@ export default function OrderForm() {
       const gstRateValue = parseFloat(gstRate);
       const caseSizeValue = parseInt(caseSize) || 1;
 
-
       if (isNaN(quantityValue) || isNaN(priceValue) || isNaN(gstRateValue)) {
         return "0.00";
       }
-
 
       // Calculate total units
       let totalUnits = quantityValue;
@@ -607,14 +546,11 @@ export default function OrderForm() {
         totalUnits = quantityValue * caseSizeValue;
       }
 
-
       // Calculate per-unit gross price (price + GST)
       const perUnitGross = priceValue * (1 + gstRateValue / 100);
 
-
       // Calculate item total
       const itemTotal = perUnitGross * totalUnits;
-
 
       return itemTotal.toFixed(2);
     } catch (error) {
@@ -623,28 +559,24 @@ export default function OrderForm() {
     }
   };
 
-
   // Update item total whenever relevant values change
   useEffect(() => {
     const newItemTotal = calculateItemTotal();
     setItemTotal(newItemTotal);
   }, [selectedProduct, selectedPacking, quantity, price, discount, gstRate, caseSize]);
 
-
   // ========== Order Management Functions ==========
- 
   // Add item to order
   const addItemToOrder = () => {
     if (!selectedDealer) {
       Alert.alert("Error", "Please select a dealer first");
       return;
     }
-   
+
     if (!selectedProduct || !selectedPacking || !quantity.quantity || !price) {
       Alert.alert("Error", "Please fill all required fields");
       return;
     }
-
 
     // Validate order type and scheme
     if (!orderType.order_type) {
@@ -652,12 +584,10 @@ export default function OrderForm() {
       return;
     }
 
-
     if (orderType.order_type === "scheme" && !orderType.scheme_id) {
       Alert.alert("Error", "Please select a scheme for scheme order type");
       return;
     }
-
 
     // Validate quantity
     const quantityValue = parseFloat(quantity.quantity);
@@ -666,31 +596,26 @@ export default function OrderForm() {
       return;
     }
 
-
     // Validate case size for case quantity unit
     if (quantity.quantity_unit === "case" && (!caseSize || caseSize <= 0)) {
       Alert.alert("Error", "No case size available for this product. Please contact administrator.");
       return;
     }
 
-
     // Validate price and discount
     const priceValue = parseFloat(price);
     const discountValue = parseFloat(discount) || 0;
     const dealerPriceValue = parseFloat(dealerPriceNoGst);
-
 
     if (isNaN(priceValue) || priceValue < 0 || priceValue > dealerPriceValue) {
       Alert.alert("Error", `Price must be between 0 and ${dealerPriceValue}`);
       return;
     }
 
-
     if (discountValue < 0 || discountValue > 100) {
       Alert.alert("Error", "Discount must be between 0% and 100%");
       return;
     }
-
 
     const newItem = {
       product: selectedProduct.id,
@@ -708,15 +633,14 @@ export default function OrderForm() {
       packing_size: selectedPacking.packing_size,
     };
 
-
     setOrderItems([...orderItems, newItem]);
-   
+
     // Reset current item fields
     resetCurrentItemFields();
   };
 
-
   const resetCurrentItemFields = () => {
+    setProductDisplayValue("");
     setProductQuery("");
     setSelectedProduct(null);
     setSelectedPacking(null);
@@ -733,12 +657,10 @@ export default function OrderForm() {
     setShowPackingList(false);
   };
 
-
   const removeItemFromOrder = (index) => {
     const updatedItems = orderItems.filter((_, i) => i !== index);
     setOrderItems(updatedItems);
   };
-
 
   // Submit order
   const submitOrder = async () => {
@@ -747,21 +669,13 @@ export default function OrderForm() {
       return;
     }
 
-
     if (orderItems.length === 0) {
       Alert.alert("Error", "Please add at least one item to the order");
       return;
     }
 
-
     try {
       setIsSubmitting(true);
-
-
-      // Debug logging
-      console.log("Selected dealer:", selectedDealer);
-      console.log("Dealer ID:", selectedDealer.id);
-
 
       const orderData = {
         dealer_id: selectedDealer.id,
@@ -780,58 +694,37 @@ export default function OrderForm() {
         })),
       };
 
-
-      console.log("Order data being sent:", JSON.stringify(orderData, null, 2));
-
-
       const response = await apiClient.post("/order/api/orders/create/", orderData);
+
+      console.log("Order: ", response.data);
 
 
       if (response.data.success) {
         Alert.alert(
           "Success",
-          `Order ${response.data.data.order_number} created successfully!\nExpected Delivery: ${response.data.data.expected_delivery_date}`,
+          `Order ${response.data.data.dealer_owner} created successfully`,
           [{ text: "OK", onPress: resetForm }]
         );
       } else {
-        console.log("Order creation failed:", response.data);
-        Alert.alert("Error", response.data.error || "Failed to create order");
+        Alert.alert("Error", "Failed to create order");
       }
     } catch (error) {
       console.error("Error creating order:", error);
-     
-      // Handle API error response
-      if (error.response && error.response.data) {
-        const errorData = error.response.data;
-        console.log("API Error Details:", errorData);
-       
-        if (errorData.errors) {
-          // Handle validation errors
-          const errorMessages = Object.entries(errorData.errors)
-            .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
-            .join('\n');
-          Alert.alert("Validation Error", errorMessages);
-        } else {
-          Alert.alert("Error", errorData.error || errorData.message || "Failed to create order");
-        }
-      } else {
-        Alert.alert("Error", "Failed to create order. Please try again.");
-      }
+      Alert.alert("Error", "Failed to create order. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-
   const resetForm = () => {
     setOrderItems([]);
     setOrderRemark("");
+    setDealerDisplayValue("");
     setDealerQuery("");
     setSelectedDealer(null);
     setShowDealerList(false);
     resetCurrentItemFields();
   };
-
 
   // Calculate order totals for display
   const calculateOrderTotals = () => {
@@ -841,21 +734,25 @@ export default function OrderForm() {
     let grandTotal = 0;
 
 
+
+
     orderItems.forEach(item => {
       // Calculate based on actual item totals from backend logic
       const itemSubtotal = item.quantity * item.price;
       const discountAmount = itemSubtotal * (item.discount / 100);
       const taxableAmount = itemSubtotal - discountAmount;
-     
+
       // Use dynamic GST rate from the item if available
       const gstRateForItem = parseFloat(gstRate) || 5; // fallback to 5%
       const taxAmount = taxableAmount * (gstRateForItem / 100);
 
 
+
+
       subtotal += itemSubtotal;
       totalDiscount += discountAmount;
       totalTax += taxAmount;
-     
+
       // Use the calculated item_total if available, otherwise calculate
       if (item.item_total) {
         grandTotal += parseFloat(item.item_total);
@@ -863,6 +760,8 @@ export default function OrderForm() {
         grandTotal += taxableAmount + taxAmount;
       }
     });
+
+
 
 
     return {
@@ -874,293 +773,441 @@ export default function OrderForm() {
   };
 
 
-  return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Create Order</Text>
-        {selectedDealer && (
-          <Text style={styles.selectedDealer}>
-            For: {selectedDealer.shop_name}
-          </Text>
-        )}
-      </View>
 
 
-      {/* Dealer Search */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Select Dealer</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Search dealer..."
-          value={dealerQuery}
-          onChangeText={setDealerQuery}
-        />
-        {loadingDealer && <ActivityIndicator style={{ marginVertical: 8 }} />}
-        {showDealerList && dealers.length > 0 && (
-          <View style={styles.list}>
-            {dealers.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.item}
-                onPress={() => handleSelectDealer(item)}
-              >
-                <Text style={styles.text}>{item.shop_name}</Text>
-                <Text style={styles.subtext}>{item.owner_name}</Text>
-              </TouchableOpacity>
-            ))}
+  // Create sections data for FlatList
+  const renderSections = () => {
+    const sections = [];
+
+
+    // Header section
+    sections.push({
+      id: 'header',
+      type: 'header',
+      data: { selectedDealer }
+    });
+
+
+    // Dealer search section
+    sections.push({
+      id: 'dealer-search',
+      type: 'dealer-search',
+      data: {
+        dealerDisplayValue,
+        handleDealerInputChange,
+        loadingDealer,
+        showDealerList,
+        dealers,
+        handleSelectDealer
+      }
+    });
+
+
+    // Order items section
+    if (orderItems.length > 0) {
+      sections.push({
+        id: 'order-items',
+        type: 'order-items',
+        data: { orderItems, removeItemFromOrder, calculateOrderTotals }
+      });
+    }
+
+
+    // Add new item section
+    if (selectedDealer) {
+      sections.push({
+        id: 'add-item',
+        type: 'add-item',
+        data: {
+          productDisplayValue,
+          handleProductInputChange,
+          loadingProduct,
+          showProductList,
+          products,
+          handleSelectProduct,
+          selectedProduct,
+          packings,
+          showPackingList,
+          setShowPackingList,
+          selectedPacking,
+          handleSelectPacking,
+          orderType,
+          setOrderType,
+          quantity,
+          setQuantity,
+          dealerPriceNoGst,
+          gstRate,
+          price,
+          discount,
+          caseSize,
+          itemTotal,
+          addItemToOrder
+        }
+      });
+    }
+
+
+    // Order remarks section
+    if (orderItems.length > 0) {
+      sections.push({
+        id: 'order-remarks',
+        type: 'order-remarks',
+        data: { orderRemark, setOrderRemark }
+      });
+    }
+
+
+    // Submit button section
+    if (orderItems.length > 0) {
+      sections.push({
+        id: 'submit-buttons',
+        type: 'submit-buttons',
+        data: { isSubmitting, submitOrder, resetForm, orderItems }
+      });
+    }
+
+
+    return sections;
+  };
+
+
+  const renderSection = ({ item }) => {
+    switch (item.type) {
+      case 'header':
+        return (
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Create Order</Text>
           </View>
-        )}
-      </View>
+        );
 
 
-      {/* Current Order Items */}
-      {orderItems.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Order Items ({orderItems.length})</Text>
-          {orderItems.map((item, index) => (
-            <View key={index} style={styles.orderItem}>
-              <View style={styles.orderItemHeader}>
-                <Text style={styles.orderItemName}>{item.product_name}</Text>
-                <TouchableOpacity
-                  onPress={() => removeItemFromOrder(index)}
-                  style={styles.removeButton}
-                >
-                  <Text style={styles.removeButtonText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.orderItemDetails}>
-                {item.packing_size} • {item.quantity} {item.quantity_unit} • ₹{item.price}
-                {item.discount > 0 && ` • ${item.discount}% off`} • Total: ₹{item.item_total}
-              </Text>
-              <Text style={styles.orderItemType}>Type: {item.product_order_type}</Text>
-            </View>
-          ))}
-         
-          {/* Order Totals */}
-          {(() => {
-            const totals = calculateOrderTotals();
-            return (
-              <View style={styles.totalsContainer}>
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Subtotal:</Text>
-                  <Text style={styles.totalValue}>₹{totals.subtotal}</Text>
-                </View>
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Discount:</Text>
-                  <Text style={styles.totalValue}>-₹{totals.totalDiscount}</Text>
-                </View>
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Tax (5%):</Text>
-                  <Text style={styles.totalValue}>₹{totals.totalTax}</Text>
-                </View>
-                <View style={[styles.totalRow, styles.grandTotalRow]}>
-                  <Text style={styles.grandTotalLabel}>Total:</Text>
-                  <Text style={styles.grandTotalValue}>₹{totals.grandTotal}</Text>
-                </View>
-              </View>
-            );
-          })()}
-        </View>
-      )}
-
-
-      {/* Add New Item Section */}
-      {selectedDealer && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Add New Item</Text>
-         
-          {/* Product Search */}
-          <TextInput
-            style={styles.input}
-            placeholder="Search product..."
-            value={productQuery}
-            onChangeText={setProductQuery}
-          />
-          {loadingProduct && <ActivityIndicator style={{ marginVertical: 8 }} />}
-          {showProductList && products.length > 0 && (
-            <View style={styles.list}>
-              {products.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.item}
-                  onPress={() => handleSelectProduct(item)}
-                >
-                  <Text style={styles.text}>{item.name}</Text>
-                  <Text style={styles.subtext}>{item.category_name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-
-          {/* Packing Selection */}
-          {selectedProduct && packings.length > 0 && (
-            <View style={{ marginBottom: 10 }}>
-              <TouchableOpacity
-                style={styles.input}
-                onPress={() => setShowPackingList(!showPackingList)}
+      case 'dealer-search':
+        return (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Select Dealer</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Search dealer..."
+              value={item.data.dealerDisplayValue}
+              onChangeText={item.data.handleDealerInputChange}
+            />
+            {item.data.loadingDealer && <ActivityIndicator style={{ marginVertical: 8 }} />}
+            {item.data.showDealerList && item.data.dealers.length > 0 && (
+              <View
+                style={[
+                  styles.list,
+                  {
+                    maxHeight: Math.min(
+                      item.data.dealers.length * DROPDOWN_ROW_HEIGHT,
+                      MAX_DROPDOWN_HEIGHT
+                    ),
+                  },
+                ]}
               >
-                <Text style={selectedPacking ? styles.text : styles.placeholder}>
-                  {selectedPacking
-                    ? `${selectedPacking.packing_size}`
-                    : "Select packing"}
-                </Text>
-              </TouchableOpacity>
-
-
-              {showPackingList && (
-                <View style={styles.list}>
-                  {packings.map((item) => (
+                <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                  {item.data.dealers.map((dealer) => (
                     <TouchableOpacity
-                      key={item.id}
+                      key={dealer.id}
                       style={styles.item}
-                      onPress={() => handleSelectPacking(item)}
+                      onPress={() => item.data.handleSelectDealer(dealer)}
                     >
-                      <Text style={styles.text}>{item.packing_size}</Text>
+                      <Text style={styles.text}>{dealer.shop_name}</Text>
+                      <Text style={styles.subtext}>{dealer.owner_name}</Text>
                     </TouchableOpacity>
                   ))}
+                </ScrollView>
+              </View>
+            )}
+
+          </View>
+        );
+
+
+      case 'order-items':
+        return (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Order Items ({item.data.orderItems.length})</Text>
+            {item.data.orderItems.map((orderItem, index) => (
+              <View key={index} style={styles.orderItem}>
+                <View style={styles.orderItemHeader}>
+                  <Text style={styles.orderItemName}>{orderItem.product_name}</Text>
+                  <TouchableOpacity
+                    onPress={() => item.data.removeItemFromOrder(index)}
+                    style={styles.removeButton}
+                  >
+                    <Text style={styles.removeButtonText}>✕</Text>
+                  </TouchableOpacity>
                 </View>
-              )}
-            </View>
-          )}
+                <Text style={styles.orderItemDetails}>
+                  {orderItem.packing_size} • {orderItem.quantity} {orderItem.quantity_unit} • ₹{orderItem.price}
+                  {orderItem.discount > 0 && ` • ${orderItem.discount}% off`} • Total: ₹{orderItem.item_total}
+                </Text>
+                <Text style={styles.orderItemType}>Type: {orderItem.product_order_type}</Text>
+              </View>
+            ))}
+
+            {/* Order Totals */}
+            {(() => {
+              const totals = item.data.calculateOrderTotals();
+              return (
+                <View style={styles.totalsContainer}>
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>Subtotal:</Text>
+                    <Text style={styles.totalValue}>₹{totals.subtotal}</Text>
+                  </View>
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>Discount:</Text>
+                    <Text style={styles.totalValue}>-₹{totals.totalDiscount}</Text>
+                  </View>
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>Tax (5%):</Text>
+                    <Text style={styles.totalValue}>₹{totals.totalTax}</Text>
+                  </View>
+                  <View style={[styles.totalRow, styles.grandTotalRow]}>
+                    <Text style={styles.grandTotalLabel}>Total:</Text>
+                    <Text style={styles.grandTotalValue}>₹{totals.grandTotal}</Text>
+                  </View>
+                </View>
+              );
+            })()}
+          </View>
+        );
 
 
-          {/* Order Type Picker */}
-          {selectedProduct && (
-            <OrderTypePicker
-              productId={selectedProduct.id}
-              value={orderType}
-              onChange={setOrderType}
-            />
-          )}
+      case 'add-item':
+        return (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Add New Item</Text>
 
-
-          {/* Quantity Input */}
-          {selectedProduct && (
-            <QuantityInput value={quantity} onChange={setQuantity} />
-          )}
-
-
-          {/* Dealer Price Display */}
-          {selectedPacking && (
+            {/* Product Search */}
             <TextInput
-              style={[styles.input, styles.readOnlyInput]}
-              value={dealerPriceNoGst ? `₹ ${dealerPriceNoGst} (No GST)` : ""}
-              editable={false}
-              placeholder="Dealer price (No GST)"
+              style={styles.input}
+              placeholder="Search product..."
+              value={item.data.productDisplayValue}
+              onChangeText={item.data.handleProductInputChange}
             />
-          )}
+            {item.data.loadingProduct && <ActivityIndicator style={{ marginVertical: 8 }} />}
+            {item.data.showProductList && item.data.products.length > 0 && (
+              <View
+                style={[
+                  styles.list,
+                  {
+                    maxHeight: Math.min(
+                      item.data.products.length * DROPDOWN_ROW_HEIGHT,
+                      MAX_DROPDOWN_HEIGHT
+                    ),
+                  },
+                ]}
+              >
+                <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                  {item.data.products.map((product) => (
+                    <TouchableOpacity
+                      key={product.id}
+                      style={styles.item}
+                      onPress={() => item.data.handleSelectProduct(product)}
+                    >
+                      <Text style={styles.text}>{product.name}</Text>
+                      <Text style={styles.subtext}>{product.category_name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
 
-          {/* Tax Rate Display */}
-          {selectedPacking && (
-            <TextInput
-              style={[styles.input, styles.readOnlyInput]}
-              value={gstRate ? `${gstRate}% GST` : ""}
-              editable={false}
-              placeholder="Tax Rate"
-            />
-          )}
+
+            {/* Packing Selection */}
+            {item.data.selectedProduct && item.data.packings.length > 0 && (
+              <View style={{ marginBottom: 10 }}>
+                <TouchableOpacity
+                  style={styles.input}
+                  onPress={() => item.data.setShowPackingList(!item.data.showPackingList)}
+                >
+                  <Text style={item.data.selectedPacking ? styles.text : styles.placeholder}>
+                 
+                     {"Select packing"}
+                  </Text>
+                </TouchableOpacity>
 
 
-          {/* Price & Discount Input */}
-          {selectedPacking && (
-            <DiscountPriceInput
-              dealerPriceNoGst={Number(dealerPriceNoGst)}
-              value={{ price, discount }}
-              onChange={({ price, discount }) => {
-                setPrice(price?.toString() ?? "");
-                setDiscount(discount?.toString() ?? "");
-              }}
-            />
-          )}
+                {item.data.showPackingList && (
+                  <View
+                    style={[
+                      styles.list,
+                      {
+                        maxHeight: Math.min(
+                          item.data.packings.length * DROPDOWN_ROW_HEIGHT,
+                          MAX_DROPDOWN_HEIGHT
+                        ),
+                      },
+                    ]}
+                  >
+                    <ScrollView keyboardShouldPersistTaps="handled">
+                      {item.data.packings.map((packing) => (
+                        <TouchableOpacity
+                          key={packing.id}
+                          style={styles.item}
+                          onPress={() => item.data.handleSelectPacking(packing)}
+                        >
+                          <Text style={styles.text}>{packing.packing_size}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+
+              </View>
+            )}
 
 
-          {/* Case Size Warning */}
-          {selectedPacking && quantity.quantity_unit === "case" && (!caseSize || caseSize <= 0) && (
-            <Text style={{ color: "red", fontSize: 12, marginBottom: 10 }}>
-              ⚠️ No case size available for this product
-            </Text>
-          )}
+            {/* Order Type Picker */}
+            {item.data.selectedProduct && (
+              <OrderTypePicker
+                productId={item.data.selectedProduct.id}
+                value={item.data.orderType}
+                onChange={item.data.setOrderType}
+              />
+            )}
 
 
-          {/* Item Total Display */}
-          {selectedPacking && (
-            <TextInput
-              style={[styles.input, styles.readOnlyInput]}
-              value={`₹${itemTotal} (Item Total)`}
-              editable={false}
-              placeholder="Item Total"
-            />
-          )}
+            {/* Quantity Input */}
+            {item.data.selectedProduct && (
+              <QuantityInput value={item.data.quantity} onChange={item.data.setQuantity} />
+            )}
 
 
-          {/* Add Item Button */}
-          {selectedProduct &&
-           selectedPacking &&
-           quantity.quantity &&
-           price &&
-           (quantity.quantity_unit === "units" || (quantity.quantity_unit === "case" && caseSize > 0)) &&
-           itemTotal !== "0.00" && (
-            <TouchableOpacity
-              style={styles.addItemButton}
-              onPress={addItemToOrder}
-            >
-              <Text style={styles.addItemButtonText}>Add Item to Order</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
+            {/* Dealer Price Display */}
+            {item.data.selectedPacking && (
+              <TextInput
+                style={[styles.input, styles.readOnlyInput]}
+                value={item.data.dealerPriceNoGst ? `₹ ${item.data.dealerPriceNoGst} (No GST)` : ""}
+                editable={false}
+                placeholder="Dealer price (No GST)"
+              />
+            )}
 
 
-      {/* Order Remarks */}
-      {orderItems.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Order Remarks (Optional)</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Enter any remarks for this order..."
-            value={orderRemark}
-            onChangeText={setOrderRemark}
-            multiline
-            numberOfLines={3}
-          />
-        </View>
-      )}
+            {/* Tax Rate Display */}
+            {item.data.selectedPacking && (
+              <TextInput
+                style={[styles.input, styles.readOnlyInput]}
+                value={item.data.gstRate ? `${item.data.gstRate}% GST` : ""}
+                editable={false}
+                placeholder="Tax Rate"
+              />
+            )}
 
 
-      {/* Submit Order Button */}
-      {orderItems.length > 0 && (
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-            onPress={submitOrder}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.submitButtonText}>
-                Create Order ({orderItems.length} items)
+            {/* Price & Discount Input */}
+            {item.data.selectedPacking && (
+              <DiscountPriceInput
+                dealerPriceNoGst={Number(item.data.dealerPriceNoGst)}
+                value={{ price: item.data.price, discount: item.data.discount }}
+                onChange={({ price, discount }) => {
+                  setPrice(price?.toString() ?? "");
+                  setDiscount(discount?.toString() ?? "");
+                }}
+              />
+            )}
+
+
+            {/* Case Size Warning */}
+            {item.data.selectedPacking && item.data.quantity.quantity_unit === "case" && (!item.data.caseSize || item.data.caseSize <= 0) && (
+              <Text style={{ color: "red", fontSize: 12, marginBottom: 10 }}>
+                ⚠️ No case size available for this product
               </Text>
             )}
-          </TouchableOpacity>
-         
-          <TouchableOpacity
-            style={styles.resetButton}
-            onPress={resetForm}
-          >
-            <Text style={styles.resetButtonText}>Reset Form</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </ScrollView>
+
+
+            {/* Item Total Display */}
+            {item.data.selectedPacking && (
+              <TextInput
+                style={[styles.input, styles.readOnlyInput]}
+                value={`₹${item.data.itemTotal} (Item Total)`}
+                editable={false}
+                placeholder="Item Total"
+              />
+            )}
+
+
+            {/* Add Item Button */}
+            {item.data.selectedProduct &&
+              item.data.selectedPacking &&
+              item.data.quantity.quantity &&
+              item.data.price &&
+              (item.data.quantity.quantity_unit === "units" || (item.data.quantity.quantity_unit === "case" && item.data.caseSize > 0)) &&
+              item.data.itemTotal !== "0.00" && (
+                <TouchableOpacity
+                  style={styles.addItemButton}
+                  onPress={item.data.addItemToOrder}
+                >
+                  <Text style={styles.addItemButtonText}>Add Item to Order</Text>
+                </TouchableOpacity>
+              )}
+          </View>
+        );
+
+
+      case 'order-remarks':
+        return (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Order Remarks (Optional)</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Enter any remarks for this order..."
+              value={item.data.orderRemark}
+              onChangeText={item.data.setOrderRemark}
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+        );
+
+
+      case 'submit-buttons':
+        return (
+          <View style={styles.section}>
+            <TouchableOpacity
+              style={[styles.submitButton, item.data.isSubmitting && styles.submitButtonDisabled]}
+              onPress={item.data.submitOrder}
+              disabled={item.data.isSubmitting}
+            >
+              {item.data.isSubmitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>
+                  Create Order ({item.data.orderItems.length} items)
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.resetButton}
+              onPress={item.data.resetForm}
+            >
+              <Text style={styles.resetButtonText}>Reset Form</Text>
+            </TouchableOpacity>
+          </View>
+        );
+
+
+      default:
+        return null;
+    }
+  };
+
+
+  return (
+    <FlatList
+      style={styles.container}
+      data={renderSections()}
+      keyExtractor={(item) => item.id}
+      renderItem={renderSection}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    />
   );
 }
-
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -1204,7 +1251,7 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
-    padding: 12,
+    padding: 10,
     borderRadius: 8,
     marginBottom: 10,
     backgroundColor: "#fff",
@@ -1226,15 +1273,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 8,
-    maxHeight: 200,
+    // ❌ remove maxHeight: 200
     backgroundColor: "#fff",
     marginBottom: 10,
+    overflow: "hidden",
   },
   item: {
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+    minHeight: DROPDOWN_ROW_HEIGHT,  // ✅ add this
+    justifyContent: "center",        // ✅ add this
   },
+
   text: {
     fontSize: 16,
     color: "#333",
@@ -1244,7 +1295,6 @@ const styles = StyleSheet.create({
     color: "#777",
     marginTop: 2,
   },
- 
   // Order Items Styles
   orderItem: {
     backgroundColor: "#f8f9fa",
@@ -1291,6 +1341,8 @@ const styles = StyleSheet.create({
   },
 
 
+
+
   // Totals Styles
   totalsContainer: {
     marginTop: 16,
@@ -1328,6 +1380,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#007bff",
   },
+
+
 
 
   // Button Styles
@@ -1368,7 +1422,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
   },
- 
   // Existing styles
   dropdown: {
     flexDirection: "row",
@@ -1378,9 +1431,10 @@ const styles = StyleSheet.create({
   option: {
     padding: 10,
     borderWidth: 1,
-    borderColor: "#aaa",
+    borderColor: "#ddd",
     borderRadius: 6,
     marginRight: 8,
+    backgroundColor: "#f9f9f9",
   },
   optionSelected: {
     backgroundColor: "#e0f7fa",
@@ -1403,7 +1457,8 @@ const styles = StyleSheet.create({
   quantityRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    justifyContent: "space-between",
+    marginBottom: 12,
   },
   inputWithIcon: {
     flexDirection: "row",
@@ -1420,31 +1475,13 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     padding: 12,
   },
+  orderTypeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
