@@ -4,15 +4,15 @@ const IS_DEV = APP_VARIANT === "development";
 const IS_PREVIEW = APP_VARIANT === "preview";
 
 const getUniqueIdentifier = () => {
-  if (IS_DEV) return "com.ashwamedhgroup.AUBIZO.dev";
-  if (IS_PREVIEW) return "com.ashwamedhgroup.AUBIZO.preview";
+  if (IS_DEV) return "com.ashwamedhgroup.AUBIZO";
+  if (IS_PREVIEW) return "com.ashwamedhgroup.AUBIZO";
   return "com.ashwamedhgroup.AUBIZO";
 };
 
 const getAppName = () => {
   if (IS_DEV) return "AUBIZO (Dev)";
-  if (IS_PREVIEW) return "AUBIZO (Preview)";
-  return "AUBIZO";
+  if (IS_PREVIEW) return "Aubizo (Preview)";
+  return "Aubizo";
 };
 
 export default {
@@ -61,21 +61,24 @@ export default {
       [
         "expo-splash-screen",
         {
-          backgroundColor: "#ffffff",
-          image: "./assets/images/splash-icon-light.png",
-          imageWidth: 200,
-        },
-
+          "backgroundColor": "#ffffff",
+          "image": "./assets/images/splash-icon-light.png",
+          "dark": {
+            "image": "./assets/images/splash-icon-dark.png",
+            "backgroundColor": "#000000"
+          },
+          "imageWidth": 200
+        }
       ],
       [
-        "expo-location",
-        {
-          isAndroidBackgroundLocationEnabled: true,
-          locationAlwaysAndWhenInUsePermission:
-            "Allow AUBIZO to use your location even when the app is in the background.",
-          locationWhenInUsePermission:
-            "Allow AUBIZO to access your location while you are using the app.",
-        }
+      "expo-location",
+      {
+        isAndroidBackgroundLocationEnabled: true,
+        locationAlwaysAndWhenInUsePermission:
+          "Allow AUBIZO to use your location even when the app is in the background.",
+        locationWhenInUsePermission:
+          "Allow AUBIZO to access your location while you are using the app.",
+      }
       ]
 
     ],

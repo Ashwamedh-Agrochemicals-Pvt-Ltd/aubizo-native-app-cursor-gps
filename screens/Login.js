@@ -54,7 +54,6 @@ function LoginScreen() {
       showToast.success("You have logged in successfully.", "✅ Login Successful!");
     } catch (error) {
       setFormError("Something went wrong. Please try again.");
-      showToast.error("Something went wrong. Please try again.", "Login Error");
     } finally {
       setLoading(false);
     }

@@ -39,8 +39,8 @@ function EntityVisitList({
   const renderItem = ({ item, index }) => {
     const isActive = activeStartId === item.id;
     const displayName = item.farmer_name || item.owner_name || "Unnamed";
-   console.log("DealerScreen punchId:", punch_id,);
-   console.log("EntityVisitList startVisit params:", { itemId: item.id, location_id: item.location_id, punch_id, type });
+    console.log("DealerScreen punchId:", punch_id,);
+    console.log("EntityVisitList startVisit params:", { itemId: item.id, location_id: item.location_id, punch_id, type });
 
     const handleStartVisit = async () => {
       const visitKeys = ["VISIT_ID_Farmer", "VISIT_ID_Dealer"];
@@ -180,10 +180,15 @@ function EntityVisitList({
 
         {isActive && (
           <View style={modernStyles.activeIndicator}>
-            <View style={modernStyles.activeDot} />
+            <ActivityIndicator
+              size="small"
+              color={DESIGN.colors.surface}
+              style={{ marginRight: 8 }}
+            />
             <Text style={modernStyles.activeText}>Active Visit</Text>
           </View>
         )}
+
       </View>
     );
   };
@@ -496,24 +501,24 @@ const modernStyles = StyleSheet.create({
   },
 
   bottomButtonContainer: {
-  position: "absolute",
-  bottom: Platform.OS === "ios" ? DESIGN.spacing.xl : DESIGN.spacing.lg,
-  right: DESIGN.spacing.lg,
-},
+    position: "absolute",
+    bottom: Platform.OS === "ios" ? DESIGN.spacing.xl : DESIGN.spacing.lg,
+    right: DESIGN.spacing.lg,
+  },
 
-addButton: {
-  backgroundColor: DESIGN.colors.primary,
-  width: 56,
-  height: 56,
-  borderRadius: 28, // perfect circle
-  alignItems: "center",
-  justifyContent: "center",
-  ...DESIGN.shadows.medium,
-},
+  addButton: {
+    backgroundColor: DESIGN.colors.primary,
+    width: 56,
+    height: 56,
+    borderRadius: 28, // perfect circle
+    alignItems: "center",
+    justifyContent: "center",
+    ...DESIGN.shadows.medium,
+  },
 
-addButtonText: {
-  display: "none", // FAB usually has only an icon
-},
+  addButtonText: {
+    display: "none", // FAB usually has only an icon
+  },
 
 
   loadingOverlay: {
