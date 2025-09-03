@@ -451,6 +451,7 @@ export default function OrderForm() {
     setProductDisplayValue(product.name);
     setSelectedProduct(product);
     setShowProductList(false);
+    setShowPackingList(false);
     setProducts([]); // Clear suggestions array
     setProductQuery(""); // Clear query
     setSelectedPacking(null);
@@ -470,7 +471,7 @@ export default function OrderForm() {
       );
       if (response.data.success) {
         setPackings(response.data.data);
-        setShowPackingList(true);
+        setShowPackingList(false);
       } else {
         setPackings([]);
         setShowPackingList(false);
@@ -1014,50 +1015,37 @@ export default function OrderForm() {
               </View>
             )}
 
+          {/* Packing Selection */}
+          {selectedProduct && packings.length > 0 && (
+            <View style={{ marginBottom: 10 }}>
+              <TouchableOpacity
+                style={styles.input}
+                onPress={() => setShowPackingList(!showPackingList)}
+              >
+                <Text style={selectedPacking ? styles.text : styles.placeholder}>
+                  {selectedPacking
+                    ? `${selectedPacking.packing_size}`
+                    : "Select packing"}
+                </Text>
+              </TouchableOpacity>
 
 
-            {/* Packing Selection */}
-            {item.data.selectedProduct && item.data.packings.length > 0 && (
-              <View style={{ marginBottom: 10 }}>
-                <TouchableOpacity
-                  style={styles.input}
-                  onPress={() => item.data.setShowPackingList(!item.data.showPackingList)}
-                >
-                  <Text style={item.data.selectedPacking ? styles.text : styles.placeholder}>
-                 
-                     {"Select packing"}
-                  </Text>
-                </TouchableOpacity>
+              {showPackingList && (
+                <View style={styles.list}>
+                  {packings.map((item) => (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={styles.item}
+                      onPress={() => handleSelectPacking(item)}
+                    >
+                      <Text style={styles.text}>{item.packing_size}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
 
-
-                {item.data.showPackingList && (
-                  <View
-                    style={[
-                      styles.list,
-                      {
-                        maxHeight: Math.min(
-                          item.data.packings.length * DROPDOWN_ROW_HEIGHT,
-                          MAX_DROPDOWN_HEIGHT
-                        ),
-                      },
-                    ]}
-                  >
-                    <ScrollView keyboardShouldPersistTaps="handled">
-                      {item.data.packings.map((packing) => (
-                        <TouchableOpacity
-                          key={packing.id}
-                          style={styles.item}
-                          onPress={() => item.data.handleSelectPacking(packing)}
-                        >
-                          <Text style={styles.text}>{packing.packing_size}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-
-              </View>
-            )}
 
 
             {/* Order Type Picker */}
