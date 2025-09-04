@@ -9,6 +9,7 @@ import {
   Dimensions,
   FlatList,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DESIGN from "../src/theme";
@@ -25,10 +26,11 @@ function OrderScreen() {
   const [activeTab, setActiveTab] = useState(0);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
 
-  // inside OrderScreen component
+  // Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
 
@@ -45,7 +47,7 @@ function OrderScreen() {
     4: "hold",
   };
 
-  // 🔹 fetch orders only by status
+  // Fetch orders by status
   const fetchOrders = async (status = "") => {
     try {
       setLoading(true);
@@ -62,7 +64,6 @@ function OrderScreen() {
     }
   };
 
-  // 🔹 only depends on activeTab
   useEffect(() => {
     fetchOrders(statusMap[activeTab]);
   }, [activeTab]);
@@ -75,10 +76,19 @@ function OrderScreen() {
     }).start();
   };
 
+  // Pull-to-refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchOrders(statusMap[activeTab]);
+    setRefreshing(false);
+  };
+
   const renderOrderCard = ({ item }) => (
     <TouchableOpacity onPress={() => handleCardPress(item.id)}>
       <View style={styles.card}>
-        <Text style={styles.createdAt}>
+        <Text
+          style={styles.createdAt}
+        >
           {new Date(item.created_at).toLocaleDateString("en-GB", {
             day: "2-digit",
             month: "short",
@@ -129,42 +139,42 @@ function OrderScreen() {
           backgroundColor: DESIGN.colors.searchInput,
         }}
       >
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={24}
+              color={DESIGN.colors.textPrimary}
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>List of Orders</Text>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity onPress={() => navigation.navigate("OrderForm")}>
               <MaterialCommunityIcons
-                name="arrow-left"
-                size={24}
-                color={DESIGN.colors.textPrimary}
+                name="plus-circle"
+                size={30}
+                color={DESIGN.colors.primary}
+                style={styles.icon}
               />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>List of Orders</Text>
-            <View style={styles.headerIcons}>
-              <TouchableOpacity onPress={() => navigation.navigate("OrderForm")}>
-                <MaterialCommunityIcons
-                  name="plus-circle"
-                  size={30}
-                  color={DESIGN.colors.primary}
-                  style={styles.icon}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity>
-                <MaterialCommunityIcons
-                  name="magnify"
-                  size={30}
-                  color={DESIGN.colors.textPrimary}
-                  style={styles.icon}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity>
-                <MaterialCommunityIcons
-                  name="filter-variant"
-                  size={30}
-                  color={DESIGN.colors.textPrimary}
-                  style={styles.icon}
-                />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity>
+              <MaterialCommunityIcons
+                name="magnify"
+                size={30}
+                color={DESIGN.colors.textPrimary}
+                style={styles.icon}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <MaterialCommunityIcons
+                name="filter-variant"
+                size={30}
+                color={DESIGN.colors.textPrimary}
+                style={styles.icon}
+              />
+            </TouchableOpacity>
           </View>
+        </View>
       </View>
 
       {/* Tabs */}
@@ -207,6 +217,14 @@ function OrderScreen() {
           renderItem={renderOrderCard}
           contentContainerStyle={{ padding: DESIGN.spacing.md }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[DESIGN.colors.primary]} // Android loader color
+              tintColor={DESIGN.colors.primary} // iOS loader color
+            />
+          }
         />
       )}
 
@@ -249,7 +267,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  tabText: { fontSize: 14, color: "#555", fontWeight: 700 },
+  tabText: { fontSize: 14, color: "#555", fontWeight: "700" },
   activeTabText: { color: DESIGN.colors.primary, fontWeight: "600" },
   indicator: {
     height: 3,
@@ -298,7 +316,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  statusText: { fontSize: 12, marginRight: 4, fontWeight: 50 },
+  statusText: { fontSize: 12, marginRight: 4, fontWeight: "50" },
   searchInput: {
     flex: 1,
     height: 48,
