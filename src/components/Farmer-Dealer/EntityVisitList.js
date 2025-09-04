@@ -163,7 +163,7 @@ function EntityVisitList({
                   modernStyles.visitButton,
                   modernStyles.endButton,
                   { opacity: isActive ? 1 : 0.4 },
-                ]}
+                ]} 
                 onPress={handleEndVisit}
                 activeOpacity={0.7}
                 disabled={!isActive}

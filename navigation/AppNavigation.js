@@ -52,7 +52,7 @@ function DashboardStack() {
         )}
       </Stack.Screen>
       <Stack.Screen name="Product" component={ProductScreen} />
-      <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+      <Stack.Screen name="Product Details" component={ProductDetailScreen} />
       <Stack.Screen name="Farmer" component={FarmerScreen} />
       <Stack.Screen name="FarmerUpdate" component={FarmerUpdateScreen} />
       <Stack.Screen name="FarmerVisit" component={FarmerVisitScreen} />
@@ -133,8 +133,6 @@ export function AppNavigation() {
             "Dealer",
             "DealerUpdate",
             "DealerVisit",
-            "Product",
-            "ProductDetail",
           ];
 
           return {

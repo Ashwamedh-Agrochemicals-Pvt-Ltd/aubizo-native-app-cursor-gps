@@ -79,7 +79,7 @@ export default function ProductScreen() {
           key={product.id || `${index}-${i}`}
           style={styles.cardContainer}
           onPress={() =>
-            navigation.navigate("ProductDetail", { productId: product.id })
+            navigation.navigate("Product Details", { productId: product.id })
           }
           activeOpacity={0.8}
         >
@@ -99,7 +99,7 @@ export default function ProductScreen() {
               <Text style={styles.categoryText} numberOfLines={1}>
                 {categories[product.category] || "No Category"}
               </Text>
-              <Text style={styles.productTitle} numberOfLines={2}>
+              <Text style={styles.productTitle} numberOfLines={2}>cli
                 {product.title || product.name}
               </Text>
             </View>

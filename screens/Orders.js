@@ -9,7 +9,6 @@ import {
   Dimensions,
   FlatList,
   ActivityIndicator,
-  TextInput
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DESIGN from "../src/theme";
@@ -32,23 +31,6 @@ function OrderScreen() {
   // inside OrderScreen component
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
-  const [searchVisible, setSearchVisible] = useState(false); // toggle search bar
-  const [searchQuery, setSearchQuery] = useState("");        // search text
-
-  const handleSearch = (text) => {
-    setSearchQuery(text);
-
-    if (text.length < 2) {
-      // reset → fetch full list again
-      fetchOrders(statusMap[activeTab]);
-    } else {
-      // fetch orders filtered by dealer + status
-      fetchOrders(statusMap[activeTab], text);
-    }
-  };
-
-
-
 
   const handleCardPress = (orderId) => {
     setSelectedOrderId(orderId);
@@ -63,14 +45,12 @@ function OrderScreen() {
     4: "hold",
   };
 
-  const fetchOrders = async (status = "", dealer = "") => {
+  // 🔹 fetch orders only by status
+  const fetchOrders = async (status = "") => {
     try {
       setLoading(true);
       const response = await apiClient.get("/order/api/orders/", {
-        params: {
-          status,
-          dealer: dealer.trim() || undefined, // if API supports dealer filter
-        },
+        params: { status },
       });
       if (response.data.success) {
         setOrders(response.data.data.orders);
@@ -82,10 +62,10 @@ function OrderScreen() {
     }
   };
 
+  // 🔹 only depends on activeTab
   useEffect(() => {
-    fetchOrders(statusMap[activeTab], searchQuery.length >= 2 ? searchQuery : "");
+    fetchOrders(statusMap[activeTab]);
   }, [activeTab]);
-
 
   const handleTabPress = (index) => {
     setActiveTab(index);
@@ -108,7 +88,9 @@ function OrderScreen() {
         <Text style={styles.dealerName}>{item.dealer_owner}</Text>
 
         <View style={styles.amountRow}>
-          <Text style={styles.totalValue}>Amount     : ₹ {item.total_order_value}</Text>
+          <Text style={styles.totalValue}>
+            Amount : ₹ {item.total_order_value}
+          </Text>
           <View
             style={[
               styles.statusContainer,
@@ -121,7 +103,8 @@ function OrderScreen() {
           >
             <Text
               style={[
-                styles.statusText, { fontSize: 14 },
+                styles.statusText,
+                { fontSize: 14 },
                 item.status === "draft" && { color: "#080808ff" },
                 item.status === "approved" && { color: "#07883dff" },
                 item.status === "processing" && { color: "#f5cd2cff" },
@@ -137,29 +120,15 @@ function OrderScreen() {
     </TouchableOpacity>
   );
 
-
   return (
     <View style={{ flex: 1, backgroundColor: DESIGN.colors.surface }}>
       {/* Header with Safe Area */}
-      <View style={{ paddingTop: insets.top, backgroundColor: DESIGN.colors.searchInput }}>
-        {searchVisible ? (
-          <View style={[styles.header, { justifyContent: "space-between" }]}>
-            <TouchableOpacity onPress={() => setSearchVisible(false)}>
-              <MaterialCommunityIcons
-                name="arrow-left"
-                size={24}
-                color={DESIGN.colors.textPrimary}
-              />
-            </TouchableOpacity>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search dealer..."
-              value={searchQuery}
-              onChangeText={(text) => handleSearch(text)}
-              autoFocus
-            />
-          </View>
-        ) : (
+      <View
+        style={{
+          paddingTop: insets.top,
+          backgroundColor: DESIGN.colors.searchInput,
+        }}
+      >
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <MaterialCommunityIcons
@@ -178,7 +147,7 @@ function OrderScreen() {
                   style={styles.icon}
                 />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setSearchVisible(true)}>
+              <TouchableOpacity>
                 <MaterialCommunityIcons
                   name="magnify"
                   size={30}
@@ -186,7 +155,6 @@ function OrderScreen() {
                   style={styles.icon}
                 />
               </TouchableOpacity>
-
               <TouchableOpacity>
                 <MaterialCommunityIcons
                   name="filter-variant"
@@ -197,7 +165,6 @@ function OrderScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        )}
       </View>
 
       {/* Tabs */}
@@ -223,10 +190,7 @@ function OrderScreen() {
 
       {/* Animated Underline */}
       <Animated.View
-        style={[
-          styles.indicator,
-          { transform: [{ translateX }] },
-        ]}
+        style={[styles.indicator, { transform: [{ translateX }] }]}
       />
 
       {/* Order List */}
@@ -242,11 +206,11 @@ function OrderScreen() {
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderOrderCard}
           contentContainerStyle={{ padding: DESIGN.spacing.md }}
-          showsVerticalScrollIndicator={false} // optional
+          showsVerticalScrollIndicator={false}
         />
       )}
 
-      {/* Add the modal here */}
+      {/* Order Details Modal */}
       <OrderDetails
         orderId={selectedOrderId}
         visible={modalVisible}
@@ -263,8 +227,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: DESIGN.spacing.md,
     paddingVertical: DESIGN.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
   },
   headerTitle: {
     flex: 1,
@@ -308,13 +270,24 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: "row", justifyContent: "space-between" },
   orderNumber: { fontWeight: "600", fontSize: 16 },
   createdAt: {
-    fontWeight: "100", fontSize: 14, position: "absolute", // places it over the card
-    top: 8,              // distance from top
-    right: 8,            // distance from right
+    fontWeight: "100",
+    fontSize: 14,
+    position: "absolute",
+    top: 8,
+    right: 8,
     zIndex: 10,
   },
-  dealerName: { color: DESIGN.colors.primary, marginVertical: 4, fontWeight: "800", fontSize: 16 },
-  amountRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  dealerName: {
+    color: DESIGN.colors.primary,
+    marginVertical: 4,
+    fontWeight: "800",
+    fontSize: 16,
+  },
+  amountRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   totalValue: { fontWeight: "600", fontSize: 15 },
   paymentType: { color: "#3498db", fontSize: 12 },
   statusContainer: {
@@ -324,19 +297,17 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     paddingHorizontal: 8,
     paddingVertical: 2,
-
   },
   statusText: { fontSize: 12, marginRight: 4, fontWeight: 50 },
   searchInput: {
     flex: 1,
-    height: 48, // increase box height
-    fontSize: 18, // increase placeholder & input text size
+    height: 48,
+    fontSize: 18,
     paddingHorizontal: 12,
     backgroundColor: "#fff",
     borderRadius: 8,
     marginLeft: 10,
   },
-
 });
 
 export default OrderScreen;

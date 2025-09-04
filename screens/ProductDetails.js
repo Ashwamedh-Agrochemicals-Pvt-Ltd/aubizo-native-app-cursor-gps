@@ -7,6 +7,7 @@ import {
   Text,
   View,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import apiClient from "../src/api/client";
 import DESIGN from "../src/theme";
@@ -91,46 +92,44 @@ export default function ProductDetailScreen({ route }) {
   ].filter((item) => item.value); // remove empty ones
 
   return (
-    <View style={{ flex: 1, paddingBottom: insets.bottom }}>
-      <FlatList
-        data={fields}
-        keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={{ paddingBottom: DESIGN.spacing.lg }}
-        ListHeaderComponent={
-          <View>
-            <Image
-              source={
-                product.image
-                  ? { uri: product.image }
-                  : require("../assets/images/placeholder.jpg")
-              }
-              style={styles.image}
-              resizeMode="cover"
-            />
+    <ScrollView
+      style={{ flex: 1, backgroundColor: DESIGN.colors.background }}
+      contentContainerStyle={{ paddingBottom: insets.bottom }}
+    >
+      {/* Product Image */}
+      <View style={styles.imageWrapper}>
+        <Image
+          source={
+            product.image
+              ? { uri: product.image }
+              : require("../assets/images/placeholder.jpg")
+          }
+          style={styles.image}
+          resizeMode="cover"
+        />
+      </View>
 
-            <View style={styles.content}>
-              <Text style={styles.title}>{product.name}</Text>
-              <Text style={styles.category}>{categoryName}</Text>
-            </View>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <View style={[styles.field, DESIGN.shadows.subtle]}>
+      {/* Product Title */}
+      <View style={styles.headerCard}>
+        <Text style={styles.title}>{product.name}</Text>
+        <Text style={styles.category}>{categoryName}</Text>
+      </View>
+
+      {/* Product Details */}
+      <View style={styles.detailsCard}>
+        <Text style={styles.sectionTitle}>Product Information</Text>
+        {fields.map((item, index) => (
+          <View key={index} style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{item.label}</Text>
             <Text style={styles.fieldValue}>{item.value}</Text>
           </View>
-        )}
-      />
-    </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: DESIGN.colors.background,
-    margin:DESIGN.spacing.md
-  },
   loader: {
     flex: 1,
     justifyContent: "center",
@@ -142,29 +141,55 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.textSecondary,
     textAlign: "center",
   },
+
+  // Image section
+  imageWrapper: {
+    margin: DESIGN.spacing.md,
+    borderRadius: DESIGN.borderRadius.lg,
+    overflow: "hidden",
+    ...DESIGN.shadows.medium,
+  },
   image: {
     width: "100%",
-    height: 250,
+    aspectRatio: 1024 / 1086, // keep aspect ratio
     backgroundColor: DESIGN.colors.surfaceElevated,
   },
-  content: {
+
+  // Header Card
+  headerCard: {
+    marginHorizontal: DESIGN.spacing.md,
+    marginBottom: DESIGN.spacing.md,
     padding: DESIGN.spacing.md,
+    backgroundColor: DESIGN.colors.surface,
+    borderRadius: DESIGN.borderRadius.lg,
+    ...DESIGN.shadows.subtle,
   },
   title: {
     ...DESIGN.typography.title,
     color: DESIGN.colors.textPrimary,
+    marginBottom: DESIGN.spacing.xs,
   },
   category: {
     ...DESIGN.typography.body,
     color: DESIGN.colors.textSecondary,
-    marginTop: DESIGN.spacing.xs,
-    marginBottom: DESIGN.spacing.md,
   },
-  field: {
-    marginBottom: DESIGN.spacing.md,
+
+  // Details Card
+  detailsCard: {
+    marginHorizontal: DESIGN.spacing.md,
+    marginBottom: DESIGN.spacing.lg,
+    padding: DESIGN.spacing.md,
     backgroundColor: DESIGN.colors.surface,
-    padding: DESIGN.spacing.sm,
-    borderRadius: DESIGN.borderRadius.md,
+    borderRadius: DESIGN.borderRadius.lg,
+    ...DESIGN.shadows.subtle,
+  },
+  sectionTitle: {
+    ...DESIGN.typography.subtitle,
+    color: DESIGN.colors.primary,
+    marginBottom: DESIGN.spacing.sm,
+  },
+  fieldRow: {
+    marginBottom: DESIGN.spacing.sm,
   },
   fieldLabel: {
     ...DESIGN.typography.subtitle,
