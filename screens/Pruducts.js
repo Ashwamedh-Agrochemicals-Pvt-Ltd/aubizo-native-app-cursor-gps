@@ -12,6 +12,8 @@ import apiClient from "../src/api/client";
 import styles from "../src/styles/products.style";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native";
+import DESIGN from "../src/theme";
 
 const PRODUCTELIST_URL = process.env.EXPO_PUBLIC_PRODUCTELIST_URL;
 
@@ -23,7 +25,6 @@ export default function ProductScreen() {
   const [error, setError] = useState(null);
 
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
 
   const fetchProducts = async () => {
     try {
@@ -85,15 +86,15 @@ export default function ProductScreen() {
         >
           <View style={styles.productCard}>
             <View style={styles.imageContainer}>
-               <Image
-              source={
-                product.image
-                  ? { uri: product.image }
-                  : require("../assets/images/placeholder.jpg") // fallback image
-              }
-              style={styles.productImage}
-              resizeMode="cover"
-            />
+              <Image
+                source={
+                  product.image
+                    ? { uri: product.image }
+                    : require("../assets/images/placeholder.jpg") // fallback image
+                }
+                style={styles.productImage}
+                resizeMode="cover"
+              />
             </View>
             <View style={styles.productInfo}>
               <Text style={styles.categoryText} numberOfLines={1}>
@@ -117,17 +118,39 @@ export default function ProductScreen() {
       </View>
     );
   }
-
   if (error) {
     return (
-      <View style={[styles.listContainer, { flex: 1, justifyContent: "center" }]}>
-        <Text style={{ color: "red", fontSize: 16 }}>{error}</Text>
-        <TouchableOpacity onPress={loadData} style={{ marginTop: 12 }}>
-          <Text style={{ color: "#4CAF50" }}>Retry</Text>
+      <View
+        style={[
+          styles.listContainer,
+          { flex: 1, justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={loadData}
+          style={{
+            backgroundColor: DESIGN.colors.primary,
+            paddingVertical: DESIGN.spacing.md,
+            paddingHorizontal: DESIGN.spacing.lg,
+            borderRadius: DESIGN.borderRadius.md,
+            ...DESIGN.shadows.medium,
+          }}
+        >
+          <Text
+            style={{
+              color: DESIGN.colors.surface,
+              fontSize: DESIGN.typography.body.fontSize,
+              fontWeight: DESIGN.typography.subtitle.fontWeight,
+              textAlign: "center",
+            }}
+          >
+            Retry
+          </Text>
         </TouchableOpacity>
       </View>
     );
   }
+
 
   if (groupedProducts.length === 0) {
     return (
@@ -138,7 +161,8 @@ export default function ProductScreen() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
+
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Our Products</Text>
         <Text style={styles.headerSubtitle}>
@@ -156,6 +180,7 @@ export default function ProductScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       />
-    </View>
+
+    </SafeAreaView>
   );
 }

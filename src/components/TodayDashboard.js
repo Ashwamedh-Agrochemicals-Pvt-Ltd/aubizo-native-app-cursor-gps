@@ -113,7 +113,7 @@ const TodayDashboard = ({ dashboardData, onRefreshDashboard }) => {
 
 const styles = StyleSheet.create({
   header: {
-    marginBottom: DESIGN.spacing.lg,
+    marginBottom: DESIGN.spacing.md,
   },
   date: {
     fontSize: DESIGN.typography.body.fontSize,
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: DESIGN.colors.surface,
-    padding: DESIGN.spacing.md,
+    padding: 14,
     borderRadius: DESIGN.borderRadius.sm,
     marginBottom: DESIGN.spacing.lg,
     ...DESIGN.shadows.subtle,
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: DESIGN.typography.subtitle.fontSize,
     fontWeight: "bold",
-    marginBottom: DESIGN.spacing.md,
+    marginBottom: DESIGN.spacing.sm,
     color: DESIGN.colors.primary,
   },
   punchRow: {

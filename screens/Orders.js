@@ -13,6 +13,7 @@ import {
   TextInput,
   BackHandler,
   Platform,
+  StatusBar,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DESIGN from "../src/theme";
@@ -20,6 +21,7 @@ import { navigation } from "../navigation/NavigationService";
 import apiClient from "../src/api/client"; // Your API client
 import OrderDetails from "../src/components/orders/OrderDetails";
 import { useFocusEffect } from "@react-navigation/native";
+import { SafeAreaView } from "react-native";
 
 const { width } = Dimensions.get("window");
 const TABS = ["All", "Pending", "Approved", "Rejected", "Hold"];
@@ -214,12 +216,11 @@ function OrderScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: DESIGN.colors.surface }}>
+    <SafeAreaView style={{ flex: 1 }}>
       {/* Header with Safe Area */}
       <View
         style={{
           paddingTop: insets.top,
-          backgroundColor: DESIGN.colors.searchInput,
         }}
       >
         <View style={styles.header}>
@@ -348,7 +349,9 @@ function OrderScreen() {
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
       />
-    </View>
+
+    </SafeAreaView>
+
   );
 }
 
@@ -439,13 +442,15 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     fontSize: DESIGN.typography.caption.fontSize,
     position: "absolute",
-    top: DESIGN.spacing.xs,
-    right: DESIGN.spacing.xs,
+    top: DESIGN.spacing.sm,
+    right: DESIGN.spacing.md,
     zIndex: 10,
     color: DESIGN.colors.textSecondary,
+  
   },
   dealerName: {
     marginVertical: DESIGN.spacing.xs,
+    fontStyle:'italic',
     fontWeight: "400",
     fontSize: DESIGN.typography.body.fontSize,
     color: DESIGN.colors.textPrimary,

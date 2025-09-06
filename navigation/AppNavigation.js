@@ -24,13 +24,13 @@ const Tab = createBottomTabNavigator();
 
 const AUTHENTICATED_MENU_ITEMS = [
   { id: "products", label: "Products", route: "Product", icon: "leaf" },
-  { id: "logout", label: "Logout", route: "Login", icon: "logout" }, 
+  { id: "logout", label: "Logout", route: "Login", icon: "logout" },
 ];
 
 function DashboardStack() {
   return (
     <Stack.Navigator
-     screenOptions={{
+      screenOptions={{
         statusBarStyle: "dark",        // for Expo (use "dark-content" if pure RN)
         statusBarColor: "#FFFFFF",     // Android background
       }}>
@@ -51,39 +51,72 @@ function DashboardStack() {
           </ScreenWrapper>
         )}
       </Stack.Screen>
-      <Stack.Screen name="Product" component={ProductScreen} />
+      <Stack.Screen
+        name="Product"
+        component={ProductScreen}
+        options={{ title: "Product List" }}
+      />
       <Stack.Screen name="Product Details" component={ProductDetailScreen} />
       <Stack.Screen name="Farmer" component={FarmerScreen} />
-      <Stack.Screen name="FarmerUpdate" component={FarmerUpdateScreen} />
-      <Stack.Screen name="FarmerVisit" component={FarmerVisitScreen} />
+      <Stack.Screen
+        name="FarmerUpdate"
+        component={FarmerUpdateScreen}
+        options={{ title: "Update Farmer" }}
+      />
+      <Stack.Screen
+        name="FarmerVisit"
+        component={FarmerVisitScreen}
+        options={{ title: "Farmer Visit" }}
+      />
+
       <Stack.Screen name="Dealer" component={DealerScreen} />
-      <Stack.Screen name="DealerVisit" component={DealerVisitScreen} />
-      <Stack.Screen name="DealerUpdate" component={DealerUpdateScreen} />
-      <Stack.Screen name="Login" component={LoginScreen}/>
+      <Stack.Screen
+        name="DealerVisit"
+        component={DealerVisitScreen}
+        options={{ title: "Dealer Visit" }}
+      />
+      <Stack.Screen
+        name="DealerUpdate"
+        component={DealerUpdateScreen}
+        options={{ title: "Update Dealer" }}
+      />
+
+      <Stack.Screen name="Login" component={LoginScreen} />
     </Stack.Navigator>
   );
 }
 
 function OrdersStack() {
   return (
-     <Stack.Navigator>
-       <Stack.Screen
-  name="OrderScreen"
-  component={OrderScreen}
-  options={{ headerShown: false }} // ✅ disable React Navigation header
-/>
-        <Stack.Screen name="OrderForm"  component={OrderForm} />
-      </Stack.Navigator>
+    <Stack.Navigator screenOptions={{
+      statusBarStyle: "dark",
+      statusBarColor: "#FFFFFF",
+    }}>
+      <Stack.Screen
+        name="OrderScreen"
+        component={OrderScreen}
+        options={{ headerShown: false }} // ✅ disable React Navigation header
+      />
+      <Stack.Screen
+        name="OrderForm"
+        component={OrderForm}
+        options={{ title: "Order Form" }}
+      />
+    </Stack.Navigator>
   );
 }
 
 
 function PaymentsStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{
+      statusBarStyle: "dark",
+      statusBarColor: "#FFFFFF",
+    }}>
       <Stack.Screen
         name="PaymentsHome"
-       >
+        options={{ title: "Payments" }}
+      >
         {(props) => (
           <ScreenWrapper>
             <PaymentScreen {...props} />
@@ -153,21 +186,39 @@ export function AppNavigation() {
         }}
       />
 
-      <Tab.Screen
-        name="OrdersTab"
-        component={OrdersStack}
-        options={{
-          tabBarLabel: "Orders",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons
-              name="cart-outline"
-              size={size}
-              color={color}
-            />
-          ),
-          headerShown: false,
-        }}
-      />
+  
+
+<Tab.Screen
+  name="OrdersTab"
+  component={OrdersStack}
+  options={({ route }) => {
+    // 👇 get the active route inside OrdersStack
+    const routeName = getFocusedRouteNameFromRoute(route) ?? "OrderScreen";
+
+    // screens where tab bar should be hidden
+    const hideOnScreens = ["OrderForm"];
+
+    return {
+      tabBarLabel: "Orders",
+      tabBarIcon: ({ color, size }) => (
+        <MaterialCommunityIcons
+          name="cart-outline"
+          size={size}
+          color={color}
+        />
+      ),
+      headerShown: false,
+      tabBarStyle: hideOnScreens.includes(routeName)
+        ? { display: "none" }
+        : {
+            height: totalHeight,
+            paddingBottom: safeAreaBottom,
+            backgroundColor: "#FFFFFF",
+            borderTopWidth: 2,
+          },
+    };
+  }}
+/>
 
       <Tab.Screen
         name="PaymentsTab"

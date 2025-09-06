@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView, Platform,
 } from "react-native";
 import apiClient from "../../api/client";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const DROPDOWN_ROW_HEIGHT = 56;
 const MAX_DROPDOWN_HEIGHT = Math.round(Dimensions.get("window").height * 0.5);
@@ -114,31 +115,31 @@ function QuantityInput({ value, onChange }) {
   };
 
   return (
-   
-      <View style={styles.quantityRow}>
 
-        <TextInput
-          style={[styles.input, { flex: 1, marginRight: 8, marginBottom: 0 }]}
-          placeholder="Quantity"
-          keyboardType="numeric"
-          value={value.quantity !== null ? String(value.quantity) : ""}
-          onChangeText={handleQuantityChange}
-        />
+    <View style={styles.quantityRow}>
 
-        {QUANTITY_UNIT_CHOICES.map((unit) => (
-          <TouchableOpacity
-            key={unit}
-            style={[
-              styles.option,
-              value.quantity_unit === unit && styles.optionSelected,
-            ]}
-            onPress={() => handleUnitChange(unit)}
-          >
-            <Text>{unit}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    
+      <TextInput
+        style={[styles.input, { flex: 1, marginRight: 8, marginBottom: 0 }]}
+        placeholder="Quantity"
+        keyboardType="numeric"
+        value={value.quantity !== null ? String(value.quantity) : ""}
+        onChangeText={handleQuantityChange}
+      />
+
+      {QUANTITY_UNIT_CHOICES.map((unit) => (
+        <TouchableOpacity
+          key={unit}
+          style={[
+            styles.option,
+            value.quantity_unit === unit && styles.optionSelected,
+          ]}
+          onPress={() => handleUnitChange(unit)}
+        >
+          <Text>{unit}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+
   );
 }
 
@@ -302,7 +303,8 @@ export default function OrderForm() {
   const [discount, setDiscount] = useState("");
   const [caseSize, setCaseSize] = useState("");
   const [itemTotal, setItemTotal] = useState("0.00");
-
+   const insets = useSafeAreaInsets();
+  
   // Order Type State
   const [orderType, setOrderType] = useState({
     order_type: "net-rate",
@@ -1186,21 +1188,24 @@ export default function OrderForm() {
 
 
   return (
-   <KeyboardAvoidingView
-  style={{ flex: 1 }}
-  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-  keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0} // adjust offset as needed
->
-  <FlatList
-    style={styles.container}
-    data={renderSections()}
-    keyExtractor={(item) => item.id}
-    renderItem={renderSection}
-    keyboardShouldPersistTaps="handled"
-    showsVerticalScrollIndicator={false}
-    contentContainerStyle={{ paddingBottom: 20 }} // ensures last field isn't hidden
-  />
-</KeyboardAvoidingView>
+    <View style={{flex:1, paddingBottom:insets.bottom}}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0} // adjust offset as needed
+      >
+        <FlatList
+          style={styles.container}
+          data={renderSections()}
+          keyExtractor={(item) => item.id}
+          renderItem={renderSection}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }} // ensures last field isn't hidden
+        />
+      </KeyboardAvoidingView>
+      </View>
+  
 
   );
 }

@@ -8,6 +8,7 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
+  SafeAreaView,
 } from "react-native";
 import apiClient from "../src/api/client";
 import DESIGN from "../src/theme";
@@ -92,40 +93,42 @@ export default function ProductDetailScreen({ route }) {
   ].filter((item) => item.value); // remove empty ones
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: DESIGN.colors.background }}
-      contentContainerStyle={{ paddingBottom: insets.bottom }}
-    >
-      {/* Product Image */}
-      <View style={styles.imageWrapper}>
-        <Image
-          source={
-            product.image
-              ? { uri: product.image }
-              : require("../assets/images/placeholder.jpg")
-          }
-          style={styles.image}
-          resizeMode="cover"
-        />
-      </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: DESIGN.colors.background }}
+        contentContainerStyle={{ paddingBottom: insets.bottom }}
+      >
+        {/* Product Image */}
+        <View style={styles.imageWrapper}>
+          <Image
+            source={
+              product.image
+                ? { uri: product.image }
+                : require("../assets/images/placeholder.jpg")
+            }
+            style={styles.image}
+            resizeMode="cover"
+          />
+        </View>
 
-      {/* Product Title */}
-      <View style={styles.headerCard}>
-        <Text style={styles.title}>{product.name}</Text>
-        <Text style={styles.category}>{categoryName}</Text>
-      </View>
+        {/* Product Title */}
+        <View style={styles.headerCard}>
+          <Text style={styles.title}>{product.name}</Text>
+          <Text style={styles.category}>{categoryName}</Text>
+        </View>
 
-      {/* Product Details */}
-      <View style={styles.detailsCard}>
-        <Text style={styles.sectionTitle}>Product Information</Text>
-        {fields.map((item, index) => (
-          <View key={index} style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>{item.label}</Text>
-            <Text style={styles.fieldValue}>{item.value}</Text>
-          </View>
-        ))}
-      </View>
-    </ScrollView>
+        {/* Product Details */}
+        <View style={styles.detailsCard}>
+          <Text style={styles.sectionTitle}>Product Information</Text>
+          {fields.map((item, index) => (
+            <View key={index} style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>{item.label}</Text>
+              <Text style={styles.fieldValue}>{item.value}</Text>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

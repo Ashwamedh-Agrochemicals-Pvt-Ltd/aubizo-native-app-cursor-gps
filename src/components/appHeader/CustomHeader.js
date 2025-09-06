@@ -22,10 +22,6 @@ const CustomHeader = ({
 
   return (
     <>
-      <StatusBar
-        translucent={true}
-        barStyle="light-content"
-      />
       <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Aubizo</Text>

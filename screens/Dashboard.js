@@ -1,11 +1,11 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { useContext, useEffect, useRef, useState, useCallback } from "react";
-import { ActivityIndicator, Alert, Animated, Text, TouchableHighlight, View } from "react-native";
-import apiClient from "../src/api/client"
-import authContext from "../src/auth/context"
+import { Alert, Text, TouchableHighlight, View } from "react-native";
+import apiClient from "../src/api/client";
+import authContext from "../src/auth/context";
 import authStorage from "../src/auth/storage";
-import { navigation } from "../navigation/NavigationService"
+import { navigation } from "../navigation/NavigationService";
 import { styles } from "../src/styles/dashboard.style";
 import Location from "../src/utility/location";
 import storage from "../src/utility/storage";
@@ -274,16 +274,14 @@ function Dashboard() {
 
     <>
 
-
       {/* Main Content */}
       <View style={styles.mainContent}>
-
-       <View> 
-      <TodayDashboard
-        dashboardData={dashboardData}
-        onRefreshDashboard={checkPunchStatus}
-      />
-      </View>
+        <View>
+          <TodayDashboard
+            dashboardData={dashboardData}
+            onRefreshDashboard={checkPunchStatus}
+          />
+        </View>
         {/* Action Cards Grid */}
         <View style={styles.actionsGrid}>
 

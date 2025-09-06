@@ -20,6 +20,7 @@ export default StyleSheet.create({
     ...DESIGN.typography.title,
     color: DESIGN.colors.surface,
   },
+  
   menuButton: {
     width: 48,
     height: 48,
