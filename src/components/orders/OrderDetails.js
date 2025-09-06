@@ -13,7 +13,7 @@ const OrderDetails = ({ orderId, visible, onClose }) => {
     if (!orderId) return;
     try {
       setLoading(true);
-      const response = await apiClient.get(`/order/api/orders/${orderId}/`);
+      const response = await apiClient.get(`/order/api/individual/orders/${orderId}/`);
       if (response.data.success) {
         setOrder(response.data.data);
       }
@@ -92,29 +92,44 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
-    padding: 16,
+    padding: DESIGN.spacing.md,
   },
   modalContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: DESIGN.colors.surface,
+    borderRadius: DESIGN.borderRadius.sm,
     maxHeight: "90%",
-    padding: 16,
+    padding: DESIGN.spacing.md,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: DESIGN.spacing.md,
   },
-  modalTitle: { fontSize: 18, fontWeight: "600", color: DESIGN.colors.textPrimary },
-  content: { paddingBottom: 20 },
-  label: { fontWeight: "600", marginTop: 10 },
-  value: { marginBottom: 4, color: "#333" },
+  modalTitle: {
+    fontSize: DESIGN.typography.subtitle.fontSize,
+    fontWeight: DESIGN.typography.subtitle.fontWeight,
+    color: DESIGN.colors.textPrimary,
+  },
+  content: {
+    paddingBottom: DESIGN.spacing.lg,
+  },
+  label: {
+    fontWeight: "600",
+    marginTop: DESIGN.spacing.sm,
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.textPrimary,
+  },
+  value: {
+    marginBottom: DESIGN.spacing.xs,
+    color: DESIGN.colors.textSecondary,
+    fontSize: DESIGN.typography.body.fontSize,
+  },
   itemCard: {
-    backgroundColor: "#f9f9f9",
-    padding: 8,
-    borderRadius: 6,
-    marginTop: 6,
+    backgroundColor: DESIGN.colors.surfaceElevated,
+    padding: DESIGN.spacing.sm,
+    borderRadius: DESIGN.borderRadius.xs,
+    marginTop: DESIGN.spacing.xs,
   },
 });
 

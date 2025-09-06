@@ -3,9 +3,7 @@ import Constants from 'expo-constants';
 import DESIGN from '../theme';
 
 export default StyleSheet.create({
-  container: {
-    backgroundColor: DESIGN.colors.primary,
-  },
+
   headerContainer: {
     backgroundColor: DESIGN.colors.primary,
     ...DESIGN.shadows.subtle,

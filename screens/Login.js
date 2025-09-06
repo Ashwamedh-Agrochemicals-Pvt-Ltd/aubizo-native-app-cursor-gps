@@ -13,11 +13,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import authApi from "../src/api/auth";
 import useAuth from "../src/auth/useAuth";
-import {
-  AppForm,
-  AppFormField,
-  SubmitButton,
-} from "../src/components/form/appComponents";
+import AppForm from "../src/components/form/appComponents/AppForm";
+import AppFormField from "../src/components/form/appComponents/AppFormField";
+import SubmitButton from "../src/components/form/appComponents/SubmitButton";
 import { loginSchema } from "../src/validations/loginSchema";
 import showToast from "../src/utility/showToast";
 import DESIGN from "../src/theme";

@@ -99,7 +99,7 @@ export default function ProductScreen() {
               <Text style={styles.categoryText} numberOfLines={1}>
                 {categories[product.category] || "No Category"}
               </Text>
-              <Text style={styles.productTitle} numberOfLines={2}>cli
+              <Text style={styles.productTitle} numberOfLines={2}>
                 {product.title || product.name}
               </Text>
             </View>
@@ -138,7 +138,7 @@ export default function ProductScreen() {
   }
 
   return (
-    <View style={{ flex: 1, paddingBottom: insets.bottom }}>
+    <View style={{ flex: 1 }}>
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Our Products</Text>
         <Text style={styles.headerSubtitle}>

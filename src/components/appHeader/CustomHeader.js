@@ -25,8 +25,6 @@ const CustomHeader = ({
       <StatusBar
         translucent={true}
         barStyle="light-content"
-        // apply backgroundColor for Android only (iOS will ignore this prop)
-        backgroundColor={Platform.OS === "android" ? DESIGN.colors.primary : "transparent"}
       />
       <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
         <View style={styles.headerContent}>

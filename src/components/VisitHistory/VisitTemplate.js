@@ -11,6 +11,7 @@ import InputFormField from "../form/appComponents/InputFormText";
 import DESIGN from "../../theme";
 import { useState } from "react";
 import logger from "../../utility/logger";
+import { replace } from "../../../navigation/NavigationService";
 
 
 const validationSchema = Yup.object().shape({
@@ -27,16 +28,16 @@ const VisitForm = ({ storageKey, navigateTo }) => {
 
   const handleSubmit = useCallback(async (values, { resetForm }) => {
     if (loading) return;
-    
+
     try {
       setLoading(true);
-      
+
       // Create abort controller for this request
       abortControllerRef.current = new AbortController();
-      
+
       const visitId = await storage.get(storageKey);
       if (!visitId) {
-        Alert.alert("Error", "Visit ID not found. Please start a new visit.");
+        Alert.alert("Error","Please start a new visit.");
         return;
       }
 
@@ -54,9 +55,18 @@ const VisitForm = ({ storageKey, navigateTo }) => {
         resetForm();
         await storage.remove(storageKey);
         await storage.remove(storageKey.replace("VISIT", "START"));
-        
+
         Alert.alert("Success", "Visit ended successfully.");
-        navigation.navigate(navigateTo);
+
+        if (navigation.isReady()) {
+          navigation.reset({
+            index: 1, // FarmerScreen will be active
+            routes: [
+              { name: "DashboardHome" },
+              { name: navigateTo },
+            ],
+          });
+        }
       } else {
         Alert.alert("Error", "Failed to end visit. Please try again.");
       }
@@ -65,38 +75,38 @@ const VisitForm = ({ storageKey, navigateTo }) => {
         // Request was cancelled, do nothing
         return;
       }
-      
+
       if (__DEV__) {
         logger.error("Visit end error:", error);
       }
-      
+
       if (error.response?.status === 401) {
         Alert.alert("Session Expired", "Please log in again.");
         return;
       }
-      
+
       if (error.response?.status >= 400 && error.response?.status < 500) {
         // Validation error
         const errorMessage = error.response?.data?.detail || error.response?.data?.message || "Please check your input and try again.";
         Alert.alert("Validation Error", errorMessage);
         return;
       }
-      
+
       if (error.response?.status >= 500) {
         Alert.alert("Server Error", "Something went wrong. Please try again later.");
         return;
       }
-      
+
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         Alert.alert("Connection Timeout", "Can't reach server. Please check your connection and try again.");
         return;
       }
-      
+
       if (!error.response) {
         Alert.alert("Network Error", "Can't reach server. Please check your internet connection.");
         return;
       }
-      
+
       Alert.alert("Error", "Something went wrong while ending the visit.");
     } finally {
       setLoading(false);

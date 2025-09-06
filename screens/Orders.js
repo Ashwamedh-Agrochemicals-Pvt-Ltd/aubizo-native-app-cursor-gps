@@ -10,17 +10,52 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
+  BackHandler,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DESIGN from "../src/theme";
 import { navigation } from "../navigation/NavigationService";
 import apiClient from "../src/api/client"; // Your API client
 import OrderDetails from "../src/components/orders/OrderDetails";
+import { useFocusEffect } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 const TABS = ["All", "Pending", "Approved", "Rejected", "Hold"];
 const TAB_COUNT = TABS.length;
 const TAB_WIDTH = width / TAB_COUNT;
+
+// 🔎 Separate Search Component
+const SearchBar = ({ searchQuery, setSearchQuery, onClose }) => {
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100); // small delay ensures component is mounted
+  }, []);
+
+  return (
+    <View style={styles.searchContainer}>
+      <TextInput
+        ref={inputRef}
+        style={styles.searchInput}
+        placeholder="Search by Dealer or Shop name..."
+        placeholderTextColor="#888"
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
+      <TouchableOpacity onPress={onClose}>
+        <MaterialCommunityIcons
+          name="close-circle"
+          size={28}
+          color={DESIGN.colors.textPrimary}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 function OrderScreen() {
   const [activeTab, setActiveTab] = useState(0);
@@ -34,10 +69,47 @@ function OrderScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
 
+  // 🔎 Search state
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
   const handleCardPress = (orderId) => {
     setSelectedOrderId(orderId);
     setModalVisible(true);
   };
+
+  // 🔙 Handle Back Button
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        if (showSearch) {
+          setShowSearch(false);
+          setSearchQuery("");
+          return true; // stop default back
+        }
+        return false; // allow default back
+      };
+
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress
+      );
+
+      return () => subscription.remove(); // ✅ proper cleanup
+    }, [showSearch])
+  );
+
+  // 🔄 Close search when leaving screen
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        setShowSearch(false);
+        setSearchQuery("");
+      };
+    }, [])
+  );
+
+
 
   const statusMap = {
     0: "", // All
@@ -51,7 +123,7 @@ function OrderScreen() {
   const fetchOrders = async (status = "") => {
     try {
       setLoading(true);
-      const response = await apiClient.get("/order/api/orders/", {
+      const response = await apiClient.get("/order/api/individual/orders/", {
         params: { status },
       });
       if (response.data.success) {
@@ -65,8 +137,12 @@ function OrderScreen() {
   };
 
   useEffect(() => {
-    fetchOrders(statusMap[activeTab]);
-  }, [activeTab]);
+    if (showSearch) {
+      fetchOrders(""); // Always fetch all when searching
+    } else {
+      fetchOrders(statusMap[activeTab]);
+    }
+  }, [activeTab, showSearch]);
 
   const handleTabPress = (index) => {
     setActiveTab(index);
@@ -83,24 +159,31 @@ function OrderScreen() {
     setRefreshing(false);
   };
 
+  // ✅ Decide which data to render
+  const dataToRender = showSearch
+    ? orders.filter(
+      (order) =>
+        order.dealer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.dealer_owner?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    : orders;
+
+
   const renderOrderCard = ({ item }) => (
     <TouchableOpacity onPress={() => handleCardPress(item.id)}>
       <View style={styles.card}>
-        <Text
-          style={styles.createdAt}
-        >
+        <Text style={styles.createdAt}>
           {new Date(item.created_at).toLocaleDateString("en-GB", {
             day: "2-digit",
             month: "short",
             year: "numeric",
           })}
         </Text>
+        <Text style={styles.shopName}>{item.dealer_name}</Text>
         <Text style={styles.dealerName}>{item.dealer_owner}</Text>
 
         <View style={styles.amountRow}>
-          <Text style={styles.totalValue}>
-            Amount : ₹ {item.total_order_value}
-          </Text>
+          <Text style={styles.totalValue}>Amount : ₹ {item.total_order_value}</Text>
           <View
             style={[
               styles.statusContainer,
@@ -149,15 +232,17 @@ function OrderScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>List of Orders</Text>
           <View style={styles.headerIcons}>
-            <TouchableOpacity onPress={() => navigation.navigate("OrderForm")}>
-              <MaterialCommunityIcons
-                name="plus-circle"
-                size={30}
-                color={DESIGN.colors.primary}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity>
+            {/* 🔎 Toggle search */}
+            <TouchableOpacity
+              onPress={() => {
+                if (showSearch) {
+                  setShowSearch(false);
+                  setSearchQuery(""); // reset text too
+                } else {
+                  setShowSearch(true);
+                }
+              }}
+            >
               <MaterialCommunityIcons
                 name="magnify"
                 size={30}
@@ -165,6 +250,7 @@ function OrderScreen() {
                 style={styles.icon}
               />
             </TouchableOpacity>
+
             <TouchableOpacity>
               <MaterialCommunityIcons
                 name="filter-variant"
@@ -177,31 +263,45 @@ function OrderScreen() {
         </View>
       </View>
 
-      {/* Tabs */}
-      <View style={styles.tabRow}>
-        {TABS.map((tab, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.tab}
-            onPress={() => handleTabPress(index)}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === index && styles.activeTabText,
-              ]}
-            >
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* 🔎 Show Search OR Tabs */}
+      {showSearch ? (
+        <SearchBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onClose={() => {
+            setShowSearch(false);
+            setSearchQuery("");
+          }}
+        />
+      ) : (
+        <>
+          {/* Tabs */}
+          <View style={styles.tabRow}>
+            {TABS.map((tab, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.tab}
+                onPress={() => handleTabPress(index)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === index && styles.activeTabText,
+                  ]}
+                >
+                  {tab}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-      {/* Animated Underline */}
-      <Animated.View
-        style={[styles.indicator, { transform: [{ translateX }] }]}
-      />
+          {/* Animated Underline */}
+          <Animated.View
+            style={[styles.indicator, { transform: [{ translateX }] }]}
+          />
+        </>
+      )}
 
       {/* Order List */}
       {loading ? (
@@ -212,7 +312,7 @@ function OrderScreen() {
         />
       ) : (
         <FlatList
-          data={orders}
+          data={dataToRender}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderOrderCard}
           contentContainerStyle={{ padding: DESIGN.spacing.md }}
@@ -221,12 +321,26 @@ function OrderScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={[DESIGN.colors.primary]} // Android loader color
-              tintColor={DESIGN.colors.primary} // iOS loader color
+              colors={[DESIGN.colors.primary]}
+              tintColor={DESIGN.colors.primary}
             />
           }
         />
       )}
+      {/* Bottom Add Button */}
+      <View style={styles.bottomButtonContainer}>
+        <TouchableOpacity onPress={() => navigation.navigate("OrderForm")}
+          style={styles.addButton}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons
+            name="plus"
+            size={24}
+            color={DESIGN.colors.surface}
+          />
+          {/* <Text style={modernStyles.addButtonText}>Add {type}</Text> */}
+        </TouchableOpacity>
+      </View>
 
       {/* Order Details Modal */}
       <OrderDetails
@@ -250,82 +364,142 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: DESIGN.spacing.sm,
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: DESIGN.typography.subtitle.fontWeight,
     color: DESIGN.colors.textPrimary,
   },
-  headerIcons: { flexDirection: "row", alignItems: "center" },
-  icon: { marginLeft: DESIGN.spacing.md },
+  headerIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  icon: {
+    marginLeft: DESIGN.spacing.md,
+  },
+
+  // 🔎 SearchBar styles
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: DESIGN.colors.surface,
+    margin: DESIGN.spacing.md,
+    borderRadius: DESIGN.borderRadius.sm,
+    paddingHorizontal: DESIGN.spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    height: 48,
+    fontSize: DESIGN.typography.body.fontSize,
+    paddingHorizontal: DESIGN.spacing.sm,
+    color: DESIGN.colors.textPrimary,
+  },
+
   tabRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    paddingVertical: DESIGN.spacing.xm,
+    borderBottomColor: DESIGN.colors.borderLight,
+    paddingVertical: DESIGN.spacing.sm,
   },
   tab: {
     width: TAB_WIDTH,
-    paddingVertical: 12,
+    paddingVertical: DESIGN.spacing.sm,
     alignItems: "center",
     justifyContent: "center",
   },
-  tabText: { fontSize: 14, color: "#555", fontWeight: "700" },
-  activeTabText: { color: DESIGN.colors.primary, fontWeight: "600" },
+  tabText: {
+    fontSize: DESIGN.typography.caption.fontSize,
+    color: DESIGN.colors.textSecondary,
+    fontWeight: "700",
+  },
+  activeTabText: {
+    color: DESIGN.colors.primary,
+    fontWeight: "600",
+  },
   indicator: {
     height: 3,
     width: TAB_WIDTH,
     backgroundColor: DESIGN.colors.primary,
   },
+
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: DESIGN.colors.surface,
+    borderRadius: DESIGN.borderRadius.sm,
     padding: DESIGN.spacing.md,
     marginBottom: DESIGN.spacing.md,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+    ...DESIGN.shadows.medium,
   },
-  cardHeader: { flexDirection: "row", justifyContent: "space-between" },
-  orderNumber: { fontWeight: "600", fontSize: 16 },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  orderNumber: {
+    fontWeight: "600",
+    fontSize: DESIGN.typography.bodyLarge.fontSize,
+    color: DESIGN.colors.textPrimary,
+  },
   createdAt: {
-    fontWeight: "100",
-    fontSize: 14,
+    fontWeight: "400",
+    fontSize: DESIGN.typography.caption.fontSize,
     position: "absolute",
-    top: 8,
-    right: 8,
+    top: DESIGN.spacing.xs,
+    right: DESIGN.spacing.xs,
     zIndex: 10,
+    color: DESIGN.colors.textSecondary,
   },
   dealerName: {
+    marginVertical: DESIGN.spacing.xs,
+    fontWeight: "400",
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.textPrimary,
+  },
+  shopName: {
     color: DESIGN.colors.primary,
-    marginVertical: 4,
-    fontWeight: "800",
-    fontSize: 16,
+    marginVertical: DESIGN.spacing.xs,
+    fontWeight: "700",
+    fontSize: DESIGN.typography.body.fontSize,
   },
   amountRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  totalValue: { fontWeight: "600", fontSize: 15 },
-  paymentType: { color: "#3498db", fontSize: 12 },
+  totalValue: {
+    fontWeight: "600",
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.textPrimary,
+  },
+  paymentType: {
+    color: DESIGN.colors.accent,
+    fontSize: DESIGN.typography.caption.fontSize,
+  },
   statusContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: DESIGN.spacing.sm,
     alignSelf: "flex-start",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingHorizontal: DESIGN.spacing.sm,
+    paddingVertical: DESIGN.spacing.xs,
+    borderRadius: DESIGN.borderRadius.sm,
+    backgroundColor: DESIGN.colors.surfaceElevated,
   },
-  statusText: { fontSize: 12, marginRight: 4, fontWeight: "50" },
-  searchInput: {
-    flex: 1,
-    height: 48,
-    fontSize: 18,
-    paddingHorizontal: 12,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    marginLeft: 10,
+  statusText: {
+    fontSize: DESIGN.typography.caption.fontSize,
+    marginRight: DESIGN.spacing.xs,
+    fontWeight: "500",
+    color: DESIGN.colors.textSecondary,
+  },
+  bottomButtonContainer: {
+    position: "absolute",
+    bottom: Platform.OS === "ios" ? DESIGN.spacing.xl : DESIGN.spacing.lg,
+    right: DESIGN.spacing.lg,
+  },
+
+  addButton: {
+    backgroundColor: DESIGN.colors.primary,
+    width: 56,
+    height: 56,
+    borderRadius: 28, // perfect circle
+    alignItems: "center",
+    justifyContent: "center",
+    ...DESIGN.shadows.medium,
   },
 });
-
 export default OrderScreen;

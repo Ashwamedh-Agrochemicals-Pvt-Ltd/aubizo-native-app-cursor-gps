@@ -100,15 +100,6 @@ function Dashboard() {
       }
     } catch (error) {
       logger.error("Error checking punch status:", error);
-
-
-      if (error.response?.status === 401) {
-        Alert.alert("Session Expired", MESSAGES.SESSION_EXPIRED);
-      } else if (!error.response) {
-        Alert.alert("Network Error", MESSAGES.NETWORK_ERROR);
-      } else {
-        Alert.alert("Error", MESSAGES.GENERIC_ERROR);
-      }
     }
   }, [setUser, hasInpunch]);
 

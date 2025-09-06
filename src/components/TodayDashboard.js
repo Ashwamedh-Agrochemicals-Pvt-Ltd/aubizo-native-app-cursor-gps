@@ -4,44 +4,69 @@ import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
-  FlatList,
+  ScrollView,
   RefreshControl,
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import NetInfo from "@react-native-community/netinfo";
 import DESIGN from "../theme";
 
+// Individual Section Components
+const HeaderSection = ({ date, userName }) => (
+  <View style={styles.header}>
+    <Text style={styles.date}>{date || "--/--/----"}</Text>
+    <Text style={styles.userName}>Hello, {userName || "User"}</Text>
+  </View>
+);
+
+const VisitSummarySection = ({ visit_summary }) => (
+  <View style={styles.section}>
+    <Text style={styles.sectionTitle}>Visit Summary</Text>
+    <View style={styles.visitRow}>
+      <Text style={styles.visitItem}>
+        Total Visits: {visit_summary?.total_visits ?? 0}
+      </Text>
+      <Text style={styles.visitItem}>
+        Farmers: {visit_summary?.farmer_visits ?? 0}
+      </Text>
+      <Text style={styles.visitItem}>
+        Dealers: {visit_summary?.dealer_visits ?? 0}
+      </Text>
+    </View>
+  </View>
+);
+
+const PunchStatusSection = ({ punch_status }) => {
+  if (!punch_status) return null;
+
+  const { punched_in, punched_out, punch_in_time, punch_out_time } = punch_status;
+
+  if (!punched_in && !punched_out) return null;
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Punch Status</Text>
+      {punched_in && (
+        <View style={styles.punchRow}>
+          <Text style={styles.punchLabel}>Punch In: </Text>
+          <Text style={styles.punchTime}>{punch_in_time || "--:--"}</Text>
+        </View>
+      )}
+      {punched_out && (
+        <View style={styles.punchRow}>
+          <Text style={styles.punchLabel}>Punch Out: </Text>
+          <Text style={styles.punchTime}>{punch_out_time || "--:--"}</Text>
+        </View>
+      )}
+    </View>
+  );
+};
+
 const TodayDashboard = ({ dashboardData, onRefreshDashboard }) => {
-  const [date, setDate] = useState(""); // initially blank
-  const [userName, setUserName] = useState(""); // initially blank
-  const [isSlowInternet, setIsSlowInternet] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [date, setDate] = useState(new Date().toLocaleDateString());
+  const [userName, setUserName] = useState("User");
   const [refreshing, setRefreshing] = useState(false);
 
-  // Handle Date (API or Device)
-  const loadDate = useCallback(async () => {
-    setIsLoading(true);
-    const netInfo = await NetInfo.fetch();
-
-    if (!netInfo.isConnected || netInfo.details?.downlink < 0.2) {
-      setIsSlowInternet(true);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsSlowInternet(false);
-
-    if (dashboardData?.date) {
-      setDate(dashboardData.date);
-    } else {
-      const deviceDate = new Date().toLocaleDateString();
-      setDate(deviceDate);
-    }
-    setIsLoading(false);
-  }, [dashboardData]);
-
-  // Handle User Name (SecureStore)
+  // Sync username from dashboardData or SecureStore
   const syncUserName = useCallback(async () => {
     if (dashboardData?.user_name) {
       await SecureStore.setItemAsync("user_name", dashboardData.user_name);
@@ -52,102 +77,23 @@ const TodayDashboard = ({ dashboardData, onRefreshDashboard }) => {
     }
   }, [dashboardData]);
 
-  // Initial load
   useEffect(() => {
-    loadDate();
+    if (dashboardData?.date) setDate(dashboardData.date);
     syncUserName();
-  }, [dashboardData, loadDate, syncUserName]);
+  }, [dashboardData, syncUserName]);
 
-  // Refresh handler
   const handleRefresh = async () => {
     setRefreshing(true);
-    if (onRefreshDashboard) {
-      await onRefreshDashboard(); // call parent function to refetch data
-    }
-    await loadDate();
-    await syncUserName();
+    if (onRefreshDashboard) await onRefreshDashboard();
+    if (dashboardData?.date) setDate(dashboardData.date);
+    syncUserName();
     setRefreshing(false);
   };
 
-  if (isLoading) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color={DESIGN.colors.primary} />
-        <Text style={styles.loaderText}>Refreshing...</Text>
-      </View>
-    );
-  }
-
-  if (!dashboardData || isSlowInternet) {
-    return <View style={styles.blankContainer}></View>;
-  }
-
-  const { punch_status, visit_summary } = dashboardData;
-  const { punched_in, punched_out, punch_in_time, punch_out_time } =
-    punch_status || {};
-
-  // Data for FlatList (to keep pull-to-refresh)
-  const dashboardSections = [
-    {
-      key: "header",
-      render: () => (
-        <View style={styles.header}>
-          <Text style={styles.date}>{date || " "}</Text>
-          <Text style={styles.userName}>Hello, {userName || " "}</Text>
-        </View>
-      ),
-    },
-   
-    {
-      key: "visitSummary",
-      render: () =>
-        visit_summary && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Visit Summary</Text>
-            <View style={styles.visitRow}>
-              <Text style={styles.visitItem}>
-                Total Visits: {visit_summary.total_visits}
-              </Text>
-              <Text style={styles.visitItem}>
-                Farmers: {visit_summary.farmer_visits}
-              </Text>
-              <Text style={styles.visitItem}>
-                Dealers: {visit_summary.dealer_visits}
-              </Text>
-            </View>
-          </View>
-        ),
-    },
-     {
-      key: "punchStatus",
-      render: () =>
-        (punched_in || punched_out) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Punch Status</Text>
-            {punched_in && (
-              <View style={styles.punchRow}>
-                <Text style={styles.punchLabel}>Punch In: </Text>
-                <Text style={styles.punchTime}>{punch_in_time || "--:--"}</Text>
-              </View>
-            )}
-            {punched_out && (
-              <View style={styles.punchRow}>
-                <Text style={styles.punchLabel}>Punch Out: </Text>
-                <Text style={styles.punchTime}>
-                  {punch_out_time || "--:--"}
-                </Text>
-              </View>
-            )}
-          </View>
-        ),
-    },
-  ];
+  const { visit_summary, punch_status } = dashboardData || {};
 
   return (
-    <FlatList
-      data={dashboardSections}
-      keyExtractor={(item) => item.key}
-      renderItem={({ item }) => item.render()}
+    <ScrollView
       contentContainerStyle={styles.container}
       refreshControl={
         <RefreshControl
@@ -157,71 +103,54 @@ const TodayDashboard = ({ dashboardData, onRefreshDashboard }) => {
           tintColor={DESIGN.colors.primary}
         />
       }
-    />
+    >
+      <HeaderSection date={date} userName={userName} />
+      <VisitSummarySection visit_summary={visit_summary} />
+      <PunchStatusSection punch_status={punch_status} />
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-  },
-  blankContainer: {
-    flex: 1,
-    backgroundColor: DESIGN.colors.background,
-  },
-  loaderContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: DESIGN.colors.background,
-  },
-  loaderText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: DESIGN.colors.primary,
-  },
   header: {
-    marginBottom: 20,
+    marginBottom: DESIGN.spacing.lg,
   },
   date: {
-    fontSize: 16,
+    fontSize: DESIGN.typography.body.fontSize,
+    fontWeight: DESIGN.typography.body.fontWeight,
     color: DESIGN.colors.textSecondary,
   },
   userName: {
-    fontSize: 20,
+    fontSize: DESIGN.typography.title.fontSize,
     fontWeight: "bold",
     color: DESIGN.colors.textPrimary,
-    marginTop: 4,
+    marginTop: DESIGN.spacing.xs,
   },
   section: {
     backgroundColor: DESIGN.colors.surface,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 2,
+    padding: DESIGN.spacing.md,
+    borderRadius: DESIGN.borderRadius.sm,
+    marginBottom: DESIGN.spacing.lg,
+    ...DESIGN.shadows.subtle,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: DESIGN.typography.subtitle.fontSize,
     fontWeight: "bold",
-    marginBottom: 12,
+    marginBottom: DESIGN.spacing.md,
     color: DESIGN.colors.primary,
   },
   punchRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: DESIGN.spacing.sm,
   },
   punchLabel: {
-    fontSize: 16,
+    fontSize: DESIGN.typography.body.fontSize,
     color: DESIGN.colors.textSecondary,
-    marginRight: 8,
+    marginRight: DESIGN.spacing.sm,
   },
   punchTime: {
-    fontSize: 18,
+    fontSize: DESIGN.typography.bodyLarge.fontSize,
     fontWeight: "bold",
     color: DESIGN.colors.textPrimary,
   },
@@ -230,7 +159,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   visitItem: {
-    fontSize: 14,
+    fontSize: DESIGN.typography.body.fontSize,
     color: DESIGN.colors.textPrimary,
   },
 });

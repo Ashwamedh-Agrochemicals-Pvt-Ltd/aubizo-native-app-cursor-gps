@@ -163,7 +163,7 @@ function EntityVisitList({
                   modernStyles.visitButton,
                   modernStyles.endButton,
                   { opacity: isActive ? 1 : 0.4 },
-                ]} 
+                ]}
                 onPress={handleEndVisit}
                 activeOpacity={0.7}
                 disabled={!isActive}
@@ -180,15 +180,10 @@ function EntityVisitList({
 
         {isActive && (
           <View style={modernStyles.activeIndicator}>
-            <ActivityIndicator
-              size="small"
-              color={DESIGN.colors.surface}
-              style={{ marginRight: 8 }}
-            />
+            <View style={modernStyles.activeDot} />
             <Text style={modernStyles.activeText}>Active Visit</Text>
           </View>
         )}
-
       </View>
     );
   };
@@ -209,17 +204,6 @@ function EntityVisitList({
 
   return (
     <View style={modernStyles.container}>
-      {/* Header Section */}
-      {/* <View style={modernStyles.header}>
-        <View style={modernStyles.headerContent}>
-          <Text style={modernStyles.headerTitle}>{type} Management</Text>
-          <Text style={modernStyles.headerSubtitle}>
-            {data.length} {type.toLowerCase()}
-            {data.length !== 1 ? "s" : ""} nearby
-          </Text>
-        </View>
-      </View> */}
-
       {/* Table Header */}
       <View style={modernStyles.tableHeader}>
         <View style={modernStyles.tableHeaderSection}>
@@ -280,7 +264,7 @@ function EntityVisitList({
       </View>
 
       {/* Global Loading Overlay */}
-      {loading && (
+      {/* {loading && (
         <View style={modernStyles.loadingOverlay}>
           <View style={modernStyles.loadingModal}>
             <ActivityIndicator size="large" color={DESIGN.colors.primary} />
@@ -289,7 +273,7 @@ function EntityVisitList({
             </Text>
           </View>
         </View>
-      )}
+      )} */}
     </View>
   );
 }

@@ -8,6 +8,7 @@ import {
   Text,
   View,
   Alert,
+  BackHandler,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCallback, useMemo } from "react";
@@ -16,10 +17,32 @@ import useVisitHistory from "./useVisitHistory";
 import VisitTable from "./VisitTable";
 import VisitForm from "./VisitTemplate";
 import logger from "../../utility/logger";
+import { useFocusEffect } from "@react-navigation/native";
+import { navigation } from "../../../navigation/NavigationService";
 
 const VisitScreen = ({ location_id, storageKey, navigateTo }) => {
   const { remarksList, isLoading, error, refetch } = useVisitHistory(location_id);
-  
+
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (navigation.isReady()) {
+          navigation.goBack(); // 👈 only remove current screen
+        }
+        return true; // prevent default back action
+      };
+
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress
+      );
+
+      return () => subscription.remove();
+    }, [])
+  );
+
+
   if (__DEV__) {
     logger.info("Visit History:", remarksList);
   }
@@ -33,7 +56,7 @@ const VisitScreen = ({ location_id, storageKey, navigateTo }) => {
     if (__DEV__) {
       logger.error("Visit history error:", error);
     }
-    
+
     // Show user-friendly error message
     Alert.alert(
       "Connection Error",

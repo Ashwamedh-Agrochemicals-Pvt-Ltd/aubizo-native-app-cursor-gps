@@ -79,9 +79,9 @@ function DiscountPriceInput({ dealerPriceNoGst, value, onChange }) {
 
         <TextInput
           style={[styles.input, styles.inputWithIconText]}
-          placeholder="Enter Discount"
+          placeholder="Enter Discount %"
           keyboardType="numeric"
-          value={localDiscount ? `${localDiscount}%` : ""}
+          value={localDiscount ? `${localDiscount}` : ""}
           onChangeText={handleDiscountChange}
         />
       </View>
@@ -114,7 +114,7 @@ function QuantityInput({ value, onChange }) {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+   
       <View style={styles.quantityRow}>
 
         <TextInput
@@ -138,7 +138,7 @@ function QuantityInput({ value, onChange }) {
           </TouchableOpacity>
         ))}
       </View>
-    </KeyboardAvoidingView>
+    
   );
 }
 
@@ -1015,36 +1015,36 @@ export default function OrderForm() {
               </View>
             )}
 
-          {/* Packing Selection */}
-          {selectedProduct && packings.length > 0 && (
-            <View style={{ marginBottom: 10 }}>
-              <TouchableOpacity
-                style={styles.input}
-                onPress={() => setShowPackingList(!showPackingList)}
-              >
-                <Text style={selectedPacking ? styles.text : styles.placeholder}>
-                  {selectedPacking
-                    ? `${selectedPacking.packing_size}`
-                    : "Select packing"}
-                </Text>
-              </TouchableOpacity>
+            {/* Packing Selection */}
+            {selectedProduct && packings.length > 0 && (
+              <View style={{ marginBottom: 10 }}>
+                <TouchableOpacity
+                  style={styles.input}
+                  onPress={() => setShowPackingList(!showPackingList)}
+                >
+                  <Text style={selectedPacking ? styles.text : styles.placeholder}>
+                    {selectedPacking
+                      ? `${selectedPacking.packing_size}`
+                      : "Select packing"}
+                  </Text>
+                </TouchableOpacity>
 
 
-              {showPackingList && (
-                <View style={styles.list}>
-                  {packings.map((item) => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={styles.item}
-                      onPress={() => handleSelectPacking(item)}
-                    >
-                      <Text style={styles.text}>{item.packing_size}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
-          )}
+                {showPackingList && (
+                  <View style={styles.list}>
+                    {packings.map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={styles.item}
+                        onPress={() => handleSelectPacking(item)}
+                      >
+                        <Text style={styles.text}>{item.packing_size}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
 
 
 
@@ -1186,14 +1186,22 @@ export default function OrderForm() {
 
 
   return (
-    <FlatList
-      style={styles.container}
-      data={renderSections()}
-      keyExtractor={(item) => item.id}
-      renderItem={renderSection}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
-    />
+   <KeyboardAvoidingView
+  style={{ flex: 1 }}
+  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+  keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0} // adjust offset as needed
+>
+  <FlatList
+    style={styles.container}
+    data={renderSections()}
+    keyExtractor={(item) => item.id}
+    renderItem={renderSection}
+    keyboardShouldPersistTaps="handled"
+    showsVerticalScrollIndicator={false}
+    contentContainerStyle={{ paddingBottom: 20 }} // ensures last field isn't hidden
+  />
+</KeyboardAvoidingView>
+
   );
 }
 
