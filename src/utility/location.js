@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as Location from "expo-location";
-import { Alert, BackHandler } from "react-native";
 import Constants from "expo-constants";
+import showToast from "./showToast";
 
 const GOOGLE_API_KEY =
   Constants.expoConfig.extra.googleApiKey ||
@@ -10,36 +10,24 @@ const GOOGLE_URL = process.env.EXPO_PUBLIC_GOOGLE_URL;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// ✅ Get current location and address
+
 const getCurrentLocationDetails = async () => {
   try {
-    // Step 1: Permission
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Location Permission Required",
-        "Please enable location permission in Settings.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Settings", onPress: () => Location.openSettings() },
-        ]
-      );
-      return { latitude: null, longitude: null, address: null };
-    }
 
-     await sleep(2000);
+    const granted = await requestLocationWhenNeeded();
+    if (!granted) return;
 
-    // Step 2: Get GPS coordinates
+    await sleep(2000);
+
     const location = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Highest,
-      mayShowUserSettingsDialog:true,
-      maximumAge:0,
-      timeout:10000,
-
+      maximumAge: 0,
+      timeout: 10000,
+      mayShowUserSettingsDialog: true,
     });
     const { latitude, longitude } = location.coords;
 
-    // Step 3: Reverse Geocoding
+
     const url = `${GOOGLE_URL}?latlng=${latitude},${longitude}&key=${GOOGLE_API_KEY}`;
     let address = null;
 
@@ -52,73 +40,49 @@ const getCurrentLocationDetails = async () => {
       address = null;
     }
 
-     await sleep(1000);
     return { latitude, longitude, address };
   } catch (error) {
-    Alert.alert("Location Error", "Unable to fetch location. Please try again.");
     return { latitude: null, longitude: null, address: null };
   }
 };
 
-// ✅ Force strict permission (close app if denied)
 const getStrictLocation = async () => {
   try {
-    const { status } = await Location.getForegroundPermissionsAsync();
-    if (status !== "granted") {
-      const { status: newStatus } =
-        await Location.requestForegroundPermissionsAsync();
 
-      if (newStatus !== "granted") {
-        Alert.alert(
-          "Location Required",
-          "Location permission is required to use this app.",
-          [
-            {
-              text: "Exit App",
-              onPress: () => BackHandler.exitApp(),
-              style: "destructive",
-            },
-          ],
-          { cancelable: false }
-        );
-        return null;
-      }
-    }
-    return true;
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    return status === "granted" ? true : null;
   } catch (error) {
-    Alert.alert("Location Error", "Unable to retrieve location.", [
-      {
-        text: "Exit",
-        onPress: () => BackHandler.exitApp(),
-        style: "destructive",
-      },
-    ]);
     return null;
   }
 };
 
-// ✅ Request permission only if needed
 const requestLocationWhenNeeded = async () => {
   try {
-    const { status } = await Location.getForegroundPermissionsAsync();
 
-    if (status === "granted") return true;
+    let { status, canAskAgain } = await Location.getForegroundPermissionsAsync();
 
-    if (status === "denied") {
-      Alert.alert(
-        "Location Permission",
-        "This feature requires location access. Please enable it in Settings.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Settings", onPress: () => Location.openSettings() },
-        ]
-      );
+    if (status === "granted") {
+      return true;
+    }
+
+    if (canAskAgain) {
+      let { status: newStatus } = await Location.requestForegroundPermissionsAsync();
+
+      if (newStatus === "granted") {
+        return true;
+      }
+
       return false;
     }
 
-    const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
-    return newStatus === "granted";
-  } catch {
+    // Usage
+    showToast.show(
+      "Location permissions are permanently denied, you must enable location permission from settings to continue"
+    );
+
+    return false;
+  } catch (err) {
+    console.log("Permission error:", err);
     return false;
   }
 };

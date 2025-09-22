@@ -1,16 +1,18 @@
-const APP_VARIANT = process.env.APP_VARIANT;
+import 'dotenv/config';
+
+const APP_VARIANT = process.env.APP_VARIANT || "production";
 
 const IS_DEV = APP_VARIANT === "development";
 const IS_PREVIEW = APP_VARIANT === "preview";
 
 const getUniqueIdentifier = () => {
-  if (IS_DEV) return "com.ashwamedhgroup.AUBIZO";
-  if (IS_PREVIEW) return "com.ashwamedhgroup.AUBIZO";
-  return "com.ashwamedhgroup.AUBIZO";
+  if (IS_DEV) return "com.ravindrakhadangale.aubizo.dev";
+  if (IS_PREVIEW) return "com.ravindrakhadangale.aubizo.preview";
+  return "com.ravindrakhadangale.aubizo";
 };
 
 const getAppName = () => {
-  if (IS_DEV) return "AUBIZO (Dev)";
+  if (IS_DEV) return "Aubizo (Dev)";
   if (IS_PREVIEW) return "Aubizo (Preview)";
   return "Aubizo";
 };
@@ -49,9 +51,9 @@ export default {
         "ACCESS_NETWORK_STATE",
         "FOREGROUND_SERVICE",
         "ACCESS_FINE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
+        "ACCESS_BACKGROUND_LOCATION",
       ],
-      jsEngine: "hermes",
+      enableExperimentalNewArchitecture: true
     },
     web: {
       favicon: "./assets/images/favicon.png",
@@ -61,29 +63,28 @@ export default {
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#ffffff",
-          "image": "./assets/images/splash-icon-light.png",
-          "dark": {
-            "image": "./assets/images/splash-icon-dark.png",
-            "backgroundColor": "#000000"
+          backgroundColor: "#ffffff",
+          image: "./assets/images/splash-icon-light.png",
+          dark: {
+            image: "./assets/images/splash-icon-dark.png",
+            backgroundColor: "#000000",
           },
-          "imageWidth": 200
-        }
+          imageWidth: 200,
+        },
       ],
       [
-      "expo-location",
-      {
-        isAndroidBackgroundLocationEnabled: true,
-        locationAlwaysAndWhenInUsePermission:
-          "Allow AUBIZO to use your location even when the app is in the background.",
-        locationWhenInUsePermission:
-          "Allow AUBIZO to access your location while you are using the app.",
-      }
-      ]
-
+        "expo-location",
+        {
+          isAndroidBackgroundLocationEnabled: true,
+          locationAlwaysAndWhenInUsePermission:
+            "Allow AUBIZO to use your location even when the app is in the background.",
+          locationWhenInUsePermission:
+            "Allow AUBIZO to access your location while you are using the app.",
+        },
+      ],
     ],
     extra: {
-      appVariant: APP_VARIANT,
+      APP_VARIANT,
       googleApiKey: process.env.GOOGLE_API_KEY,
       eas: {
         projectId: "a75af2e9-f700-4b79-b729-8498f0340e19",

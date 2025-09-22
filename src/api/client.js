@@ -1,7 +1,6 @@
 import axios from "axios";
-import { navigation } from "../../navigation/NavigationService";
 import AuthStorage from "../auth/storage";
-import { handleError } from "../utility/errorHandler";
+import { Alert } from "react-native";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -11,116 +10,71 @@ if (__DEV__) {
 
 const apiClient = axios.create({
   baseURL: `${API_URL}`,
-  timeout: 30000, //30 second
+  timeout: 30000, // 10 seconds
   headers: {
-    'Content-Type': 'application/json',
-  }
-});
-apiClient.interceptors.request.use(async (config) => {
-  const token = await AuthStorage.getUser();
-  if (__DEV__) {
-    console.log("Token from storage:", token);
-  }
-  if (token) {
-    config.headers.Authorization = `token ${token}`;
-  }
-  return config;
-}, (error) => {
-  if (__DEV__) {
-    console.error("Request interceptor error:", error);
-  }
-  return Promise.reject(error);
+    "Content-Type": "application/json",
+  },
 });
 
-
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    // Handle 401 errors (session expiry)
-    if (error.response && error.response.status === 401) {
-      await AuthStorage.removeToken();
-
-      // Use centralized error handler
-      handleError(error, {
-        context: 'API_Interceptor',
-        showAlert: false, // Don't show alert, use toast instead
-        showToast: true,
-        logError: true
-      });
-
-      // Navigate to login
-      if (navigation.current) {
-        navigation.current.reset({
-          index: 0,
-          routes: [{ name: 'Login' }],
-        });
-      }
-
-      return Promise.reject(new Error('Unauthorized'));
+// Request interceptor
+apiClient.interceptors.request.use(
+  async (config) => {
+    const token = await AuthStorage.getUser();
+    if (__DEV__) {
+      console.log("Token from storage:", token);
     }
-
-    // Handle other errors with centralized handler
-    handleError(error, {
-      context: 'API_Interceptor',
-      showAlert: false,
-      showToast: true,
-      logError: true
-    });
-
+    if (token) {
+      config.headers.Authorization = `token ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    if (__DEV__) {
+      console.error("Request interceptor error:", error);
+    }
     return Promise.reject(error);
   }
 );
 
-// Add a centralized HTTP wrapper function
-const http = {
-  get: async (url, config = {}) => {
-    try {
-      return await apiClient.get(url, config);
-    } catch (error) {
-      if (__DEV__) {
-        console.error('HTTP GET error:', error);
-      }
-      throw error;
-    }
-  },
+// Response interceptor
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const status = error.response?.status;
+    const errorMsg = error.response?.data?.detail || "";
+    const message = (error.message || "").toLowerCase();
 
-  post: async (url, data = {}, config = {}) => {
-    try {
-      const response = await apiClient.post(url, data, config);
-      return { ok: true, data: response.data };
-    } catch (error) {
-      if (__DEV__) {
-        console.error('HTTP POST error:', error);
-      }
-      return { ok: false, error };
-    }
-  },
+    console.log("------ API Error Interceptor ------");
+    console.log("Status:", status);
+    console.log("Error message:", errorMsg);
+    console.log("Axios message:", message);
+    console.log("Full error object:", error);
+    console.log("----------------------------------");
 
-  put: async (url, data = {}, config = {}) => {
-    try {
-      const response = await apiClient.put(url, data, config);
-      return { ok: true, data: response.data };
-    } catch (error) {
-      if (__DEV__) {
-        console.error('HTTP PUT error:', error);
-      }
-      return { ok: false, error };
-    }
-  },
+    // 1️⃣ DNS / Network fail check
+    if (!error.response || message.includes("network") || message.includes("dns") || message.includes("enotfound")) {
+      setTimeout(() => {
+        Alert.alert(
+          "Network Issue",
+          "सर्व्हरशी कनेक्ट होत नाही. कृपया Wi-Fi/Data off-on करून पुन्हा प्रयत्न करा."
+        );
+      }, 100);
 
-  delete: async (url, config = {}) => {
-    try {
-      const response = await apiClient.delete(url, config);
-      return { ok: true, data: response.data };
-    } catch (error) {
-      if (__DEV__) {
-        console.error('HTTP DELETE error:', error);
-      }
-      return { ok: false, error };
+      return Promise.reject({
+        status: 0,
+        reason: "DNS/Network Error",
+        detail: error.message || "Network Error",
+      });
     }
+
+
+    // Other errors
+    return Promise.reject({
+      status: status || 500,
+      reason: "API Error",
+      detail: error.response?.data || error.message,
+    });
   }
-};
+);
 
 export default apiClient;
-export { http };
-

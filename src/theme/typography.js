@@ -20,20 +20,22 @@ export default {
     lineHeight: Platform.select({ ios: 24, android: 22, default: 23 }),
   },
   body: {
-    fontSize: 16,
-    fontWeight: '400',
+    fontSize: Platform.select({ ios: 16, android: 16, default: 16 }),
+    fontWeight: Platform.select({ ios: '400', android: '400', default: '400' }),
     letterSpacing: Platform.select({ ios: -0.2, android: 0, default: 0 }),
-    lineHeight: 24,
+    lineHeight: Platform.select({ ios: 24, android: 24, default: 24 }),
   },
   bodyLarge: {
-    fontSize: 18,
-    fontWeight: '400',
+    fontSize: Platform.select({ ios: 18, android: 18, default: 18 }),
+    fontWeight: Platform.select({ ios: '400', android: '400', default: '400' }),
     letterSpacing: Platform.select({ ios: -0.3, android: 0, default: 0 }),
-    lineHeight: 28,
+    lineHeight: Platform.select({ ios: 28, android: 28, default: 28 }),
   },
   caption: {
-    fontSize: 13,
-    fontWeight: '500',
-    letterSpacing: 0,
+    fontSize: Platform.select({ ios: 13, android: 13, default: 13 }),
+    fontWeight: Platform.select({ ios: '500', android: '500', default: '500' }),
+    letterSpacing: Platform.select({ ios: 0, android: 0, default: 0 }),
+    lineHeight: Platform.select({ ios: 18, android: 18, default: 18 }),
   },
 };
+

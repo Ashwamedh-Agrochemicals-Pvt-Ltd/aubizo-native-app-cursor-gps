@@ -16,11 +16,4 @@ export default {
   borderLight: '#F0F2F5',
   warning: '#FF9800',
  
-
-  youtube: "#FF0000",
-  facebook: "#1877F2",
-  instagram: "#E4405F",
-  twitter: "#1DA1F2",
-  linkedin: "#0A66C2",
-  whatsapp: "#25D366",
 };

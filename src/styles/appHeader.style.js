@@ -9,7 +9,7 @@ export default StyleSheet.create({
     ...DESIGN.shadows.subtle,
   },
   headerContent: {
-    height: Platform.OS === 'ios' ? 70 : 80,
+    height: Platform.OS === 'ios' ? 70 : 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

@@ -62,7 +62,7 @@ const VisitForm = ({ storageKey, navigateTo }) => {
           navigation.reset({
             index: 1, // FarmerScreen will be active
             routes: [
-              { name: "DashboardHome" },
+              { name: "Dashboard" },
               { name: navigateTo },
             ],
           });

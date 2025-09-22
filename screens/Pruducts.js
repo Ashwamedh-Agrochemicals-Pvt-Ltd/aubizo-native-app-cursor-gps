@@ -11,8 +11,6 @@ import {
 import apiClient from "../src/api/client";
 import styles from "../src/styles/products.style";
 import { useNavigation } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { SafeAreaView } from "react-native";
 import DESIGN from "../src/theme";
 
 const PRODUCTELIST_URL = process.env.EXPO_PUBLIC_PRODUCTELIST_URL;
@@ -114,7 +112,10 @@ export default function ProductScreen() {
   if (loading) {
     return (
       <View style={[styles.listContainer, { flex: 1, justifyContent: "center" }]}>
-        <ActivityIndicator size="large" color="#4CAF50" />
+        <ActivityIndicator
+          size="large"
+          color={DESIGN.colors.primary} // use your app's primary color
+        />
       </View>
     );
   }
@@ -161,15 +162,7 @@ export default function ProductScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-
-      <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>Our Products</Text>
-        <Text style={styles.headerSubtitle}>
-          Discover our range of agricultural solutions
-        </Text>
-      </View>
-
+    <View>
       <FlatList
         data={groupedProducts}
         renderItem={renderRow}
@@ -177,10 +170,11 @@ export default function ProductScreen() {
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[DESIGN.colors.primary]} // Android: progress spinner color
+            tintColor={DESIGN.colors.primary} />
         }
       />
 
-    </SafeAreaView>
+    </View>
   );
 }

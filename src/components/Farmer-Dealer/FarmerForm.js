@@ -868,6 +868,8 @@ const modernStyles = StyleSheet.create({
   locationInput: {
     backgroundColor: DESIGN.colors.surfaceElevated,
     borderColor: DESIGN.colors.borderLight,
+    fontStyle: "italic",
+    color: DESIGN.colors.textSecondary,
   },
 
   fieldContainer: {

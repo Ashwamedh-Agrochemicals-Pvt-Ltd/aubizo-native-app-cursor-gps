@@ -2,18 +2,16 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
-  FlatList,
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
 } from "react-native";
 import apiClient from "../src/api/client";
 import DESIGN from "../src/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 export default function ProductDetailScreen({ route }) {
   const { productId } = route.params;
   const [product, setProduct] = useState(null);
@@ -93,10 +91,11 @@ export default function ProductDetailScreen({ route }) {
   ].filter((item) => item.value); // remove empty ones
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }} edges={['left', 'right', 'bottom']}>
       <ScrollView
         style={{ flex: 1, backgroundColor: DESIGN.colors.background }}
         contentContainerStyle={{ paddingBottom: insets.bottom }}
+        showsVerticalScrollIndicator={false}
       >
         {/* Product Image */}
         <View style={styles.imageWrapper}>

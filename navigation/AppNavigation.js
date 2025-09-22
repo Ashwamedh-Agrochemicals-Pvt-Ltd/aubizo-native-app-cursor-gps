@@ -14,43 +14,27 @@ import DealerUpdateScreen from "../screens/DealerUpdate";
 import DealerVisitScreen from "../screens/DealerVisit";
 import ProductDetailScreen from "../screens/ProductDetails";
 import FarmerUpdateScreen from "../screens/FarmerUpdate";
-import CustomHeader from "../src/components/appHeader/CustomHeader";
 import ScreenWrapper from "../src/components/ScreenWrapper";
-import LoginScreen from "../screens/Login"
-import OrderForm from "../src/components/orders/OrderForm"
+import LoginScreen from "../screens/Login";
+import OrderForm from "../src/components/orders/OrderForm";
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-
-const AUTHENTICATED_MENU_ITEMS = [
-  { id: "products", label: "Products", route: "Product", icon: "leaf" },
-  { id: "logout", label: "Logout", route: "Login", icon: "logout" },
-];
 
 function DashboardStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        statusBarStyle: "dark",        // for Expo (use "dark-content" if pure RN)
-        statusBarColor: "#FFFFFF",     // Android background
-      }}>
+        statusBarStyle: "dark",
+        statusBarColor: "#FFFFFF",
+      }}
+    >
       <Stack.Screen
-        name="DashboardHome"
-        options={{
-          header: () => (
-            <CustomHeader
-              userType="auth"
-              menuItems={AUTHENTICATED_MENU_ITEMS}
-            />
-          ),
-        }}
-      >
-        {(props) => (
-          <ScreenWrapper>
-            <Dashboard {...props} />
-          </ScreenWrapper>
-        )}
-      </Stack.Screen>
+        name="Dashboard"
+        component={Dashboard}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="Product"
         component={ProductScreen}
@@ -80,22 +64,27 @@ function DashboardStack() {
         component={DealerUpdateScreen}
         options={{ title: "Update Dealer" }}
       />
-
-      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen
+        name="Login"
+        component={LoginScreen}
+         options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 }
 
 function OrdersStack() {
   return (
-    <Stack.Navigator screenOptions={{
-      statusBarStyle: "dark",
-      statusBarColor: "#FFFFFF",
-    }}>
+    <Stack.Navigator
+      screenOptions={{
+        statusBarStyle: "dark",
+        statusBarColor: "#FFFFFF",
+      }}
+    >
       <Stack.Screen
         name="OrderScreen"
         component={OrderScreen}
-        options={{ headerShown: false }} // ✅ disable React Navigation header
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="OrderForm"
@@ -106,17 +95,15 @@ function OrdersStack() {
   );
 }
 
-
 function PaymentsStack() {
   return (
-    <Stack.Navigator screenOptions={{
-      statusBarStyle: "dark",
-      statusBarColor: "#FFFFFF",
-    }}>
-      <Stack.Screen
-        name="PaymentsHome"
-        options={{ title: "Payments" }}
-      >
+    <Stack.Navigator
+      screenOptions={{
+        statusBarStyle: "dark",
+        statusBarColor: "#FFFFFF",
+      }}
+    >
+      <Stack.Screen name="PaymentsHome" options={{ title: "Payments" }}>
         {(props) => (
           <ScreenWrapper>
             <PaymentScreen {...props} />
@@ -127,11 +114,31 @@ function PaymentsStack() {
   );
 }
 
+
+
+function ProductStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        statusBarStyle: "dark",
+        statusBarColor: "#FFFFFF",
+      }}
+    >
+      <Stack.Screen
+        name="Product"
+        component={ProductScreen}
+        options={{ title: "Product List" }}
+      />
+      <Stack.Screen name="Product Details" component={ProductDetailScreen} />
+    </Stack.Navigator>
+  );
+}
+
 //
 // 🔹 Tab Navigator (Root)
 //
 export function AppNavigation() {
-  const insets = useSafeAreaInsets()
+  const insets = useSafeAreaInsets();
 
   const tabBarHeight = 60;
   const safeAreaBottom = insets.bottom || 10;
@@ -140,13 +147,16 @@ export function AppNavigation() {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: "#00796B",
+        tabBarActiveTintColor: "#2E7D32",
         tabBarInactiveTintColor: "#B0BEC5",
         tabBarStyle: {
           height: totalHeight,
           paddingBottom: safeAreaBottom,
           backgroundColor: "#FFFFFF",
-          borderTopWidth: 2,
+          borderTopWidth: 1,
+          borderTopLeftRadius: 12, // Top Left
+          borderTopRightRadius: 12, // Top Right
+
           headerShown: false,
         },
       }}
@@ -156,7 +166,7 @@ export function AppNavigation() {
         component={DashboardStack}
         options={({ route }) => {
           // 👇 get the active route inside DashboardStack
-          const routeName = getFocusedRouteNameFromRoute(route) ?? "DashboardHome";
+          const routeName = getFocusedRouteNameFromRoute(route) ?? "Dashboard";
 
           // hide tab bar if not on DashboardHome
           const hideOnScreens = [
@@ -180,54 +190,94 @@ export function AppNavigation() {
                 height: totalHeight,
                 paddingBottom: safeAreaBottom,
                 backgroundColor: "#FFFFFF",
-                borderTopWidth: 2,
+                borderTopWidth: 1,
+                borderTopLeftRadius: 12, // Top Left
+                borderTopRightRadius: 12, // Top Right
+
               },
           };
         }}
       />
 
-  
 
-<Tab.Screen
-  name="OrdersTab"
-  component={OrdersStack}
-  options={({ route }) => {
-    // 👇 get the active route inside OrdersStack
-    const routeName = getFocusedRouteNameFromRoute(route) ?? "OrderScreen";
+      <Tab.Screen
+        name="ProductsTab"
+        component={ProductStack}
+        options={({ route }) => {
+          // 👇 get the active route inside OrdersStack
+          const routeName =
+            getFocusedRouteNameFromRoute(route) ?? "ProductScreen";
 
-    // screens where tab bar should be hidden
-    const hideOnScreens = ["OrderForm"];
+          // screens where tab bar should be hidden
+          const hideOnScreens = ["Product Details"];
 
-    return {
-      tabBarLabel: "Orders",
-      tabBarIcon: ({ color, size }) => (
-        <MaterialCommunityIcons
-          name="cart-outline"
-          size={size}
-          color={color}
-        />
-      ),
-      headerShown: false,
-      tabBarStyle: hideOnScreens.includes(routeName)
-        ? { display: "none" }
-        : {
-            height: totalHeight,
-            paddingBottom: safeAreaBottom,
-            backgroundColor: "#FFFFFF",
-            borderTopWidth: 2,
-          },
-    };
-  }}
-/>
+          return {
+            tabBarLabel: "Products",
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons
+                name="cube-outline"
+                size={size}
+                color={color}
+              />
+            ),
+            headerShown: false,
+            tabBarStyle: hideOnScreens.includes(routeName)
+              ? { display: "none" }
+              : {
+                height: totalHeight,
+                paddingBottom: safeAreaBottom,
+                backgroundColor: "#070101ff",
+
+
+              },
+
+          };
+        }}
+      />
+
+      <Tab.Screen
+        name="OrdersTab"
+        component={OrdersStack}
+        options={({ route }) => {
+          // 👇 get the active route inside OrdersStack
+          const routeName =
+            getFocusedRouteNameFromRoute(route) ?? "OrderScreen";
+
+          // screens where tab bar should be hidden
+          const hideOnScreens = ["OrderForm"];
+
+          return {
+            tabBarLabel: "Orders",
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons
+                name="cart-outline"
+                size={size}
+                color={color}
+              />
+            ),
+            headerShown: false,
+            tabBarStyle: hideOnScreens.includes(routeName)
+              ? { display: "none" }
+              : {
+                height: totalHeight,
+                paddingBottom: safeAreaBottom,
+                backgroundColor: "#FFFFFF",
+                borderTopWidth: 1,
+                borderTopLeftRadius: 12, // Top Left
+                borderTopRightRadius: 12, // Top Right
+              },
+          };
+        }}
+      />
 
       <Tab.Screen
         name="PaymentsTab"
         component={PaymentsStack}
         options={{
-          tabBarLabel: "Payments",
+          tabBarLabel: "Collection",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
-              name="currency-inr"
+              name="folder"
               size={size}
               color={color}
             />
@@ -235,6 +285,7 @@ export function AppNavigation() {
           headerShown: false,
         }}
       />
+
     </Tab.Navigator>
   );
 }

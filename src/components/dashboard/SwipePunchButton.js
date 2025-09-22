@@ -52,7 +52,7 @@ const SwipePunchButton = forwardRef(({ onSwipe, loading, hasInpunch }, ref) => {
 
 
     const labelOpacity = translateX.interpolate({
-        inputRange: [0, MAX_TRANSLATE * 0.6, MAX_TRANSLATE],
+        inputRange: [0, MAX_TRANSLATE * 0.5, MAX_TRANSLATE],
         outputRange: [1, 0.3, 0],
         extrapolate: "clamp",
     });
@@ -95,13 +95,6 @@ const SwipePunchButton = forwardRef(({ onSwipe, loading, hasInpunch }, ref) => {
         })
     ).current;
 
-
-
-
-
-
-
-
     return (
         <TouchableHighlight style={styles.container}>
             <View style={styles.track}>
@@ -125,19 +118,10 @@ const SwipePunchButton = forwardRef(({ onSwipe, loading, hasInpunch }, ref) => {
             </View>
         </TouchableHighlight>
 
-
-
-
     );
 });
 
-
-
-
 export default SwipePunchButton;
-
-
-
 
 const styles = StyleSheet.create({
     container: {
@@ -145,8 +129,12 @@ const styles = StyleSheet.create({
         bottom: 20,              // distance from bottom
         left: 0,
         right: 0,
+
         alignItems: "center",
-        paddingHorizontal: DESIGN.spacing.lg,
+        paddingHorizontal: DESIGN.spacing.md,
+        backgroundColor: DESIGN.colors.surface,
+        justifyContent: "center",
+
     },
     trackLabel: {
         ...DESIGN.typography.body,
@@ -158,7 +146,7 @@ const styles = StyleSheet.create({
     track: {
         width: TRACK_WIDTH,
         height: THUMB_SIZE,
-        backgroundColor: DESIGN.colors.surface,
+        backgroundColor: DESIGN.colors.background,
         borderRadius: THUMB_SIZE / 2,
         justifyContent: "center",
     },

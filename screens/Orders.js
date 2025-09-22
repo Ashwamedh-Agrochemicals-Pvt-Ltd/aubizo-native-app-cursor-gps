@@ -21,10 +21,10 @@ import { navigation } from "../navigation/NavigationService";
 import apiClient from "../src/api/client"; // Your API client
 import OrderDetails from "../src/components/orders/OrderDetails";
 import { useFocusEffect } from "@react-navigation/native";
-import { SafeAreaView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
-const TABS = ["All", "Pending", "Approved", "Rejected", "Hold"];
+const TABS = ["All", "Pending", "Delivered", "Rejected", "Hold"];
 const TAB_COUNT = TABS.length;
 const TAB_WIDTH = width / TAB_COUNT;
 
@@ -116,7 +116,7 @@ function OrderScreen() {
   const statusMap = {
     0: "", // All
     1: "processing",
-    2: "approved",
+    2: "delivered",
     3: "cancelled",
     4: "hold",
   };
@@ -190,7 +190,7 @@ function OrderScreen() {
             style={[
               styles.statusContainer,
               item.status === "draft" && styles.statusdrafted,
-              item.status === "approved" && styles.statusApproved,
+              item.status === "delivered" && styles.statusDelivered,
               item.status === "processing" && styles.statusPending,
               item.status === "cancelled" && styles.statusRejected,
               item.status === "hold" && styles.statusHold,
@@ -201,7 +201,7 @@ function OrderScreen() {
                 styles.statusText,
                 { fontSize: 14 },
                 item.status === "draft" && { color: "#080808ff" },
-                item.status === "approved" && { color: "#07883dff" },
+                item.status === "delivered" && { color: "#07883dff" },
                 item.status === "processing" && { color: "#f5cd2cff" },
                 item.status === "cancelled" && { color: "#e42712ff" },
                 item.status === "hold" && { color: "#3498db" },
@@ -217,52 +217,47 @@ function OrderScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      {/* Header with Safe Area */}
-      <View
-        style={{
-          paddingTop: insets.top,
-        }}
-      >
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color={DESIGN.colors.textPrimary}
+          />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>List of Orders</Text>
+        <View style={styles.headerIcons}>
+          {/* 🔎 Toggle search */}
+          <TouchableOpacity
+            onPress={() => {
+              if (showSearch) {
+                setShowSearch(false);
+                setSearchQuery(""); // reset text too
+              } else {
+                setShowSearch(true);
+              }
+            }}
+          >
             <MaterialCommunityIcons
-              name="arrow-left"
-              size={24}
+              name="magnify"
+              size={30}
               color={DESIGN.colors.textPrimary}
+              style={styles.icon}
             />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>List of Orders</Text>
-          <View style={styles.headerIcons}>
-            {/* 🔎 Toggle search */}
-            <TouchableOpacity
-              onPress={() => {
-                if (showSearch) {
-                  setShowSearch(false);
-                  setSearchQuery(""); // reset text too
-                } else {
-                  setShowSearch(true);
-                }
-              }}
-            >
-              <MaterialCommunityIcons
-                name="magnify"
-                size={30}
-                color={DESIGN.colors.textPrimary}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
 
-            <TouchableOpacity>
-              <MaterialCommunityIcons
-                name="filter-variant"
-                size={30}
-                color={DESIGN.colors.textPrimary}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity>
+            <MaterialCommunityIcons
+              name="filter-variant"
+              size={30}
+              color={DESIGN.colors.textPrimary}
+              style={styles.icon}
+            />
+          </TouchableOpacity>
         </View>
       </View>
+
 
       {/* 🔎 Show Search OR Tabs */}
       {showSearch ? (
@@ -446,11 +441,11 @@ const styles = StyleSheet.create({
     right: DESIGN.spacing.md,
     zIndex: 10,
     color: DESIGN.colors.textSecondary,
-  
+
   },
   dealerName: {
     marginVertical: DESIGN.spacing.xs,
-    fontStyle:'italic',
+    fontStyle: 'italic',
     fontWeight: "400",
     fontSize: DESIGN.typography.body.fontSize,
     color: DESIGN.colors.textPrimary,

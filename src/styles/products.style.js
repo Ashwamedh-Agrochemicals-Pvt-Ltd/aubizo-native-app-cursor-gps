@@ -6,7 +6,7 @@ export default StyleSheet.create({
     backgroundColor: DESIGN.colors.background,
   },
   listContainer: {
-    paddingHorizontal: DESIGN.spacing.lg,
+    padding: DESIGN.spacing.lg,
     paddingBottom: DESIGN.spacing.xl,
   },
   row: {

@@ -3,7 +3,6 @@ import {
   Text,
   View,
   StyleSheet,
-  ActivityIndicator,
   Alert,
   TouchableOpacity,
   Platform,
@@ -12,10 +11,11 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { navigation } from "../../../navigation/NavigationService";
 import useVisitManager from "./useVisitManager";
-import { useEffect } from "react";
 import DESIGN from "../../theme";
 import storage from "../../utility/storage";
 import apiClient from "../../api/client";
+import useDeviceRestrictions from "../../hooks/useDeviceRestrictions";
+import GenericSettingsModal from "../GenericSettingsModal";
 function EntityVisitList({
   type,
   loading,
@@ -30,19 +30,25 @@ function EntityVisitList({
 }) {
   const { startVisit, endVisit, activeStartId, visitStatusTrigger } =
     useVisitManager(type);
+  const { modalVisible, modalType, setModalVisible, checkRestrictions, openSettings } = useDeviceRestrictions();
 
-  // Log whenever active IDs change
-  useEffect(() => {
-    console.log("Active Id:", activeStartId);
-  }, [activeStartId]);
 
   const renderItem = ({ item, index }) => {
+
     const isActive = activeStartId === item.id;
     const displayName = item.farmer_name || item.owner_name || "Unnamed";
     console.log("DealerScreen punchId:", punch_id,);
     console.log("EntityVisitList startVisit params:", { itemId: item.id, location_id: item.location_id, punch_id, type });
 
     const handleStartVisit = async () => {
+
+
+      const restricted = await checkRestrictions();
+      if (restricted) {
+        setModalVisible(true);
+        return;
+      }
+
       const visitKeys = ["VISIT_ID_Farmer", "VISIT_ID_Dealer"];
       const payload = { remark: "-" };
 
@@ -57,7 +63,6 @@ function EntityVisitList({
             );
             console.log(`${key} visit ended successfully:`, response.data);
 
-            // Remove only this key if visit existed
             await storage.remove(key);
             await storage.remove(key.replace("VISIT", "START"));
           } catch (error) {
@@ -85,6 +90,13 @@ function EntityVisitList({
 
 
     const handleEndVisit = async () => {
+
+      const restricted = await checkRestrictions();
+      if (restricted) {
+        setModalVisible(true); // show modal if restrictions not fulfilled
+        return; // prevent ending visit
+      }
+
       try {
         await endVisit(item.id, () => {
           navigation.navigate(visitScreen, {
@@ -262,18 +274,18 @@ function EntityVisitList({
           {/* <Text style={modernStyles.addButtonText}>Add {type}</Text> */}
         </TouchableOpacity>
       </View>
-
-      {/* Global Loading Overlay */}
-      {/* {loading && (
-        <View style={modernStyles.loadingOverlay}>
-          <View style={modernStyles.loadingModal}>
-            <ActivityIndicator size="large" color={DESIGN.colors.primary} />
-            <Text style={modernStyles.loadingModalText}>
-              Getting location...
-            </Text>
-          </View>
-        </View>
-      )} */}
+      {/* Device restrictions modal */}
+      {modalVisible && modalType === "developer" && (
+        <GenericSettingsModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          title="Developer Mode Detected"
+          message="Your device is in Developer Mode. Disable it to continue."
+          primaryText="Open Settings"
+          onPrimaryPress={openSettings}
+          secondaryText="Will do it later"
+        />
+      )}
     </View>
   );
 }

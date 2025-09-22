@@ -219,7 +219,7 @@ const DealerUpdateScreen = () => {
         shop_name: values.shopeName.trim(),
         owner_name: values.ownerName.trim(),
         phone: values.mobile.trim(),
-        gst_number: values.gst_number|| "",
+        gst_number: values.gst_number || "",
         remark: values.remark.trim(),
         agreement_status: formState.agreement_status,
         billing_address: location.trim(),

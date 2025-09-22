@@ -188,7 +188,7 @@ function DealerForm({ location, stateDealerForm }) {
       return null;
     }
   }, []);
-  const handleSubmit = useCallback(async (values, { resetForm }) => {
+  const handleSubmit = useCallback(async (values) => {
 
     if (__DEV__) {
       console.log("🏪 [DealerForm] Starting handleSubmit...");
@@ -249,17 +249,12 @@ function DealerForm({ location, stateDealerForm }) {
   }, [isSubmitting,createdDealerId, formState, location, getCurrentLocation, createDealerMutation, sendOTPMutation]);
 
   // Cleanup on unmount
-  const cleanup = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-  }, []);
 
   // Memoized form data for FlatList
   const formData = useMemo(() => [{ key: "form" }], []);
 
   // Memoized render item for FlatList
-  const renderFormItem = useCallback(({ item }) => (
+  const renderFormItem = useCallback(() => (
     <View style={modernStyles.formWrapper}>
       <Formik
         initialValues={{
@@ -276,7 +271,7 @@ function DealerForm({ location, stateDealerForm }) {
         validateOnChange={true}
         validateOnBlur={true}
       >
-        {({ values, handleSubmit, setFieldValue, touched, errors, dirty }) => {
+        {({ values, handleSubmit, setFieldValue, dirty }) => {
           const canSubmit = dirty && !createDealerMutation.isPending && !sendOTPMutation.isPending;
 
           return (
