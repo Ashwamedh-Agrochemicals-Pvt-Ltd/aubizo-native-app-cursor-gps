@@ -8,6 +8,7 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  Pressable,
 } from "react-native";
 import apiClient from "../src/api/client";
 import authContext from "../src/auth/context";
@@ -42,6 +43,8 @@ function Dashboard() {
   const hasInpunchRef = useRef(false);
   const { logOut } = useAuth();
   const inpunchIdRef = useRef(null);
+  const [showLogoutText, setShowLogoutText] = useState(false);
+
 
   // Create stable function reference for onSwipe
   const onSwipeHandler = useCallback(() => {
@@ -316,223 +319,252 @@ function Dashboard() {
     return `${count} Total visits`;
   };
 
- return (
-  <View style={[styles.container, { paddingTop: insets.top }]}>
-    {/* Header */}
-    <View style={styles.header}>
-      <View style={styles.headerContent}>
-        <Text style={styles.headerTitle}>Aubizo</Text>
-      </View>
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <Pressable
+        style={{ flex: 1 }}
+        onPress={() => showLogoutText && setShowLogoutText(false)} // close on outside press
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>Aubizo</Text>
+          </View>
 
-      <Text style={styles.headerDate}>
-        {new Date().toLocaleDateString("en-US", {
-          weekday: "short",
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        })}
-      </Text>
-
-      {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Ionicons
-          name="log-out-outline"
-          size={DESIGN.iconSize.md}
-          color={DESIGN.colors.error}
-        />
-      </TouchableOpacity>
-    </View>
-
-    {/* Scrollable Content */}
-    <ScrollView
-      style={styles.scrollView}
-      contentContainerStyle={styles.scrollViewContent}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={[DESIGN.colors.primary]}
-          tintColor={DESIGN.colors.primary}
-        />
-      }
-    >
-      {/* Main Content */}
-      <View style={styles.mainContent}>
-        {/* Greeting */}
-        <View style={styles.greetingRow}>
-          <Text
-            style={styles.greetingText}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            Welcome, {dashboardData?.user_name || "User"}
+          <Text style={styles.headerDate}>
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })}
           </Text>
-        </View>
 
-        {/* Visit Overview */}
-        <View style={styles.section}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: DESIGN.spacing.xs }}>
+
+
+          {/* Logout Button */}
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => setShowLogoutText(prev => !prev)} // toggle
+          >
             <Ionicons
-              name="star"
+              name="log-out-outline"
               size={DESIGN.iconSize.md}
-              color={DESIGN.colors.primary}
+              color={DESIGN.colors.error}
             />
-            <Text
-              style={{
-                fontSize: DESIGN.typography.body.fontSize,
-                fontWeight: DESIGN.typography.subtitle.fontWeight,
-                color: DESIGN.colors.primary,
-              }}
-            >
-              Visit Overview
-            </Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.visitRow}>
-            <Text style={styles.visitItem}>
-              Farmers: {formatVisitLabel(farmerVisits)}
-            </Text>
-            <Text style={[styles.visitItem, { right: DESIGN.spacing.md }]}>
-              Dealers: {formatVisitLabel(dealerVisits)}
-            </Text>
-          </View>
 
-          <View style={styles.sectionBadge}>
-            <Text style={styles.sectionBadgeText}>
-              {formatTotalVisitLabel(totalVisits)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Action Cards */}
-        <View style={styles.actionsGrid}>
-          <TouchableHighlight
-            style={[styles.actionCard, !hasInpunch && styles.actionCardDisabled]}
-            onPress={() => {
-              if (!hasInpunch) {
-                Alert.alert("Access Restricted", `You must be punched in to access Farmer Enquiry.`);
-                return;
-              }
-              navigation.navigate("Farmer", { inpunch_id: inpunchId });
-            }}
-            underlayColor={DESIGN.colors.surfaceElevated}
-            activeOpacity={hasInpunch ? 0.7 : 1}
-          >
-            <View style={{ alignItems: "center" }}>
-              <Ionicons
-                name="leaf-outline"
-                size={DESIGN.iconSize.lg}
-                color={hasInpunch ? DESIGN.colors.primary : DESIGN.colors.textSecondary}
-                style={styles.actionIcon}
-              />
-              <Text
-                style={[
-                  styles.actionTitle,
-                  !hasInpunch && styles.actionTitleDisabled,
-                ]}
-              >
-                Farmer Enquiry
-              </Text>
-            </View>
-          </TouchableHighlight>
-
-          <TouchableHighlight
-            style={[styles.actionCard, !hasInpunch && styles.actionCardDisabled]}
-            onPress={() => {
-              if (!hasInpunch) {
-                Alert.alert("Access Restricted", `You must be punched in to access Dealer Enquiry.`);
-                return;
-              }
-              navigation.navigate("Dealer");
-            }}
-            underlayColor={DESIGN.colors.surfaceElevated}
-            activeOpacity={hasInpunch ? 0.7 : 1}
-          >
-            <View style={{ alignItems: "center" }}>
-              <Ionicons
-                name="storefront-outline"
-                size={DESIGN.iconSize.lg}
-                color={hasInpunch ? DESIGN.colors.secondary : DESIGN.colors.textSecondary}
-                style={styles.actionIcon}
-              />
-              <Text
-                style={[
-                  styles.actionTitle,
-                  !hasInpunch && styles.actionTitleDisabled,
-                ]}
-              >
-                Dealer Enquiry
-              </Text>
-            </View>
-          </TouchableHighlight>
-        </View>
-      </View>
-
-      {/* Activity Section */}
-      <View style={styles.activitySection}>
-        <View style={styles.activityHeader}>
-          <Text style={styles.activityTitle}>Today's Activity</Text>
-          {dashboardData?.punch_status?.punched_out && (
-            <Text style={styles.activitySubtitle}>
-              Working Hours: {dashboardData.working_hours.toFixed(2)} hrs
-            </Text>
+          {showLogoutText && (
+            <TouchableOpacity style={styles.logoutTextView} onPress={handleLogout}>
+              <Text style={styles.logoutText}>Logout</Text>
+            </TouchableOpacity>
           )}
+
+
         </View>
 
-        {/* Punch In */}
-        {dashboardData?.punch_status?.punched_in && (
-          <View style={styles.punchSection}>
-            <View style={styles.punchSectionRow}>
-              <View style={styles.punchIconWrapper(DESIGN.colors.success)}>
-                <Ionicons name="arrow-up" size={DESIGN.iconSize.md} color={DESIGN.colors.success} />
-              </View>
-              <Text style={styles.punchLabel}> Punch In </Text>
+        {/* Scrollable Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollViewContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[DESIGN.colors.primary]}
+              tintColor={DESIGN.colors.primary}
+            />
+          }
+        >
+          {/* Main Content */}
+          <View style={styles.mainContent}>
+            {/* Greeting */}
+            <View style={styles.greetingRow}>
+              <Text
+                style={styles.greetingText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                Welcome, {dashboardData?.user_name || "User"}
+              </Text>
             </View>
-            <Text style={styles.punchTime}>{dashboardData?.punch_status?.punch_in_time || "--:--"}</Text>
-          </View>
-        )}
 
-        {/* Punch Out */}
-        {dashboardData?.punch_status?.punched_out && (
-          <View style={styles.punchSection}>
-            <View style={styles.punchSectionRow}>
-              <View style={styles.punchIconWrapper(DESIGN.colors.error)}>
-                <Ionicons name="arrow-down" size={DESIGN.iconSize.md} color={DESIGN.colors.error} />
+            {/* Visit Overview */}
+            <View style={styles.section}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: DESIGN.spacing.xs }}>
+                <Ionicons
+                  name="star"
+                  size={DESIGN.iconSize.md}
+                  color={DESIGN.colors.primary}
+                />
+                <Text
+                  style={{
+                    fontSize: DESIGN.typography.body.fontSize,
+                    fontWeight: DESIGN.typography.subtitle.fontWeight,
+                    color: DESIGN.colors.primary,
+                  }}
+                >
+                  Visit Overview
+                </Text>
               </View>
-              <Text style={styles.punchLabel}> Punch Out </Text>
+
+              <View style={styles.visitRow}>
+                <Text style={styles.visitItem}>
+                  Farmers: {formatVisitLabel(farmerVisits)}
+                </Text>
+                <Text style={[styles.visitItem, { right: DESIGN.spacing.md }]}>
+                  Dealers: {formatVisitLabel(dealerVisits)}
+                </Text>
+              </View>
+
+              <View style={styles.sectionBadge}>
+                <Text style={styles.sectionBadgeText}>
+                  {formatTotalVisitLabel(totalVisits)}
+                </Text>
+              </View>
             </View>
-            <Text style={styles.punchTime}>{dashboardData?.punch_status?.punch_out_time || "--:--"}</Text>
+
+            {/* Action Cards */}
+            <View style={styles.actionsGrid}>
+              <TouchableHighlight
+                style={[styles.actionCard, !hasInpunch && styles.actionCardDisabled]}
+                onPress={() => {
+                  if (!hasInpunch) {
+                    Alert.alert("Access Restricted", `You must be punched in to access Farmer Enquiry.`);
+                    return;
+                  }
+                  navigation.navigate("Farmer", { inpunch_id: inpunchId });
+                }}
+                underlayColor={DESIGN.colors.surfaceElevated}
+                activeOpacity={hasInpunch ? 0.7 : 1}
+              >
+                <View style={{ alignItems: "center" }}>
+                  <Ionicons
+                    name="leaf-outline"
+                    size={DESIGN.iconSize.lg}
+                    color={hasInpunch ? DESIGN.colors.primary : DESIGN.colors.textSecondary}
+                    style={styles.actionIcon}
+                  />
+                  <Text
+                    style={[
+                      styles.actionTitle,
+                      !hasInpunch && styles.actionTitleDisabled,
+                    ]}
+                  >
+                    Farmer Enquiry
+                  </Text>
+                </View>
+              </TouchableHighlight>
+
+              <TouchableHighlight
+                style={[styles.actionCard, !hasInpunch && styles.actionCardDisabled]}
+                onPress={() => {
+                  if (!hasInpunch) {
+                    Alert.alert("Access Restricted", `You must be punched in to access Dealer Enquiry.`);
+                    return;
+                  }
+                  navigation.navigate("Dealer");
+                }}
+                underlayColor={DESIGN.colors.surfaceElevated}
+                activeOpacity={hasInpunch ? 0.7 : 1}
+              >
+                <View style={{ alignItems: "center" }}>
+                  <Ionicons
+                    name="storefront-outline"
+                    size={DESIGN.iconSize.lg}
+                    color={hasInpunch ? DESIGN.colors.secondary : DESIGN.colors.textSecondary}
+                    style={styles.actionIcon}
+                  />
+                  <Text
+                    style={[
+                      styles.actionTitle,
+                      !hasInpunch && styles.actionTitleDisabled,
+                    ]}
+                  >
+                    Dealer Enquiry
+                  </Text>
+                </View>
+              </TouchableHighlight>
+            </View>
           </View>
+
+          {/* Activity Section */}
+          <View style={styles.activitySection}>
+            <View style={styles.activityHeader}>
+              <Text style={styles.activityTitle}>Today's Activity</Text>
+              {dashboardData?.punch_status?.punched_out && (
+                <Text style={styles.activitySubtitle}>
+                  Working Hours: {
+                    (() => {
+                      const totalHours = dashboardData.working_hours;
+                      const hrs = Math.floor(totalHours);
+                      const mins = Math.round((totalHours - hrs) * 60);
+
+                      if (hrs === 0) return `${mins} min`;
+                      return `${hrs} hr ${mins} min`;
+                    })()
+                  }
+                </Text>
+              )}
+
+            </View>
+
+            {/* Punch In */}
+            {dashboardData?.punch_status?.punched_in && (
+              <View style={styles.punchSection}>
+                <View style={styles.punchSectionRow}>
+                  <View style={styles.punchIconWrapper(DESIGN.colors.success)}>
+                    <Ionicons name="arrow-up" size={DESIGN.iconSize.md} color={DESIGN.colors.success} />
+                  </View>
+                  <Text style={styles.punchLabel}> Punch In </Text>
+                </View>
+                <Text style={styles.punchTime}>{dashboardData?.punch_status?.punch_in_time || "--:--"}</Text>
+              </View>
+            )}
+
+            {/* Punch Out */}
+            {dashboardData?.punch_status?.punched_out && (
+              <View style={styles.punchSection}>
+                <View style={styles.punchSectionRow}>
+                  <View style={styles.punchIconWrapper(DESIGN.colors.error)}>
+                    <Ionicons name="arrow-down" size={DESIGN.iconSize.md} color={DESIGN.colors.error} />
+                  </View>
+                  <Text style={styles.punchLabel}> Punch Out </Text>
+                </View>
+                <Text style={styles.punchTime}>{dashboardData?.punch_status?.punch_out_time || "--:--"}</Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+
+        {/* Punch Button */}
+        <SwipePunchButton
+          ref={swipeRef}
+          hasInpunch={hasInpunch}
+          loading={isPunchInLoading || isPunchOutLoading}
+          onSwipe={onSwipeHandler}
+        />
+
+        {/* Modal */}
+        {modalVisible && (
+          <GenericSettingsModal
+            visible={modalVisible}
+            onClose={() => setModalVisible(false)}
+            title={modalType === "developer" ? "Developer Mode Detected" : "Location Disabled"}
+            message={
+              modalType === "developer"
+                ? "Your device is in Developer Mode. Disable it to continue."
+                : "Location is turned off. Enable location services to continue."
+            }
+            primaryText="Open Settings"
+            onPrimaryPress={openSettings}
+            secondaryText="Will do it later"
+          />
         )}
-      </View>
-    </ScrollView>
-
-    {/* Punch Button */}
-    <SwipePunchButton
-      ref={swipeRef}
-      hasInpunch={hasInpunch}
-      loading={isPunchInLoading || isPunchOutLoading}
-      onSwipe={onSwipeHandler}
-    />
-
-    {/* Modal */}
-    {modalVisible && (
-      <GenericSettingsModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        title={modalType === "developer" ? "Developer Mode Detected" : "Location Disabled"}
-        message={
-          modalType === "developer"
-            ? "Your device is in Developer Mode. Disable it to continue."
-            : "Location is turned off. Enable location services to continue."
-        }
-        primaryText="Open Settings"
-        onPrimaryPress={openSettings}
-        secondaryText="Will do it later"
-      />
-    )}
-  </View>
-);
+      </Pressable>
+    </View>
+  );
 
 }
 

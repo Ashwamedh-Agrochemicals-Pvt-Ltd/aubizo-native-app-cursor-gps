@@ -6,9 +6,9 @@ const IS_DEV = APP_VARIANT === "development";
 const IS_PREVIEW = APP_VARIANT === "preview";
 
 const getUniqueIdentifier = () => {
-  if (IS_DEV) return "com.ravindrakhadangale.aubizo.dev";
-  if (IS_PREVIEW) return "com.ravindrakhadangale.aubizo.preview";
-  return "com.ravindrakhadangale.aubizo";
+  if (IS_DEV) return "com.ashwamedhgroup.AUBIZO.dev";
+  if (IS_PREVIEW) return "com.ashwamedhgroup.AUBIZO.preview";
+  return "com.ashwamedhgroup.AUBIZO";
 };
 
 const getAppName = () => {
@@ -32,6 +32,9 @@ export default {
       backgroundColor: "#ffffff",
     },
     ios: {
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
       supportsTablet: true,
       runtimeVersion: {
         policy: "appVersion",

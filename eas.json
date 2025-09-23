@@ -12,6 +12,12 @@
         "APP_VARIANT": "development"
       }
     },
+    "ios-simulator": {
+      "extends": "development",
+      "ios": {
+        "simulator": true
+      }
+    },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
@@ -22,12 +28,15 @@
     "production": {
       "autoIncrement": true,
       "channel": "production",
-      "env": {
-        "APP_VARIANT": "production"
-      }
+      "environment": "production"
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./ServiceAccountAubizo.json",
+        "track": "internal"
+      }
+    }
   }
 }

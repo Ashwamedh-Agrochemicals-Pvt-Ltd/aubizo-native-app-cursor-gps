@@ -43,6 +43,26 @@ export const styles = {
     position: "absolute",
   },
 
+  logoutTextView: {
+    position: "absolute",
+    bottom: DESIGN.spacing.xl, // place above the button
+    right: 70,
+    backgroundColor: DESIGN.colors.surface,
+    paddingVertical: DESIGN.spacing.xs,
+    paddingHorizontal: DESIGN.spacing.md,
+    borderRadius: DESIGN.borderRadius.sm,
+    elevation: 3, // shadow on Android
+    shadowColor: "#000", // shadow for iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  logoutText: {
+    color: DESIGN.colors.error,
+    fontWeight: "600",
+    fontSize: DESIGN.spacing.md,
+  },
+
   // ScrollView
   scrollView: {
     flex: 1,

@@ -5,4 +5,5 @@ export default {
   lg: 24,
   xl: 32,
   xxl: 48,
+  xxxl:96,
 };
