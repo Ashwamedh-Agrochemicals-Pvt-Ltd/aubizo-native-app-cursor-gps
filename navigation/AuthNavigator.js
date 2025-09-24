@@ -1,8 +1,9 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { lazyLoadScreen } from '../src/utility/performance';
+import LoginScreen from '../screens/Login';
 
 // Lazy load screens for better performance
-const LoginScreen = lazyLoadScreen(() => import('../screens/Login'));
+// const LoginScreen = lazyLoadScreen(() => import('../screens/Login'));
 // Import TabNavigation normally since it's a named export
 
 

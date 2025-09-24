@@ -14,10 +14,11 @@ const getUniqueIdentifier = () => {
 const getAppName = () => {
   if (IS_DEV) return "Aubizo (Dev)";
   if (IS_PREVIEW) return "Aubizo (Preview)";
-  return "Aubizo";
+  return "AUBIZO";
 };
 
-export default {
+export default ({config })=>({
+  ...config,
   expo: {
     name: getAppName(),
     slug: "AUBIZO",
@@ -32,9 +33,18 @@ export default {
       backgroundColor: "#ffffff",
     },
     ios: {
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        ...config.ios,
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+        UIViewControllerBasedStatusBarAppearance: "YES"
       },
+      NSLocationWhenInUseUsageDescription:
+        "We need your location to track visits.",
+      NSLocationAlwaysAndWhenInUseUsageDescription:
+        "We need your location in the background to auto-exit visits.",
+      NSLocationAlwaysUsageDescription:
+
+        "We use your location to keep visits active even if the app is closed.",
       supportsTablet: true,
       runtimeVersion: {
         policy: "appVersion",
@@ -78,11 +88,13 @@ export default {
       [
         "expo-location",
         {
+          locationAlwaysAndWhenInUsePermission:
+            "Allow Aubizo to use your location.",
           isAndroidBackgroundLocationEnabled: true,
           locationAlwaysAndWhenInUsePermission:
-            "Allow AUBIZO to use your location even when the app is in the background.",
+            "Allow Aubizo to use your location even when the app is in the background.",
           locationWhenInUsePermission:
-            "Allow AUBIZO to access your location while you are using the app.",
+            "Allow Aubizo to access your location while you are using the app.",
         },
       ],
     ],
@@ -97,4 +109,4 @@ export default {
       url: "https://u.expo.dev/a75af2e9-f700-4b79-b729-8498f0340e19",
     },
   },
-};
+});

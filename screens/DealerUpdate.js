@@ -74,13 +74,13 @@ const DealerUpdateScreen = () => {
       try {
         setLoading(true);
 
-        // Create abort controller for this request
-        abortControllerRef.current = new AbortController();
+        if (!abortControllerRef.current) {
+          abortControllerRef.current = new AbortController();
+        }
 
-        const response = await apiClient.get(`dealer/${dealerId}`, {
-          signal: abortControllerRef.current.signal,
-          timeout: 10000 // 10 second timeout
-        });
+        console.log("dealer ID", dealerId);
+
+        const response = await apiClient.get(`dealer/${dealerId}/`);
         const data = response.data;
         setDealer(data);
         setLocation(data.billing_address);
@@ -89,10 +89,12 @@ const DealerUpdateScreen = () => {
           longitude: parseFloat(data.location_longitude),
         });
 
-        const stateRes = await apiClient.get(`${STATE_URL}`, {
+        const axiosConfig = {
           signal: abortControllerRef.current.signal,
-          timeout: 10000
-        });
+          timeout: 10000,
+        };
+
+        const stateRes = await apiClient.get(`${STATE_URL}`, axiosConfig);
         const sortedStates = stateRes.data.sort((a, b) =>
           a.name.localeCompare(b.name)
         );
@@ -101,18 +103,13 @@ const DealerUpdateScreen = () => {
           value: item.id,
         }));
         setStateItems(stateList);
-        selectedState.current = stateList.find(
-          (s) => s.label === data.state.name
-        );
+        selectedState.current = stateList.find((s) => s.label === data.state.name);
 
         let selectedDistrictLocal;
         if (selectedState.current) {
           const districtRes = await apiClient.get(
             `${DISTRICT_URL}?state_id=${selectedState.current.value}`,
-            {
-              signal: abortControllerRef.current.signal,
-              timeout: 10000
-            }
+            axiosConfig
           );
           const sortedDistricts = districtRes.data.sort((a, b) =>
             a.name.localeCompare(b.name)
@@ -122,18 +119,13 @@ const DealerUpdateScreen = () => {
             value: item.id,
           }));
           setDistrictItems(districtList);
-          selectedDistrictLocal = districtList.find(
-            (d) => d.label === data.district.name
-          );
+          selectedDistrictLocal = districtList.find((d) => d.label === data.district.name);
           selectedDistrict.current = selectedDistrictLocal;
 
           if (selectedDistrictLocal) {
             const talukaRes = await apiClient.get(
               `${TALUKA_URL}?district_id=${selectedDistrictLocal.value}`,
-              {
-                signal: abortControllerRef.current.signal,
-                timeout: 10000
-              }
+              axiosConfig
             );
             const sortedTalukas = talukaRes.data.sort((a, b) =>
               a.name.localeCompare(b.name)
@@ -156,7 +148,7 @@ const DealerUpdateScreen = () => {
           agreement_status: data.agreement_status || "active",
         });
       } catch (error) {
-        if (error.name === 'AbortError') {
+        if (error.name === "AbortError") {
           // Request was cancelled, do nothing
           return;
         }
@@ -176,14 +168,20 @@ const DealerUpdateScreen = () => {
           return;
         }
 
-        if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-          Alert.alert("Connection Timeout", "Can't reach server. Please check your connection and try again.");
+        if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+          Alert.alert(
+            "Connection Timeout",
+            "Can't reach server. Please check your connection and try again."
+          );
           navigation.goBack();
           return;
         }
 
         if (!error.response) {
-          Alert.alert("Network Error", "Can't reach server. Please check your internet connection.");
+          Alert.alert(
+            "Network Error",
+            "Can't reach server. Please check your internet connection."
+          );
           navigation.goBack();
           return;
         }
@@ -198,13 +196,13 @@ const DealerUpdateScreen = () => {
 
     fetchDealer();
 
-    // Cleanup function to abort any pending requests
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
   }, [dealerId, navigation]);
+
 
   const handleSubmit = useCallback(async (values) => {
     if (updating) return;
