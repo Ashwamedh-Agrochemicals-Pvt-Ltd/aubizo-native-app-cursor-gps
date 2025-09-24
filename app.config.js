@@ -46,9 +46,7 @@ export default ({config })=>({
 
         "We use your location to keep visits active even if the app is closed.",
       supportsTablet: true,
-      runtimeVersion: {
-        policy: "appVersion",
-      },
+      runtimeVersion: "1.0.0",
       bundleIdentifier: getUniqueIdentifier(),
     },
     android: {
