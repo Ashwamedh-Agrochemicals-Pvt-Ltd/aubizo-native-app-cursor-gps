@@ -35,7 +35,7 @@
     "production": {
       "android": {
         "serviceAccountKeyPath": "./ServiceAccountAubizo.json",
-        "track": "internal"
+        "track": "production"
       }
     }
   }
