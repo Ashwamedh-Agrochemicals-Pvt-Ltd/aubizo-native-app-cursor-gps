@@ -14,10 +14,10 @@ const getUniqueIdentifier = () => {
 const getAppName = () => {
   if (IS_DEV) return "Aubizo (Dev)";
   if (IS_PREVIEW) return "Aubizo (Preview)";
-  return "AUBIZO";
+  return "Aubizo";
 };
 
-export default ({config })=>({
+export default ({ config }) => ({
   ...config,
   expo: {
     name: getAppName(),
@@ -33,7 +33,12 @@ export default ({config })=>({
       backgroundColor: "#ffffff",
     },
     ios: {
-        ...config.ios,
+      ...config.ios,
+      "icon": {
+        "dark": "./assets/images/ios-dark.png",
+        "light": "./assets/images/ios-light.png",
+        "tinted": "./assets/images/ios-tinted.png"
+      },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         UIViewControllerBasedStatusBarAppearance: "YES"
@@ -48,6 +53,7 @@ export default ({config })=>({
       supportsTablet: true,
       runtimeVersion: "1.0.0",
       bundleIdentifier: getUniqueIdentifier(),
+
     },
     android: {
       adaptiveIcon: {
