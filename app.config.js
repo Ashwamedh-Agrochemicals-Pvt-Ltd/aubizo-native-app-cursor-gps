@@ -32,6 +32,7 @@ export default ({config })=>({
       resizeMode: "contain",
       backgroundColor: "#ffffff",
     },
+    
     ios: {
         ...config.ios,
       infoPlist: {
