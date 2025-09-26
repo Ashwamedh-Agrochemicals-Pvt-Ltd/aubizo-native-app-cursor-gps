@@ -9,6 +9,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   Pressable,
+  ActivityIndicator
 } from "react-native";
 import apiClient from "../src/api/client";
 import authContext from "../src/auth/context";
@@ -29,7 +30,6 @@ import useAuth from "../src/auth/useAuth";
 const INPUNCH_URL = process.env.EXPO_PUBLIC_INPUNCH_URL;
 const OUTPUNCH_URL = process.env.EXPO_PUBLIC_OUTPUNCH_URL;
 
-
 function Dashboard() {
   const [hasInpunch, setHasInpunch] = useState(false);
   const [inpunchId, setInpunchId] = useState(null);
@@ -44,6 +44,7 @@ function Dashboard() {
   const { logOut } = useAuth();
   const inpunchIdRef = useRef(null);
   const [showLogoutText, setShowLogoutText] = useState(false);
+  const [loading, setLoading] = useState(false);
 
 
   // Create stable function reference for onSwipe
@@ -67,7 +68,9 @@ function Dashboard() {
   } = useDeviceRestrictions();
 
   const checkPunchStatus = useCallback(async () => {
+    setLoading(true);
     try {
+
       const response = await apiClient.get("track/dashboard/today/");
       setDashboardData(response.data);
       const { punched_in, punched_out, punch_id } = response.data.punch_status;
@@ -103,6 +106,8 @@ function Dashboard() {
       }
     } catch (error) {
       logger.error("Error checking punch status:", error);
+    } finally {
+      setLoading(false); // hide loader
     }
   }, [setUser, hasInpunch]);
 
@@ -314,13 +319,20 @@ function Dashboard() {
   };
 
   const formatTotalVisitLabel = (count) => {
-    if (count === 0) return "0 visit";
+    if (count === 0) return "0 Total visit";
     if (count === 1) return "1 Total visit";
     return `${count} Total visits`;
   };
 
+
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {loading && (
+        <View style={styles.loaderOverlay}>
+          <ActivityIndicator size="large" color={DESIGN.colors.primary} />
+        </View>
+      )}
       <Pressable
         style={{ flex: 1 }}
         onPress={() => showLogoutText && setShowLogoutText(false)} // close on outside press

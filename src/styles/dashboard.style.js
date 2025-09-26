@@ -1,6 +1,6 @@
 import DESIGN from "../theme";
-
-export const styles = {
+import { StyleSheet } from "react-native";
+export const styles = StyleSheet.create({
   // Container
   container: {
     flex: 1,
@@ -241,5 +241,14 @@ export const styles = {
     fontSize: DESIGN.typography.bodyLarge.fontSize,
     fontWeight: "400",
     color: DESIGN.colors.textPrimary,
+
   },
-};
+  loaderOverlay: {
+    ...StyleSheet.absoluteFillObject, // fills the entire screen
+    backgroundColor: "rgba(0, 0, 0, 0.2)", // semi-transparent
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999, // ensures it appears above all content
+  },
+
+});

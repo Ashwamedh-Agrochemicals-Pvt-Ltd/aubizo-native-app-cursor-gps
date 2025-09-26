@@ -2,29 +2,6 @@ import { StyleSheet, Platform } from "react-native";
 import Constants from "expo-constants";
 import DESIGN from "../theme";
 
-
-// export const tabNavigatorOptions = {
-//   headerShown: false,
-//   tabBarActiveTintColor: "#00796B",
-//   tabBarInactiveTintColor: "#B0BEC5",
-//   tabBarStyle: { 
-//     backgroundColor: "#FFFFFF",
-//     borderTopLeftRadius: 16,
-//     borderTopRightRadius: 16,
-//     // Remove hardcoded padding - will be handled by AppNavigation.js
-//     // Remove hardcoded height - will be calculated dynamically
-//     shadowColor: "#000",
-//     shadowOffset: { width: 0, height: -3 },
-//     shadowOpacity: 0.08,
-//     shadowRadius: 8,
-//     elevation: 10,
-//   },
-//   tabBarLabelStyle: {
-//     fontSize: 12,
-//     fontWeight: "600",
-//   },
-  
-// };
 export default StyleSheet.create({
   container: {
     backgroundColor: DESIGN.colors.primary,
