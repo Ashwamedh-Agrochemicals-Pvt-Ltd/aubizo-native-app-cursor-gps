@@ -367,8 +367,10 @@ function FarmerUpdateScreen() {
                 values,
                 errors,
                 touched,
-                isSubmitting,
+                dirty
+                
               }) => {
+                  const canSubmit = dirty && !updating;
                 return (
                   <View style={modernStyles.formContent}>
                     {/* Personal Information Section */}
@@ -780,26 +782,21 @@ function FarmerUpdateScreen() {
                       <TouchableOpacity
                         style={[
                           modernStyles.submitButton,
-                          updating && modernStyles.submitButtonDisabled
+                          !canSubmit && modernStyles.submitButtonDisabled
                         ]}
                         onPress={handleSubmit}
-                        disabled={updating}
+                        disabled={!canSubmit}
                         activeOpacity={0.8}
                         accessibilityRole="button"
                         accessibilityLabel="Update farmer details"
                         accessibilityHint="Submits the farmer update form"
-                        accessibilityState={{ disabled: updating }}
+                        accessibilityState={{ disabled: !canSubmit }}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
                         {updating ? (
                           <ActivityIndicator size="small" color={DESIGN.colors.surface} />
                         ) : (
                           <>
-                            <MaterialCommunityIcons
-                              name="check"
-                              size={24}
-                              color={DESIGN.colors.surface}
-                            />
                             <Text style={modernStyles.submitButtonText}>
                               Update Farmer
                             </Text>

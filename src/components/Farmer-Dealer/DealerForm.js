@@ -197,11 +197,11 @@ function DealerForm({ location, stateDealerForm }) {
     if (isSubmitting || createDealerMutation.isPending && sendOTPMutation.isPending) {
       return;
     }
-      setIsSubmitting(true);
+    setIsSubmitting(true);
     // --- Case 1: Dealer already exists → Only resend OTP ---
     if (createdDealerId) {
       sendOTPMutation.mutate({ dealerId: createdDealerId, phone: values.phone },
-        { onSettled: () => setIsSubmitting(false) } 
+        { onSettled: () => setIsSubmitting(false) }
       );
       return;
     }
@@ -239,14 +239,14 @@ function DealerForm({ location, stateDealerForm }) {
     setPhoneForOTP(payload.phone);
     createDealerMutation.mutate(payload,
       {
-      onSettled: () => setIsSubmitting(false)
-    });
+        onSettled: () => setIsSubmitting(false)
+      });
 
     const totalTime = Date.now() - startTime;
     if (__DEV__) {
       console.log(`🏪 [DealerForm] handleSubmit total time: ${totalTime}ms`);
     }
-  }, [isSubmitting,createdDealerId, formState, location, getCurrentLocation, createDealerMutation, sendOTPMutation]);
+  }, [isSubmitting, createdDealerId, formState, location, getCurrentLocation, createDealerMutation, sendOTPMutation]);
 
   // Cleanup on unmount
 
@@ -293,6 +293,7 @@ function DealerForm({ location, stateDealerForm }) {
                   <InputFormField
                     name="shop_name"
                     placeholder="Shop Name *"
+                    placeholderTextColor="#6e6e6e"
                     accessibilityLabel="Shop name input"
                     accessibilityHint="Enter the shop name"
                   />
@@ -302,6 +303,7 @@ function DealerForm({ location, stateDealerForm }) {
                   <InputFormField
                     name="owner_name"
                     placeholder="Owner Name *"
+                    placeholderTextColor="#6e6e6e"
                     accessibilityLabel="Owner name input"
                     accessibilityHint="Enter the owner's name"
                   />
@@ -311,6 +313,7 @@ function DealerForm({ location, stateDealerForm }) {
                   <InputFormField
                     name="phone"
                     placeholder="Phone *"
+                    placeholderTextColor="#6e6e6e"
                     keyboardType="phone-pad"
                     maxLength={10}
                     accessibilityLabel="Phone number input"
@@ -322,6 +325,7 @@ function DealerForm({ location, stateDealerForm }) {
                   <InputFormField
                     name="gst_number"
                     placeholder="GST Number"
+                    placeholderTextColor="#6e6e6e"
                     accessibilityLabel="GST number input"
                     accessibilityHint="Enter GST number (optional)"
                   />
@@ -505,6 +509,7 @@ function DealerForm({ location, stateDealerForm }) {
                   <InputFormField
                     name="remark"
                     placeholder="Remark *"
+                    placeholderTextColor="#6e6e6e"
                     multiline
                     numberOfLines={3}
                     accessibilityLabel="Remark input"

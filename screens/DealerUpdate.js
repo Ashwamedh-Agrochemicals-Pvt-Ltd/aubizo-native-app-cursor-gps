@@ -604,11 +604,7 @@ const DealerUpdateScreen = () => {
                     <ActivityIndicator size="small" color={DESIGN.colors.surface} />
                   ) : (
                     <>
-                      <MaterialCommunityIcons
-                        name="check"
-                        size={24}
-                        color={DESIGN.colors.surface}
-                      />
+                      
                       <Text style={modernStyles.submitButtonText}>
                         Update Dealer
                       </Text>

@@ -2,6 +2,7 @@ import * as secureStore from "expo-secure-store";
 import logger from "../utility/logger";
 
 const key = "authToken";
+const USERNAME_KEY = "username";
 
 const storeToken = async (authToken) => {
     try {
@@ -46,9 +47,28 @@ const removeToken = async () => {
     }
 };
 
+const saveUsername = async (username) => {
+    try {
+        await secureStore.setItemAsync(USERNAME_KEY, username);
+    } catch (error) {
+        console.error("Error saving username:", error);
+    }
+};
+
+const getUsername = async () => {
+    try {
+        return await secureStore.getItemAsync(USERNAME_KEY);
+    } catch (error) {
+        console.error("Error getting username:", error);
+        return null;
+    }
+};
+
 export default {
     storeToken,
     getToken,
     getUser,
     removeToken,
+    saveUsername,
+    getUsername,
 };

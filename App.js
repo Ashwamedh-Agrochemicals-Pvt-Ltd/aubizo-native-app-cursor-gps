@@ -119,6 +119,7 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
+          
         await loadToken();
         await location.getStrictLocation();
         // Wait until restrictions are OK before proceeding

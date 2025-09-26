@@ -41,7 +41,7 @@ export default function FarmerForm({
     loadProducts,
     loadCrops,
   } = useMasterData();
-  
+
   const [loading, setLoading] = useState(false);
   const [cropOptions, setCropOptions] = useState([]);
   const [selectedCrops, setSelectedCrops] = useState([]);
@@ -69,7 +69,7 @@ export default function FarmerForm({
   // Load crops on component mount
   useEffect(() => {
     loadCrops(setCropOptions);
-    
+
     // Cleanup function to abort any pending requests
     return () => {
       if (abortControllerRef.current) {
@@ -82,39 +82,39 @@ export default function FarmerForm({
   const isFormValid = (values, touched, errors) => {
     // Check if all required form fields are filled and valid
     const requiredFields = ['name', 'mobile', 'city', 'acre', 'Current_Product'];
-    const formFieldsValid = requiredFields.every(field => 
+    const formFieldsValid = requiredFields.every(field =>
       values[field] && values[field].trim() && !errors[field]
     );
-    
+
     // Check if location dropdowns are selected
     const locationValid = formState.state && formState.district && formState.taluka;
-    
+
     // Check if irrigation and recommended product are selected
     const dropdownsValid = formState.irrigation && formState.recommendedProduct;
-    
+
     // Check if crops are selected with acre values
-    const cropsValid = selectedCrops.length > 0 && 
+    const cropsValid = selectedCrops.length > 0 &&
       selectedCrops.every(crop => crop.acre && crop.acre.trim() !== "");
-    
+
     return formFieldsValid && locationValid && dropdownsValid && cropsValid;
   };
 
   const handleSubmit = async (values, { resetForm, setSubmitting }) => {
     const startTime = Date.now();
-    
+
     if (__DEV__) {
       console.log("🌾 [FarmerForm] Starting handleSubmit...");
     }
-    
+
     // Prevent double submission
     if (loading) return;
-    
+
     setLoading(true);
     setSubmitting(true);
-    
+
     // Create abort controller for this request
     abortControllerRef.current = new AbortController();
-    
+
     try {
       // Get location - use passed location or fetch current
       let latitude, longitude;
@@ -128,11 +128,11 @@ export default function FarmerForm({
           const locationStart = Date.now();
           const locationDetails = await Location.getCurrentLocationDetails();
           const locationTime = Date.now() - locationStart;
-          
+
           if (__DEV__) {
             console.log(`🌾 [FarmerForm] Location acquisition in handleSubmit took: ${locationTime}ms`);
           }
-          
+
           latitude = locationDetails.latitude;
           longitude = locationDetails.longitude;
         }
@@ -140,11 +140,11 @@ export default function FarmerForm({
         const locationStart = Date.now();
         const locationDetails = await Location.getCurrentLocationDetails();
         const locationTime = Date.now() - locationStart;
-        
+
         if (__DEV__) {
           console.log(`🌾 [FarmerForm] Location acquisition in handleSubmit took: ${locationTime}ms`);
         }
-        
+
         latitude = locationDetails.latitude;
         longitude = locationDetails.longitude;
       }
@@ -179,7 +179,7 @@ export default function FarmerForm({
 
       // Success - reset form and close
       Alert.alert(
-        "Success", 
+        "Success",
         "Farmer created successfully",
         [
           {
@@ -207,46 +207,46 @@ export default function FarmerForm({
         // Request was cancelled, do nothing
         return;
       }
-      
+
       if (error.response) {
         const { status, data } = error.response;
-        
+
         if (status === 401) {
           Alert.alert("Session Expired", "Please log in again.");
           return;
         }
-        
+
         if (status >= 400 && status < 500) {
           // Validation error
           const errorMessage = data?.message || data?.error || "Please fix the highlighted fields.";
           Alert.alert("Validation Error", errorMessage);
           return;
         }
-        
+
         if (status >= 500) {
           Alert.alert("Server Error", "Something went wrong. Please try again later.");
           return;
         }
       }
-      
+
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         Alert.alert("Connection Timeout", "Can't reach server. Please check your connection and try again.");
         return;
       }
-      
+
       if (!error.response) {
         Alert.alert("Network Error", "Can't reach server. Please check your internet connection.");
         return;
       }
-      
+
       // Generic error
       Alert.alert("Error", "Something went wrong. Please try again.");
-      
+
     } finally {
       setLoading(false);
       setSubmitting(false);
       abortControllerRef.current = null;
-      
+
       const totalTime = Date.now() - startTime;
       if (__DEV__) {
         console.log(`🌾 [FarmerForm] handleSubmit total time: ${totalTime}ms`);
@@ -282,7 +282,7 @@ export default function FarmerForm({
             >
               {({ handleSubmit, values, touched, errors, isSubmitting, dirty }) => {
                 const canSubmit = isFormValid(values, touched, errors) && dirty && !isSubmitting && !loading;
-                
+
                 return (
                   <View style={modernStyles.formContent}>
                     {/* Personal Information Section */}
@@ -299,9 +299,10 @@ export default function FarmerForm({
                       </View>
 
                       <View style={modernStyles.inputContainer}>
-                        <InputFormField 
-                          name="name" 
-                          placeholder="Name *" 
+                        <InputFormField
+                          name="name"
+                          placeholder="Name *"
+                          placeholderTextColor="#6e6e6e"
                           accessibilityLabel="Farmer name input"
                           accessibilityHint="Enter the farmer's full name"
                         />
@@ -312,6 +313,7 @@ export default function FarmerForm({
                           name="location"
                           externalValue={location}
                           placeholder="Fetching current location..."
+                          placeholderTextColor="#6e6e6e"
                           editable={false}
                           multiline
                           style={modernStyles.locationInput}
@@ -321,9 +323,10 @@ export default function FarmerForm({
                       </View>
 
                       <View style={modernStyles.inputContainer}>
-                        <InputFormField 
-                          name="mobile" 
-                          placeholder="Mobile *" 
+                        <InputFormField
+                          name="mobile"
+                          placeholder="Mobile *"
+                          placeholderTextColor="#6e6e6e"
                           keyboardType="phone-pad"
                           maxLength={10}
                           accessibilityLabel="Mobile number input"
@@ -332,9 +335,10 @@ export default function FarmerForm({
                       </View>
 
                       <View style={modernStyles.inputContainer}>
-                        <InputFormField 
-                          name="city" 
-                          placeholder="City *" 
+                        <InputFormField
+                          name="city"
+                          placeholderTextColor="#6e6e6e"
+                          placeholder="City *"
                           accessibilityLabel="City input"
                           accessibilityHint="Enter the city name"
                         />
@@ -495,6 +499,7 @@ export default function FarmerForm({
                         <InputFormField
                           name="acre"
                           placeholder="Total Acre *"
+                          placeholderTextColor="#6e6e6e"
                           keyboardType="numeric"
                           maxLength={6}
                           accessibilityLabel="Total acre input"
@@ -588,9 +593,10 @@ export default function FarmerForm({
                       </View>
 
                       <View style={modernStyles.inputContainer}>
-                        <InputFormField 
-                          name="Current_Product" 
-                          placeholder="Current Product *" 
+                        <InputFormField
+                          name="Current_Product"
+                          placeholder="Current Product *"
+                          placeholderTextColor="#6e6e6e"
                           accessibilityLabel="Current product input"
                           accessibilityHint="Enter the current product being used"
                         />
@@ -620,6 +626,7 @@ export default function FarmerForm({
                           }
                           items={products}
                           placeholder="Recommended Product *"
+                          placeholderTextColor="#6e6e6e"
                           style={modernStyles.dropdown}
                           dropDownContainerStyle={modernStyles.dropdownList}
                           textStyle={modernStyles.dropdownText}
@@ -649,9 +656,10 @@ export default function FarmerForm({
                       </View>
 
                       <View style={modernStyles.inputContainer}>
-                        <InputFormField 
-                          name="remark" 
-                          placeholder="Remark" 
+                        <InputFormField
+                          name="remark"
+                          placeholder="Remark"
+                          placeholderTextColor="#6e6e6e"
                           multiline
                           numberOfLines={3}
                           accessibilityLabel="Remark input"
@@ -933,7 +941,7 @@ const modernStyles = StyleSheet.create({
   },
 
   submitContainer: {
-    
+
   },
 
   submitButton: {

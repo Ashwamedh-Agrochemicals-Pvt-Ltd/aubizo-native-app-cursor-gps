@@ -15,7 +15,7 @@ import apiClient from "../src/api/client";
 import authContext from "../src/auth/context";
 import authStorage from "../src/auth/storage";
 import { navigation } from "../navigation/NavigationService";
-import { styles } from "../src/styles/dashboard.style";
+import styles from "../src/styles/dashboard.style"
 import Location from "../src/utility/location";
 import storage from "../src/utility/storage";
 import logger from "../src/utility/logger";
@@ -45,6 +45,7 @@ function Dashboard() {
   const inpunchIdRef = useRef(null);
   const [showLogoutText, setShowLogoutText] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [username, setUsername] = useState("User");
 
 
   // Create stable function reference for onSwipe
@@ -73,6 +74,13 @@ function Dashboard() {
 
       const response = await apiClient.get("track/dashboard/today/");
       setDashboardData(response.data);
+
+      const fetchedUsername = response.data.user_name;
+      if (fetchedUsername) {
+        setUsername(fetchedUsername);
+        await authStorage.saveUsername(fetchedUsername); // save in SecureStore
+      }
+
       const { punched_in, punched_out, punch_id } = response.data.punch_status;
       if (punched_in == true && punched_out == false) {
         const punchId = String(punch_id);
@@ -106,6 +114,9 @@ function Dashboard() {
       }
     } catch (error) {
       logger.error("Error checking punch status:", error);
+      // Offline fallback: load username from SecureStore
+      const cachedName = await authStorage.getUsername();
+      if (cachedName) setUsername(cachedName);
     } finally {
       setLoading(false); // hide loader
     }
