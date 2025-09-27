@@ -34,10 +34,10 @@ export default ({ config }) => ({
     },
     ios: {
       ...config.ios,
-      "icon": {
-        "dark": "./assets/images/ios-dark.png",
-        "light": "./assets/images/ios-light.png",
-        "tinted": "./assets/images/ios-tinted.png"
+      icon: {
+        dark: "./assets/images/ios-dark.png",
+        light: "./assets/images/ios-light.png",
+        tinted: "./assets/images/ios-tinted.png"
       },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,

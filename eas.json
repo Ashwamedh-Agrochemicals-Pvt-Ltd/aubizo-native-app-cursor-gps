@@ -36,6 +36,9 @@
       "android": {
         "serviceAccountKeyPath": "./ServiceAccountAubizo.json",
         "track": "production"
+      },
+      "ios": {
+        "ascAppId": "6752946776"
       }
     }
   }
