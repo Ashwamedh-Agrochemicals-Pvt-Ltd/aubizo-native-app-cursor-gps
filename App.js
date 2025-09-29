@@ -16,6 +16,26 @@ import useDeviceRestrictions from "./src/hooks/useDeviceRestrictions";
 import GenericSettingsModal from "./src/components/GenericSettingsModal";
 import showToast from "./src/utility/showToast";
 import { enableScreens } from 'react-native-screens';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://bba03d2bf58eed642001145c9997d48a@o4509722116882432.ingest.de.sentry.io/4510101474181200',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 enableScreens();
 
 
@@ -81,7 +101,7 @@ const queryClient = new QueryClient({
   },
 });
 
-export default function App() {
+export default Sentry.wrap(function App() {
   const [user, setUser] = useState(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -185,4 +205,4 @@ export default function App() {
       </ErrorBoundary>
     </SafeAreaProvider>
   );
-}
+});

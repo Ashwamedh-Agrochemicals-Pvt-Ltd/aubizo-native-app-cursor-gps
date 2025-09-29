@@ -101,6 +101,14 @@ export default ({ config }) => ({
             "Allow Aubizo to access your location while you are using the app.",
         },
       ],
+      [
+        "@sentry/react-native/expo",
+        {
+          url: "https://sentry.io/",
+          project: "aubizo",
+          organization: "ashwamedhgroup"
+        }
+      ],
     ],
     extra: {
       APP_VARIANT,

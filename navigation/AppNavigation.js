@@ -17,6 +17,7 @@ import FarmerUpdateScreen from "../screens/FarmerUpdate";
 import ScreenWrapper from "../src/components/ScreenWrapper";
 import LoginScreen from "../screens/Login";
 import OrderForm from "../src/components/orders/OrderForm";
+import VisitHistory from "../screens/VisitHistory";
 
 
 const Stack = createNativeStackNavigator();
@@ -67,8 +68,9 @@ function DashboardStack() {
       <Stack.Screen
         name="Login"
         component={LoginScreen}
-         options={{ headerShown: false }}
+        options={{ headerShown: false }}
       />
+      <Stack.Screen name="VisitHistory" component={VisitHistory} options={{ title: "Visit History" }} />
     </Stack.Navigator>
   );
 }
@@ -176,6 +178,7 @@ export function AppNavigation() {
             "Dealer",
             "DealerUpdate",
             "DealerVisit",
+            "VisitHistory",
           ];
 
           return {

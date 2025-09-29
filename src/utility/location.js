@@ -14,6 +14,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const getCurrentLocationDetails = async () => {
   try {
 
+
     const granted = await requestLocationWhenNeeded();
     if (!granted) return;
 
@@ -56,15 +57,12 @@ const getStrictLocation = async () => {
       return true;
     }
 
-    if (status === "denied") {
-      // Denied permanently 🚫, don’t ask again
-      return null;
-    }
-
-    // 2. Ask only if not determined yet
+    // 2. Not granted → ask once
     const { status: reqStatus } = await Location.requestForegroundPermissionsAsync();
+
     return reqStatus === "granted" ? true : null;
   } catch (error) {
+    console.log("Permission error:", error);
     return null;
   }
 };

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useContext, useEffect, useRef, useState, useCallback } from "react";
+import { useContext, useEffect, useRef, useState, useCallback, use } from "react";
 import {
   Alert,
   Text,
@@ -9,8 +9,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   Pressable,
-  ActivityIndicator
-} from "react-native";
+  ActivityIndicator} from "react-native";
 import apiClient from "../src/api/client";
 import authContext from "../src/auth/context";
 import authStorage from "../src/auth/storage";
@@ -94,6 +93,7 @@ function Dashboard() {
 
         // Ensure user stays logged in
         const token = await authStorage.getUser();
+        
         if (token) {
           setUser(token);
         }
@@ -116,7 +116,9 @@ function Dashboard() {
       logger.error("Error checking punch status:", error);
       // Offline fallback: load username from SecureStore
       const cachedName = await authStorage.getUsername();
+      console.log("Cached username:", cachedName);
       if (cachedName) setUsername(cachedName);
+      console.log("Using cached username due to error.",use);
     } finally {
       setLoading(false); // hide loader
     }
@@ -409,44 +411,53 @@ function Dashboard() {
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
-                Welcome, {dashboardData?.user_name || "User"}
+                Welcome, {dashboardData?.user_name || username}
               </Text>
             </View>
 
             {/* Visit Overview */}
-            <View style={styles.section}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: DESIGN.spacing.xs }}>
-                <Ionicons
-                  name="star"
-                  size={DESIGN.iconSize.md}
-                  color={DESIGN.colors.primary}
-                />
-                <Text
-                  style={{
-                    fontSize: DESIGN.typography.body.fontSize,
-                    fontWeight: DESIGN.typography.subtitle.fontWeight,
-                    color: DESIGN.colors.primary,
-                  }}
-                >
-                  Visit Overview
-                </Text>
-              </View>
+            <TouchableOpacity
+              onPress={() => {
+                if (!dashboardData?.recent_visits?.length) return;
+                navigation.navigate("VisitHistory", {
+                  visits: dashboardData.recent_visits,
+                });
+              }}
+            >
+              <View style={styles.section}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: DESIGN.spacing.xs }}>
+                  <Ionicons
+                    name="star"
+                    size={DESIGN.iconSize.md}
+                    color={DESIGN.colors.primary}
+                  />
+                  <Text
+                    style={{
+                      fontSize: DESIGN.typography.body.fontSize,
+                      fontWeight: DESIGN.typography.subtitle.fontWeight,
+                      color: DESIGN.colors.primary,
+                    }}
+                  >
+                    Visit Overview
+                  </Text>
+                </View>
 
-              <View style={styles.visitRow}>
-                <Text style={styles.visitItem}>
-                  Farmers: {formatVisitLabel(farmerVisits)}
-                </Text>
-                <Text style={[styles.visitItem, { right: DESIGN.spacing.md }]}>
-                  Dealers: {formatVisitLabel(dealerVisits)}
-                </Text>
-              </View>
+                <View style={styles.visitRow}>
+                  <Text style={styles.visitItem}>
+                    Farmers: {formatVisitLabel(farmerVisits)}
+                  </Text>
+                  <Text style={[styles.visitItem, { right: DESIGN.spacing.md }]}>
+                    Dealers: {formatVisitLabel(dealerVisits)}
+                  </Text>
+                </View>
 
-              <View style={styles.sectionBadge}>
-                <Text style={styles.sectionBadgeText}>
-                  {formatTotalVisitLabel(totalVisits)}
-                </Text>
+                <View style={styles.sectionBadge}>
+                  <Text style={styles.sectionBadgeText}>
+                    {formatTotalVisitLabel(totalVisits)}
+                  </Text>
+                </View>
               </View>
-            </View>
+            </TouchableOpacity>
 
             {/* Action Cards */}
             <View style={styles.actionsGrid}>

@@ -1,4 +1,4 @@
-package com.ashwamedhgroup.AUBIZO
+package com.ashwamedhgroup.AUBIZO.dev
 
 import android.app.Application
 import android.content.res.Configuration

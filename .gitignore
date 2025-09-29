@@ -43,3 +43,5 @@ temp.json
 *.tsbuildinfo
 
 API_DOCUMENTATION.md
+
+.env.local
