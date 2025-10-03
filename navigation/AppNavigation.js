@@ -4,7 +4,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import Dashboard from "../screens/Dashboard";
-import PaymentScreen from "../screens/Payments";
 import OrderScreen from "../screens/Orders";
 import ProductScreen from "../screens/Pruducts";
 import FarmerScreen from "../screens/Farmer";
@@ -18,6 +17,8 @@ import ScreenWrapper from "../src/components/ScreenWrapper";
 import LoginScreen from "../screens/Login";
 import OrderForm from "../src/components/orders/OrderForm";
 import VisitHistory from "../screens/VisitHistory";
+import CollectionScreen from "../screens/Collections";
+
 
 
 const Stack = createNativeStackNavigator();
@@ -97,7 +98,7 @@ function OrdersStack() {
   );
 }
 
-function PaymentsStack() {
+function CollectionsStack() {
   return (
     <Stack.Navigator
       screenOptions={{
@@ -105,10 +106,10 @@ function PaymentsStack() {
         statusBarColor: "#FFFFFF",
       }}
     >
-      <Stack.Screen name="PaymentsHome" options={{ title: "Payments" }}>
+      <Stack.Screen name="CollectionsHome" options={{ title: "Collection" }}>
         {(props) => (
           <ScreenWrapper>
-            <PaymentScreen {...props} />
+            <CollectionScreen {...props} />
           </ScreenWrapper>
         )}
       </Stack.Screen>
@@ -274,8 +275,8 @@ export function AppNavigation() {
       />
 
       <Tab.Screen
-        name="PaymentsTab"
-        component={PaymentsStack}
+        name="CollectionsTab"
+        component={CollectionsStack}
         options={{
           tabBarLabel: "Collection",
           tabBarIcon: ({ color, size }) => (

@@ -41,15 +41,10 @@ export default ({ config }) => ({
       },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-        UIViewControllerBasedStatusBarAppearance: "YES"
+        UIViewControllerBasedStatusBarAppearance: "NO",
+        NSLocationWhenInUseUsageDescription:
+          "Aubizo uses your location to record attendance, show nearby dealers and farmers, and track your visits."
       },
-      NSLocationWhenInUseUsageDescription:
-        "We need your location to track visits.",
-      NSLocationAlwaysAndWhenInUseUsageDescription:
-        "We need your location in the background to auto-exit visits.",
-      NSLocationAlwaysUsageDescription:
-
-        "We use your location to keep visits active even if the app is closed.",
       supportsTablet: true,
       runtimeVersion: "1.0.0",
       bundleIdentifier: getUniqueIdentifier(),
@@ -92,13 +87,9 @@ export default ({ config }) => ({
       [
         "expo-location",
         {
-          locationAlwaysAndWhenInUsePermission:
-            "Allow Aubizo to use your location.",
-          isAndroidBackgroundLocationEnabled: true,
-          locationAlwaysAndWhenInUsePermission:
-            "Allow Aubizo to use your location even when the app is in the background.",
           locationWhenInUsePermission:
-            "Allow Aubizo to access your location while you are using the app.",
+            "Aubizo uses your location to record attendance, show nearby dealers and farmers, and track your visits.",
+          isAndroidBackgroundLocationEnabled: false,
         },
       ],
       [

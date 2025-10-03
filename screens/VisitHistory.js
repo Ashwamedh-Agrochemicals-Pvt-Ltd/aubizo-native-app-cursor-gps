@@ -67,6 +67,7 @@ export default function VisitHistory({ route }) {
       key={item.id}
       style={[
         styles.visitCard,
+        item.status === "ongoing" && { borderColor: DESIGN.colors.success },
         item.status === "ongoing" && { borderColor: DESIGN.colors.secondary },
       ]}
     >

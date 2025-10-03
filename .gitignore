@@ -9,6 +9,7 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Sensitive service accounts
 ServiceAccountAubizo.json
 
 # Native
@@ -42,6 +43,7 @@ temp.json
 # typescript
 *.tsbuildinfo
 
+# Docs
 API_DOCUMENTATION.md
 
 .env.local
