@@ -334,7 +334,7 @@ function OrderScreen() {
             size={24}
             color={DESIGN.colors.surface}
           />
-          {/* <Text style={modernStyles.addButtonText}>Add {type}</Text> */}
+        
         </TouchableOpacity>
       </View>
 

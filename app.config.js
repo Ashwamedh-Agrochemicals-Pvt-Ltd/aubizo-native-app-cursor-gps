@@ -100,6 +100,12 @@ export default ({ config }) => ({
           organization: "ashwamedhgroup"
         }
       ],
+       [
+        "expo-screen-orientation",
+        {
+          initialOrientation: "DEFAULT"
+        }
+      ],
     ],
     extra: {
       APP_VARIANT,

@@ -38,7 +38,7 @@ function DashboardStack() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="Product"
+        name="Products"
         component={ProductScreen}
         options={{ title: "Product List" }}
       />
@@ -85,7 +85,7 @@ function OrdersStack() {
       }}
     >
       <Stack.Screen
-        name="OrderScreen"
+        name="Orders"
         component={OrderScreen}
         options={{ headerShown: false }}
       />
