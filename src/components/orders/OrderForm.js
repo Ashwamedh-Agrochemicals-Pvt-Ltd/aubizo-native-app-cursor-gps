@@ -303,8 +303,8 @@ export default function OrderForm() {
   const [discount, setDiscount] = useState("");
   const [caseSize, setCaseSize] = useState("");
   const [itemTotal, setItemTotal] = useState("0.00");
-   const insets = useSafeAreaInsets();
-  
+  const insets = useSafeAreaInsets();
+
   // Order Type State
   const [orderType, setOrderType] = useState({
     order_type: "net-rate",
@@ -1188,7 +1188,7 @@ export default function OrderForm() {
 
 
   return (
-    <View style={{flex:1, paddingBottom:insets.bottom}}>
+    <View style={{ flex: 1, paddingBottom: insets.bottom }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -1204,8 +1204,8 @@ export default function OrderForm() {
           contentContainerStyle={{ paddingBottom: 20 }} // ensures last field isn't hidden
         />
       </KeyboardAvoidingView>
-      </View>
-  
+    </View>
+
 
   );
 }

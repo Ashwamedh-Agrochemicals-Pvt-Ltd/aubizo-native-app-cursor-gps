@@ -274,7 +274,7 @@ export function AppNavigation() {
         }}
       />
 
-      <Tab.Screen
+      {/* <Tab.Screen
         name="CollectionsTab"
         component={CollectionsStack}
         options={{
@@ -288,7 +288,7 @@ export function AppNavigation() {
           ),
           headerShown: false,
         }}
-      />
+      /> */}
 
     </Tab.Navigator>
   );
