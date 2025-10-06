@@ -17,6 +17,7 @@ import GenericSettingsModal from "./src/components/GenericSettingsModal";
 import showToast from "./src/utility/showToast";
 import { enableScreens } from 'react-native-screens';
 import * as Sentry from '@sentry/react-native';
+import { setGlobalUserSetter } from "./src/auth/useAuth";
 
 Sentry.init({
   dsn: 'https://bba03d2bf58eed642001145c9997d48a@o4509722116882432.ingest.de.sentry.io/4510101474181200',
@@ -139,9 +140,10 @@ export default Sentry.wrap(function App() {
   useEffect(() => {
     (async () => {
       try {
-          
+
         await loadToken();
-        await location.getStrictLocation();
+        setGlobalUserSetter(setUser);
+        await location.getStrictLocation();``
         // Wait until restrictions are OK before proceeding
         await checkRestrictions();
       } catch (error) {

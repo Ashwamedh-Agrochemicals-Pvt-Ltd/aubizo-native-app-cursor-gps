@@ -9,7 +9,8 @@ import {
   RefreshControl,
   TouchableOpacity,
   Pressable,
-  ActivityIndicator} from "react-native";
+  ActivityIndicator
+} from "react-native";
 import apiClient from "../src/api/client";
 import authContext from "../src/auth/context";
 import authStorage from "../src/auth/storage";
@@ -93,7 +94,7 @@ function Dashboard() {
 
         // Ensure user stays logged in
         const token = await authStorage.getUser();
-        
+
         if (token) {
           setUser(token);
         }
@@ -114,11 +115,12 @@ function Dashboard() {
       }
     } catch (error) {
       logger.error("Error checking punch status:", error);
+      console.log("Error checking punch status:", error);
       // Offline fallback: load username from SecureStore
       const cachedName = await authStorage.getUsername();
       console.log("Cached username:", cachedName);
       if (cachedName) setUsername(cachedName);
-      console.log("Using cached username due to error.",use);
+      console.log("Using cached username due to error.", use);
     } finally {
       setLoading(false); // hide loader
     }

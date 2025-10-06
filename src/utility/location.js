@@ -53,17 +53,28 @@ const getStrictLocation = async () => {
     const { status } = await Location.getForegroundPermissionsAsync();
 
     if (status === "granted") {
-      // Already granted ✅
+
       return true;
     }
 
-    // 2. Not granted → ask once
-    const { status: reqStatus } = await Location.requestForegroundPermissionsAsync();
+    if (status === "denied") {
 
-    return reqStatus === "granted" ? true : null;
+      const { status: reqStatus } = await Location.requestForegroundPermissionsAsync();
+
+      if (reqStatus === "granted") {
+        return true;
+      } else if (reqStatus === "denied") {
+        // User denied again
+        console.log("Location permission denied by user.");
+        return false;
+      }
+    }
+
+    // For other unexpected statuses
+    return false;
   } catch (error) {
-    console.log("Permission error:", error);
-    return null;
+    console.error("Permission error:", error);
+    return false;
   }
 };
 

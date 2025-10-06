@@ -43,7 +43,11 @@ export default ({ config }) => ({
         ITSAppUsesNonExemptEncryption: false,
         UIViewControllerBasedStatusBarAppearance: "NO",
         NSLocationWhenInUseUsageDescription:
-          "Aubizo uses your location to record attendance, show nearby dealers and farmers, and track your visits."
+          "Aubizo uses your location to record attendance, show nearby dealers and farmers, and track your visits.",
+        NSCameraUsageDescription: 
+          "Aubizo needs camera access to take photos of payment receipts and invoices for record keeping and transaction verification.",
+        NSPhotoLibraryUsageDescription: 
+          "Aubizo needs photo library access to select receipt images and documents to attach as proof of payment transactions."
       },
       supportsTablet: true,
       runtimeVersion: "1.0.0",
@@ -64,6 +68,9 @@ export default ({ config }) => ({
         "FOREGROUND_SERVICE",
         "ACCESS_FINE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
       ],
       enableExperimentalNewArchitecture: true
     },
@@ -104,6 +111,21 @@ export default ({ config }) => ({
         "expo-screen-orientation",
         {
           initialOrientation: "DEFAULT"
+        }
+      ],
+      [
+        "expo-document-picker",
+        {
+          // No specific configuration needed
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          photosPermission: "Aubizo needs access to your photos to upload receipt attachments.",
+          cameraPermission: "Aubizo needs access to your camera to take photos of receipts.",
+          // Enable all media types
+          mediaTypesAllowed: "All"
         }
       ],
     ],

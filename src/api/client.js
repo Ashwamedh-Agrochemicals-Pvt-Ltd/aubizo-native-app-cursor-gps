@@ -1,6 +1,8 @@
 import axios from "axios";
 import AuthStorage from "../auth/storage";
 import { Alert } from "react-native";
+import { handleLogout } from "../auth/logoutHandler";
+import { logoutFromClient } from "../auth/useAuth";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -35,24 +37,33 @@ apiClient.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-
-// Response interceptor
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const status = error.response?.status;
-    const errorMsg = error.response?.data?.detail || "";
+    const response = error.response;
+    const status = response?.status;
+    const data = response?.data?.detail?.detail || response?.data?.detail || "";
     const message = (error.message || "").toLowerCase();
 
     console.log("------ API Error Interceptor ------");
-    console.log("Status:", status);
-    console.log("Error message:", errorMsg);
-    console.log("Axios message:", message);
     console.log("Full error object:", error);
+    console.log("Status:", status);
+    console.log("Data:", data);
+    console.log("Axios message:", message);
     console.log("----------------------------------");
 
-    // 1️⃣ DNS / Network fail check
-    if (!error.response || message.includes("network") || message.includes("dns") || message.includes("enotfound")) {
+    // 1️⃣ Check for 401 Unauthorized
+    if (
+      status === 401 &&
+      (data === "Authentication credentials were not provided." || data === "Invalid token.")
+    ) {
+      console.warn("Token invalid! Logging out...");
+      await logoutFromClient();
+
+    }
+
+    // 2️⃣ DNS / Network fail check
+    if (!response || message.includes("network") || message.includes("dns") || message.includes("enotfound")) {
       setTimeout(() => {
         Alert.alert(
           "Network Issue",
@@ -67,14 +78,12 @@ apiClient.interceptors.response.use(
       });
     }
 
-
-    // Other errors
+    // 3️⃣ Other API errors
     return Promise.reject({
       status: status || 500,
       reason: "API Error",
-      detail: error.response?.data || error.message,
+      detail: response?.data || error.message,
     });
   }
 );
-
 export default apiClient;

@@ -18,7 +18,7 @@ import LoginScreen from "../screens/Login";
 import OrderForm from "../src/components/orders/OrderForm";
 import VisitHistory from "../screens/VisitHistory";
 import CollectionScreen from "../screens/Collections";
-
+import CollectionForm from "../src/components/collections/CollectionForm";
 
 
 const Stack = createNativeStackNavigator();
@@ -66,11 +66,11 @@ function DashboardStack() {
         component={DealerUpdateScreen}
         options={{ title: "Update Dealer" }}
       />
-      <Stack.Screen
+      {/* <Stack.Screen
         name="Login"
         component={LoginScreen}
         options={{ headerShown: false }}
-      />
+      /> */}
       <Stack.Screen name="VisitHistory" component={VisitHistory} options={{ title: "Visit History" }} />
     </Stack.Navigator>
   );
@@ -106,13 +106,14 @@ function CollectionsStack() {
         statusBarColor: "#FFFFFF",
       }}
     >
-      <Stack.Screen name="CollectionsHome" options={{ title: "Collection" }}>
+      <Stack.Screen name="CollectionsHome" options={{ headerShown: false }}>
         {(props) => (
           <ScreenWrapper>
             <CollectionScreen {...props} />
           </ScreenWrapper>
         )}
       </Stack.Screen>
+      <Stack.Screen name="CollectionForm" component={CollectionForm} options={{ title: "Collection Form" }} />
     </Stack.Navigator>
   );
 }
@@ -274,10 +275,16 @@ export function AppNavigation() {
         }}
       />
 
-      {/* <Tab.Screen
+      <Tab.Screen
         name="CollectionsTab"
         component={CollectionsStack}
-        options={{
+        options={({route}) => { 
+
+          const routeName = getFocusedRouteNameFromRoute(route) ?? "CollectionsHome";
+
+          const hideOnScreens = ["CollectionForm"];
+
+          return {
           tabBarLabel: "Collection",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
@@ -287,8 +294,19 @@ export function AppNavigation() {
             />
           ),
           headerShown: false,
+          tabBarStyle: hideOnScreens.includes(routeName)
+            ? { display: "none" }
+            : {
+              height: totalHeight,  
+              paddingBottom: safeAreaBottom,
+              backgroundColor: "#FFFFFF",
+              borderTopWidth: 1,
+              borderTopLeftRadius: 12, // Top Left
+              borderTopRightRadius: 12, // Top Right
+            }
+        }
         }}
-      /> */}
+      />
 
     </Tab.Navigator>
   );

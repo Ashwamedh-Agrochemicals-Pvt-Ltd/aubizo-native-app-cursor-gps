@@ -1,4 +1,4 @@
-package com.ashwamedhgroup.AUBIZO.dev
+package com.ashwamedhgroup.AUBIZO.preview
 
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule
