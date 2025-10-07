@@ -1,4 +1,4 @@
- package com.ashwamedhgroup.AUBIZO.preview
+ package com.ashwamedhgroup.AUBIZO
 
 import android.content.Intent
 import android.provider.Settings

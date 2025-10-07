@@ -141,15 +141,8 @@ const TransactionHistory = ({ onTransactionSelect, refreshTrigger }) => {
             <Text style={styles.transactionDealer}>
                 {item.payment_info?.dealer_name || 'Unknown Dealer'}
             </Text>
-            <Text style={styles.transactionMethod}>
-                {item.payment_method_name}
-            </Text>
-            
-            {item.utr_number && (
-                <Text style={styles.transactionUtr}>
-                    UTR: {item.utr_number}
-                </Text>
-            )}
+        
+        
         </TouchableOpacity>
     );
 
