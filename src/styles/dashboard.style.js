@@ -9,7 +9,7 @@ export default StyleSheet.create({
   // Header
   header: {
     backgroundColor: DESIGN.colors.primary,
-    height: "15%",
+    height: "10%",
   },
 
   headerContent: {
@@ -95,7 +95,7 @@ export default StyleSheet.create({
   // Visit Overview Section
   section: {
     backgroundColor: DESIGN.colors.surface,
-    padding: 14,
+    padding: 12,
     borderRadius: DESIGN.borderRadius.sm,
     ...DESIGN.shadows.subtle,
     position: "relative",
@@ -117,12 +117,13 @@ export default StyleSheet.create({
   visitRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 5,
+  
   },
 
   visitItem: {
     fontSize: DESIGN.typography.body.fontSize,
     color: DESIGN.colors.textPrimary,
+    paddingTop: DESIGN.spacing.xs,
   },
 
   sectionBadge: {
@@ -134,7 +135,6 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: DESIGN.borderRadius.lg,
-    backgroundColor: DESIGN.colors.success + "20",
   },
 
   sectionBadgeText: {
@@ -148,18 +148,18 @@ export default StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: DESIGN.spacing.md,
-    marginVertical: 30,
-    marginBottom: 15,
+    marginVertical: 20,
+    marginBottom: 10,
   },
 
   actionCard: {
     flex: 1,
+    padding: DESIGN.spacing.sm,
     backgroundColor: DESIGN.colors.surface,
     borderRadius: DESIGN.borderRadius.lg,
-    padding: DESIGN.spacing.md,
     alignItems: "center",
     ...DESIGN.shadows.subtle,
-    minHeight: 120,
+    minHeight: 90,
   },
 
   actionCardDisabled: {

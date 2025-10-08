@@ -322,24 +322,6 @@ function Dashboard() {
     return;
   };
 
-  const farmerVisits = dashboardData?.visit_summary?.farmer_visits || 0;
-  const dealerVisits = dashboardData?.visit_summary?.dealer_visits || 0;
-  const totalVisits = dashboardData?.visit_summary?.total_visits || 0;
-
-  // Farmer / Dealer
-  const formatVisitLabel = (count) => {
-    if (count === 0) return "0 visit";
-    if (count === 1) return "1 visit";
-    return `${count} visits`;
-  };
-
-  const formatTotalVisitLabel = (count) => {
-    if (count === 0) return "0 Total visit";
-    if (count === 1) return "1 Total visit";
-    return `${count} Total visits`;
-  };
-
-
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -357,16 +339,6 @@ function Dashboard() {
           <View style={styles.headerContent}>
             <Text style={styles.headerTitle}>Aubizo</Text>
           </View>
-
-          <Text style={styles.headerDate}>
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "short",
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
-          </Text>
-
 
 
           {/* Logout Button */}
@@ -428,11 +400,6 @@ function Dashboard() {
             >
               <View style={styles.section}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: DESIGN.spacing.xs }}>
-                  <Ionicons
-                    name="star"
-                    size={DESIGN.iconSize.md}
-                    color={DESIGN.colors.primary}
-                  />
                   <Text
                     style={{
                       fontSize: DESIGN.typography.body.fontSize,
@@ -446,18 +413,23 @@ function Dashboard() {
 
                 <View style={styles.visitRow}>
                   <Text style={styles.visitItem}>
-                    Farmers: {formatVisitLabel(farmerVisits)}
+                    Total Visit: {dashboardData?.visit_summary?.total_visits || 0}
                   </Text>
-                  <Text style={[styles.visitItem, { right: DESIGN.spacing.md }]}>
-                    Dealers: {formatVisitLabel(dealerVisits)}
+                  <Text style={styles.visitItem}>
+                    Farmers: {dashboardData?.visit_summary?.farmer_visits || 0}
+                  </Text>
+                  <Text style={styles.visitItem}>
+                    Dealers: {dashboardData?.visit_summary?.dealer_visits || 0}
                   </Text>
                 </View>
 
+                {/* Date Badge */}
                 <View style={styles.sectionBadge}>
                   <Text style={styles.sectionBadgeText}>
-                    {formatTotalVisitLabel(totalVisits)}
+                    {`${new Date().getDate()}-${new Date().getMonth() + 1}-${new Date().getFullYear()}`}
                   </Text>
                 </View>
+
               </View>
             </TouchableOpacity>
 

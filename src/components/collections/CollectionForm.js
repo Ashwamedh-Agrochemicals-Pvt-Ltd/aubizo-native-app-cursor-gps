@@ -29,7 +29,6 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
-  Image,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
@@ -54,48 +53,19 @@ function PaymentMethodPicker({ value, onChange }) {
   const fetchPaymentMethods = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(
-        "/payment/utils/payment-methods/active/"
-      );
+      const response = await apiClient.get("/payment/methods/");
 
       console.log("Payment Methods API Response:", response.data);
 
-      // Handle documented response structure
-      if (response.data?.success && response.data?.data) {
-        const methods = Array.isArray(response.data.data)
-          ? response.data.data
-          : [];
-        setPaymentMethods(methods);
-      } else if (response.data?.message) {
-        // Handle "to be implemented" response
-        console.log("Payment Methods API:", response.data.message);
-        // Set default payment methods for development
-        setPaymentMethods([
-          { id: 1, name: "Cash", method_type_display: "Cash Payment" },
-          { id: 2, name: "UPI", method_type_display: "Digital Payment" },
-          {
-            id: 3,
-            name: "Bank Transfer",
-            method_type_display: "Bank Transfer",
-          },
-          { id: 4, name: "Cheque", method_type_display: "Cheque Payment" },
-        ]);
+      // The API returns an array directly
+      if (Array.isArray(response.data)) {
+        setPaymentMethods(response.data);
       } else {
-        console.log(
-          "Payment methods API response structure invalid:",
-          response.data
-        );
+        console.log("Payment methods API response structure invalid:", response.data);
         setPaymentMethods([]);
       }
     } catch (err) {
       console.log("Error fetching payment methods:", err);
-      // Fallback payment methods for development
-      setPaymentMethods([
-        { id: 1, name: "Cash", method_type_display: "Cash Payment" },
-        { id: 2, name: "UPI", method_type_display: "Digital Payment" },
-        { id: 3, name: "Bank Transfer", method_type_display: "Bank Transfer" },
-        { id: 4, name: "Cheque", method_type_display: "Cheque Payment" },
-      ]);
     } finally {
       setLoading(false);
     }
@@ -116,11 +86,13 @@ function PaymentMethodPicker({ value, onChange }) {
             style={styles.input}
             onPress={() => setShowMethodList(!showMethodList)}
           >
-            <Text style={value ? styles.text : styles.placeholderText}>
-              {value
-                ? value.name || "Selected Method"
-                : "Select Payment Method"}
-            </Text>
+            <View>
+              <Text style={value ? styles.text : styles.placeholderText}>
+                {value
+                  ? value.name || "Selected Method"
+                  : "Select Payment Method"}
+              </Text>
+            </View>
           </TouchableOpacity>
           {showMethodList && (
             <View style={styles.list}>
@@ -135,12 +107,12 @@ function PaymentMethodPicker({ value, onChange }) {
                     style={styles.item}
                     onPress={() => handleSelectMethod(method)}
                   >
-                    <Text style={styles.text}>
-                      {method.name || "Unknown Method"}
-                    </Text>
-                    <Text style={styles.subtext}>
-                      {method.method_type_display || "Payment Method"}
-                    </Text>
+                    <View>
+                      <Text style={styles.text}>
+                        {method.name || "Unknown Method"}
+                      </Text>
+                     
+                    </View>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -211,11 +183,14 @@ function AmountInput({ value, onChange, maxAmount, label, placeholder }) {
 function BankDetailsInput({ paymentMethod, value, onChange }) {
   const showBankFields =
     paymentMethod &&
-    ["cheque", "neft", "rtgs", "imps"].includes(paymentMethod.method_type);
+    ["cheque", "bank_transfer"].includes(paymentMethod.method_type);
   const showUPIFields =
-    paymentMethod && ["upi", "digital"].includes(paymentMethod.method_type);
+    paymentMethod && ["upi", "digital_wallet"].includes(paymentMethod.method_type);
 
-  if (!showBankFields && !showUPIFields) {
+  const showCashNote =
+    paymentMethod && ["cash"].includes(paymentMethod.method_type);
+
+  if (!showBankFields && !showUPIFields && !showCashNote) {
     return null;
   }
 
@@ -286,6 +261,32 @@ function BankDetailsInput({ paymentMethod, value, onChange }) {
             }
           />
         </>
+      )}
+
+
+      {showCashNote && (
+        <View style={{
+          backgroundColor: '#f8f9fa',
+          padding: 15,
+          borderRadius: 8,
+          borderLeftWidth: 4,
+          borderLeftColor: DESIGN.colors.success
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <MaterialCommunityIcons
+              name="cash"
+              size={20}
+              color={DESIGN.colors.success}
+              style={{ marginRight: 8 }}
+            />
+            <Text style={{ fontWeight: '600', color: DESIGN.colors.success }}>
+              Cash Payment
+            </Text>
+          </View>
+          <Text style={{ fontSize: 14, color: '#666' }}>
+            Please ensure you have received the cash amount and provide a receipt to the customer.
+          </Text>
+        </View>
       )}
     </View>
   );
@@ -648,7 +649,7 @@ export default function CollectionForm({
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -1173,9 +1174,9 @@ const DealerInvoicesSection = ({ data }) => {
         <Text style={styles.invoiceAmount}>
           {`₹${Number(
             invoice.pending_amount ||
-              invoice.outstanding_amount ||
-              invoice.amount ||
-              0
+            invoice.outstanding_amount ||
+            invoice.amount ||
+            0
           ).toLocaleString()}`}
         </Text>
         <Text style={styles.invoiceDate}>
@@ -1247,14 +1248,13 @@ const PaymentFormSection = ({ data }) => {
 
       <View style={styles.selectedInvoiceInfo}>
         <Text style={styles.selectedInvoiceText}>
-          {`Selected: ${
-            (selectedInvoice.payment_number &&
+          {`Selected: ${(selectedInvoice.payment_number &&
               selectedInvoice.payment_number.trim()) ||
             (selectedInvoice.invoice_number &&
               selectedInvoice.invoice_number.trim()) ||
             (selectedInvoice.number && selectedInvoice.number.trim()) ||
             "Invoice " + selectedInvoice.id
-          }`}
+            }`}
         </Text>
         <Text style={styles.selectedInvoiceAmount}>
           {`Pending: ₹${(
@@ -1273,9 +1273,9 @@ const PaymentFormSection = ({ data }) => {
         onChange={setPaymentAmount}
         maxAmount={parseFloat(
           selectedInvoice.pending_amount ||
-            selectedInvoice.outstanding_amount ||
-            selectedInvoice.amount ||
-            0
+          selectedInvoice.outstanding_amount ||
+          selectedInvoice.amount ||
+          0
         )}
         label="Payment Amount"
         placeholder="Enter payment amount"
@@ -1508,7 +1508,7 @@ const styles = StyleSheet.create({
     padding: DESIGN.spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: DESIGN.colors.borderLight,
-    minHeight: DROPDOWN_ROW_HEIGHT,
+    // minHeight: DROPDOWN_ROW_HEIGHT,
     justifyContent: "center",
   },
   loadingContainer: {

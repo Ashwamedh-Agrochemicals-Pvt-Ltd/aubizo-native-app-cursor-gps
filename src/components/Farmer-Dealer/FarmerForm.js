@@ -378,14 +378,19 @@ export default function FarmerForm({
                               await loadStates();
                             }
                           }}
-                          setValue={(callback) =>
+                          setValue={(callback) => {
+                            const newState = callback(formState.state);
                             setFormState((prev) => ({
                               ...prev,
-                              state: callback(prev.state),
+                              state: newState,
                               district: null, // Reset dependent fields
                               taluka: null,
-                            }))
-                          }
+                            }));
+                            // Load districts for the new state
+                            if (newState) {
+                              loadDistricts(newState);
+                            }
+                          }}
                           name={formState.state}
                           placeholder="Select State *"
                           searchable={true}
@@ -421,13 +426,18 @@ export default function FarmerForm({
                               await loadDistricts(formState.state);
                             }
                           }}
-                          setValue={(callback) =>
+                          setValue={(callback) => {
+                            const newDistrict = callback(formState.district);
                             setFormState((prev) => ({
                               ...prev,
-                              district: callback(prev.district),
+                              district: newDistrict,
                               taluka: null, // Reset dependent field
-                            }))
-                          }
+                            }));
+                            // Load talukas for the new district
+                            if (newDistrict) {
+                              loadTalukas(newDistrict);
+                            }
+                          }}
                           name={formState.district}
                           searchable={true}
                           searchablePlaceholder="Search District"

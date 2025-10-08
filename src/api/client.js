@@ -40,17 +40,12 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    console.log("Response:", error.response);
+
     const response = error.response;
     const status = response?.status;
     const data = response?.data?.detail?.detail || response?.data?.detail || "";
     const message = (error.message || "").toLowerCase();
-
-    console.log("------ API Error Interceptor ------");
-    console.log("Full error object:", error);
-    console.log("Status:", status);
-    console.log("Data:", data);
-    console.log("Axios message:", message);
-    console.log("----------------------------------");
 
     // 1️⃣ Check for 401 Unauthorized
     if (

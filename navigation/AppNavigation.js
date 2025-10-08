@@ -229,10 +229,12 @@ export function AppNavigation() {
             tabBarStyle: hideOnScreens.includes(routeName)
               ? { display: "none" }
               : {
-                height: totalHeight,
+               height: totalHeight,
                 paddingBottom: safeAreaBottom,
-                backgroundColor: "#070101ff",
-
+                backgroundColor: "#FFFFFF",
+                borderTopWidth: 1,
+                borderTopLeftRadius: 12, // Top Left
+                borderTopRightRadius: 12, // Top Right
 
               },
 

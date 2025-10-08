@@ -31,6 +31,10 @@ export default function useMasterData() {
   };
 
   const loadDistricts = async (stateId) => {
+    // Clear existing data when loading new state's districts
+    setDistricts([]);
+    setTalukas([]); // Also clear talukas since they depend on districts
+    
     try {
       const data = await api.getDistricts(stateId);
       setDistricts(toDropdown(data));
@@ -38,11 +42,15 @@ export default function useMasterData() {
       if (__DEV__) {
         console.error("Failed to load districts:", err);
       }
-      // Keep existing data if available, don't clear on error
+      // Keep districts empty on error for new state
+      setDistricts([]);
     }
   };
 
   const loadTalukas = async (districtId) => {
+    // Clear existing talukas when loading new district's talukas
+    setTalukas([]);
+    
     try {
       const data = await api.getTalukas(districtId);
       setTalukas(toDropdown(data));
@@ -50,7 +58,8 @@ export default function useMasterData() {
       if (__DEV__) {
         console.error("Failed to load talukas:", err);
       }
-      // Keep existing data if available, don't clear on error
+      // Keep talukas empty on error for new district
+      setTalukas([]);
     }
   };
 

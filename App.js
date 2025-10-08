@@ -143,7 +143,7 @@ export default Sentry.wrap(function App() {
 
         await loadToken();
         setGlobalUserSetter(setUser);
-        await location.getStrictLocation();``
+        await location.getStrictLocation(); ``
         // Wait until restrictions are OK before proceeding
         await checkRestrictions();
       } catch (error) {
