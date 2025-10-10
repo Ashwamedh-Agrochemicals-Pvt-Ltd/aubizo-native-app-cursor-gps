@@ -43,7 +43,7 @@ const SearchBarWithDropdown = ({
         name="magnify"
         size={20}
         color={DESIGN.colors.textSecondary}
-        style={{ marginRight: DESIGN.spacing.sm }}
+        style={{ marginRight: DESIGN.spacing.xs }}
       />
       <TextInput
         style={styles.searchInput}
@@ -55,9 +55,9 @@ const SearchBarWithDropdown = ({
       />
       <TouchableOpacity onPress={onClose}>
         <MaterialCommunityIcons
-          name="close"
-          size={20}
-          color={DESIGN.colors.textSecondary}
+          name="close-circle"
+          size={28}
+          color={DESIGN.colors.textPrimary}
         />
       </TouchableOpacity>
     </View>
@@ -116,17 +116,6 @@ const SearchBarWithDropdown = ({
       </View>
     )}
 
-    {showDealerList &&
-      dealers.length === 0 &&
-      !loadingDealer &&
-      searchQuery.trim() && (
-        <View style={styles.noResultsContainer}>
-          <Text style={styles.noResultsText}>No dealers found</Text>
-          <Text style={styles.noResultsSubtext}>
-            Try searching with a different name or shop
-          </Text>
-        </View>
-      )}
   </View>
 );
 
@@ -160,6 +149,7 @@ function CollectionScreen({ navigation }) {
   // Handle hardware back button
   useFocusEffect(
     useCallback(() => {
+     
       const onBackPress = () => {
         if (modalVisible) {
           setModalVisible(false);
@@ -186,6 +176,16 @@ function CollectionScreen({ navigation }) {
     }, [navigation, modalVisible, showSearch])
   );
 
+
+  useFocusEffect(
+      React.useCallback(() => {
+        return () => {
+          setShowSearch(false);
+          setSearchQuery("");
+        };
+      }, [])
+    );
+  
   // Fetch dealers based on search query
   const fetchDealers = async (search) => {
     if (!search || search.trim().length < 2) {
@@ -392,9 +392,9 @@ function CollectionScreen({ navigation }) {
             <Text
               style={[
                 styles.statusText,
-                item.status === "completed" && { color: "#07883dff" },
-                item.status === "pending" && { color: "#f5cd2cff" },
-                item.status === "failed" && { color: "#e42712ff" },
+                item.status === "completed" && { color: DESIGN.colors.success },
+                item.status === "pending" && { color: DESIGN.colors.warning },
+                item.status === "failed" && { color: DESIGN.colors.error },
               ]}
             >
               {item.status_display ||
@@ -415,13 +415,6 @@ function CollectionScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialCommunityIcons
-            name="arrow-left"
-            size={24}
-            color={DESIGN.colors.textPrimary}
-          />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Collections</Text>
         <View style={styles.headerIcons}>
           {/* Search Toggle */}
@@ -517,21 +510,46 @@ function CollectionScreen({ navigation }) {
               tintColor={DESIGN.colors.primary}
             />
           }
-          ListEmptyComponent={() => (
-            <View style={styles.emptyContainer}>
-              <MaterialCommunityIcons
-                name="credit-card-outline"
-                size={64}
-                color={DESIGN.colors.textSecondary}
-              />
-              <Text style={styles.emptyText}>No transactions found</Text>
-              <Text style={styles.emptySubtext}>
-                {showSearch
-                  ? "Try adjusting your search"
-                  : "Create your first payment"}
-              </Text>
-            </View>
-          )}
+          ListEmptyComponent={() => {
+            // Determine empty state based on context
+            let iconName, title, subtitle;
+            
+            if (showSearch && (searchQuery || selectedDealer)) {
+              // Search mode with query/dealer selected
+              iconName = "magnify";
+              title = "No collections found";
+              subtitle = selectedDealer 
+                ? `No collections for ${selectedDealer.shop_name}`
+                : "Try different search terms";
+            } else if (activeTab === 1) {
+              // Completed tab
+              iconName = "check-circle-outline";
+              title = "No completed collections";
+              subtitle = "Completed payments will appear here";
+            } else if (activeTab === 2) {
+              // Pending tab
+              iconName = "clock-outline";
+              title = "No pending collections";
+              subtitle = "Pending payments will appear here";
+            } else {
+              // All tab or general empty state
+              iconName = "credit-card-outline";
+              title = "No collections found";
+              subtitle = "Create your first payment collection";
+            }
+
+            return (
+              <View style={styles.emptyContainer}>
+                <MaterialCommunityIcons
+                  name={iconName}
+                  size={64}
+                  color={DESIGN.colors.textSecondary}
+                />
+                <Text style={styles.emptyText}>{title}</Text>
+                <Text style={styles.emptySubtext}>{subtitle}</Text>
+              </View>
+            );
+          }}
         />
       )}
 
@@ -654,12 +672,6 @@ const styles = StyleSheet.create({
     fontSize: DESIGN.typography.body.fontSize,
   },
   shopName: {
-    color: DESIGN.colors.textSecondary,
-    fontSize: DESIGN.typography.caption.fontSize,
-    fontWeight: "500",
-    marginBottom: DESIGN.spacing.xs,
-  },
-  ownerName: {
     marginVertical: DESIGN.spacing.xs,
     fontStyle: "italic",
     fontWeight: "400",
@@ -692,13 +704,13 @@ const styles = StyleSheet.create({
     backgroundColor: DESIGN.colors.surfaceElevated,
   },
   statusCompleted: {
-    backgroundColor: "#07883d20",
+    backgroundColor: DESIGN.colors.success + "20",
   },
   statusPending: {
-    backgroundColor: "#f5cd2c20",
+    backgroundColor: DESIGN.colors.warning + "20",
   },
   statusFailed: {
-    backgroundColor: "#e4271220",
+    backgroundColor: DESIGN.colors.error + "20",
   },
   statusText: {
     fontSize: DESIGN.typography.caption.fontSize,

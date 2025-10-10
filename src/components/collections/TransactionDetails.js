@@ -5,7 +5,7 @@
  *
  * Created: October 6, 2025
  */
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,6 @@ import {
   ScrollView,
   Modal,
   TouchableOpacity,
-  SafeAreaView,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import DESIGN from "../../theme";
@@ -211,70 +210,6 @@ const TransactionDetails = ({ transactionId, visible = false, onClose }) => {
                     </View>
                   </View>
                 )}
-
-                {/* Transaction Details
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Transaction Details</Text>
-                        
-                        <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Transaction Date:</Text>
-                            <Text style={styles.detailValue}>
-                                {formatDate(transactionDetails.transaction_date)}
-                            </Text>
-                        </View>
-                        
-                        <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Value Date:</Text>
-                            <Text style={styles.detailValue}>
-                                {transactionDetails.value_date || 'N/A'}
-                            </Text>
-                        </View>
-                        
-                        {transactionDetails.utr_number && (
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>UTR Number:</Text>
-                                <Text style={[styles.detailValue, styles.utrText]}>
-                                    {transactionDetails.utr_number}
-                                </Text>
-                            </View>
-                        )}
-                        
-                        {transactionDetails.cheque_number && (
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Cheque Number:</Text>
-                                <Text style={styles.detailValue}>
-                                    {transactionDetails.cheque_number}
-                                </Text>
-                            </View>
-                        )}
-                        
-                        {transactionDetails.cheque_date && (
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Cheque Date:</Text>
-                                <Text style={styles.detailValue}>
-                                    {transactionDetails.cheque_date}
-                                </Text>
-                            </View>
-                        )}
-                        
-                        {transactionDetails.bank_name && (
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Bank Name:</Text>
-                                <Text style={styles.detailValue}>
-                                    {transactionDetails.bank_name}
-                                </Text>
-                            </View>
-                        )}
-                        
-                        {transactionDetails.beneficiary_name && (
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Beneficiary:</Text>
-                                <Text style={styles.detailValue}>
-                                    {transactionDetails.beneficiary_name}
-                                </Text>
-                            </View>
-                        )}
-                    </View> */}
 
                 {/* Reconciliation Status */}
                 <View style={styles.section}>

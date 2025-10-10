@@ -117,7 +117,7 @@ export default StyleSheet.create({
   visitRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-  
+
   },
 
   visitItem: {
@@ -140,7 +140,7 @@ export default StyleSheet.create({
   sectionBadgeText: {
     fontSize: DESIGN.typography.body.fontSize,
     color: DESIGN.colors.textPrimary,
-    fontWeight: DESIGN.typography.subtitle.fontWeight,
+    fontWeight: DESIGN.typography.body.fontWeight,
   },
 
   // Actions Grid

@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import apiClient from "../../api/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import DESIGN from "../../theme";
 
 const DROPDOWN_ROW_HEIGHT = 56;
 const MAX_DROPDOWN_HEIGHT = Math.round(Dimensions.get("window").height * 0.5);
@@ -876,13 +877,6 @@ export default function OrderForm() {
 
   const renderSection = ({ item }) => {
     switch (item.type) {
-      case 'header':
-        return (
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Create Order</Text>
-          </View>
-        );
-
 
       case 'dealer-search':
         return (
@@ -1213,97 +1207,93 @@ export default function OrderForm() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5"
+    backgroundColor: DESIGN.colors.background,
   },
   header: {
-    backgroundColor: "#fff",
-    padding: 16,
+    backgroundColor: DESIGN.colors.surface,
+    padding: DESIGN.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    marginBottom: 10,
+    borderBottomColor: DESIGN.colors.borderLight,
+    marginBottom: DESIGN.spacing.sm,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: DESIGN.typography.title.fontSize,
+    fontWeight: DESIGN.typography.title.fontWeight,
+    color: DESIGN.colors.textPrimary,
   },
   selectedDealer: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 4,
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.textSecondary,
+    marginTop: DESIGN.spacing.xs,
   },
   section: {
-    backgroundColor: "#fff",
-    margin: 10,
-    padding: 16,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: DESIGN.colors.surface,
+    margin: DESIGN.spacing.sm,
+    padding: DESIGN.spacing.md,
+    borderRadius: DESIGN.borderRadius.sm,
+    ...DESIGN.shadows.medium,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 12,
+    fontSize: DESIGN.typography.subtitle.fontSize,
+    fontWeight: DESIGN.typography.subtitle.fontWeight,
+    color: DESIGN.colors.textPrimary,
+    marginBottom: DESIGN.spacing.sm,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-    backgroundColor: "#fff",
-    fontSize: 16,
+    borderColor: DESIGN.colors.borderLight,
+    padding: DESIGN.spacing.sm,
+    borderRadius: DESIGN.borderRadius.sm,
+    marginBottom: DESIGN.spacing.sm,
+    backgroundColor: DESIGN.colors.surface,
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.textPrimary,
   },
   readOnlyInput: {
-    backgroundColor: "#f9f9f9",
-    color: "#666",
+    backgroundColor: DESIGN.colors.surfaceElevated,
+    color: DESIGN.colors.textSecondary,
   },
   textArea: {
     height: 80,
     textAlignVertical: "top",
   },
   placeholder: {
-    color: "#999",
+    color: DESIGN.colors.textSecondary,
   },
   list: {
-    marginTop: 5,
+    marginTop: DESIGN.spacing.xs,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    // ❌ remove maxHeight: 200
-    backgroundColor: "#fff",
-    marginBottom: 10,
+    borderColor: DESIGN.colors.borderLight,
+    borderRadius: DESIGN.borderRadius.sm,
+    backgroundColor: DESIGN.colors.surface,
+    marginBottom: DESIGN.spacing.sm,
     overflow: "hidden",
   },
   item: {
-    padding: 12,
+    padding: DESIGN.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    minHeight: DROPDOWN_ROW_HEIGHT,  // ✅ add this
-    justifyContent: "center",        // ✅ add this
+    borderBottomColor: DESIGN.colors.borderLight,
+    minHeight: DROPDOWN_ROW_HEIGHT,
+    justifyContent: "center",
   },
 
   text: {
-    fontSize: 16,
-    color: "#333",
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.textPrimary,
   },
   subtext: {
-    fontSize: 12,
-    color: "#777",
-    marginTop: 2,
+    fontSize: DESIGN.typography.caption.fontSize,
+    color: DESIGN.colors.textSecondary,
+    marginTop: DESIGN.spacing.xs / 2,
   },
   // Order Items Styles
   orderItem: {
-    backgroundColor: "#f8f9fa",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
+    backgroundColor: DESIGN.colors.surfaceElevated,
+    padding: DESIGN.spacing.sm,
+    borderRadius: DESIGN.borderRadius.sm,
+    marginBottom: DESIGN.spacing.sm,
     borderLeftWidth: 3,
-    borderLeftColor: "#007bff",
+    borderLeftColor: DESIGN.colors.primary,
   },
   orderItemHeader: {
     flexDirection: "row",
@@ -1311,33 +1301,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   orderItemName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontSize: DESIGN.typography.body.fontSize,
+    fontWeight: DESIGN.typography.subtitle.fontWeight,
+    color: DESIGN.colors.textPrimary,
     flex: 1,
   },
   removeButton: {
-    backgroundColor: "#ff4757",
-    borderRadius: 15,
-    width: 24,
-    height: 24,
+    backgroundColor: DESIGN.colors.error,
+    borderRadius: DESIGN.spacing.sm,
+    width: DESIGN.iconSize.md,
+    height: DESIGN.iconSize.md,
     justifyContent: "center",
     alignItems: "center",
   },
   removeButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "bold",
+    color: DESIGN.colors.surface,
+    fontSize: DESIGN.typography.caption.fontSize,
+    fontWeight: DESIGN.typography.subtitle.fontWeight,
   },
   orderItemDetails: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 4,
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.textSecondary,
+    marginTop: DESIGN.spacing.xs,
   },
   orderItemType: {
-    fontSize: 12,
-    color: "#888",
-    marginTop: 2,
+    fontSize: DESIGN.typography.caption.fontSize,
+    color: DESIGN.colors.textTertiary,
+    marginTop: DESIGN.spacing.xs / 2,
     fontStyle: "italic",
   },
 
@@ -1346,40 +1336,40 @@ const styles = StyleSheet.create({
 
   // Totals Styles
   totalsContainer: {
-    marginTop: 16,
-    paddingTop: 16,
+    marginTop: DESIGN.spacing.md,
+    paddingTop: DESIGN.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
+    borderTopColor: DESIGN.colors.borderLight,
   },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: DESIGN.spacing.sm,
   },
   totalLabel: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.textSecondary,
   },
   totalValue: {
-    fontSize: 14,
-    color: "#333",
-    fontWeight: "500",
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.textPrimary,
+    fontWeight: DESIGN.typography.caption.fontWeight,
   },
   grandTotalRow: {
     borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-    paddingTop: 8,
-    marginTop: 8,
+    borderTopColor: DESIGN.colors.borderLight,
+    paddingTop: DESIGN.spacing.sm,
+    marginTop: DESIGN.spacing.sm,
   },
   grandTotalLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontSize: DESIGN.typography.subtitle.fontSize,
+    fontWeight: DESIGN.typography.subtitle.fontWeight,
+    color: DESIGN.colors.textPrimary,
   },
   grandTotalValue: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#007bff",
+    fontSize: DESIGN.typography.subtitle.fontSize,
+    fontWeight: DESIGN.typography.subtitle.fontWeight,
+    color: DESIGN.colors.primary,
   },
 
 
@@ -1387,100 +1377,100 @@ const styles = StyleSheet.create({
 
   // Button Styles
   addItemButton: {
-    backgroundColor: "#28a745",
-    padding: 14,
-    borderRadius: 8,
+    backgroundColor: DESIGN.colors.success,
+    padding: DESIGN.spacing.sm,
+    borderRadius: DESIGN.borderRadius.sm,
     alignItems: "center",
-    marginTop: 10,
+    marginTop: DESIGN.spacing.sm,
   },
   addItemButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+    color: DESIGN.colors.surface,
+    fontSize: DESIGN.typography.body.fontSize,
+    fontWeight: DESIGN.typography.subtitle.fontWeight,
   },
   submitButton: {
-    backgroundColor: "#007bff",
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: DESIGN.colors.primary,
+    padding: DESIGN.spacing.md,
+    borderRadius: DESIGN.borderRadius.sm,
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: DESIGN.spacing.sm,
   },
   submitButtonDisabled: {
-    backgroundColor: "#ccc",
+    backgroundColor: DESIGN.colors.textTertiary,
   },
   submitButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
+    color: DESIGN.colors.surface,
+    fontSize: DESIGN.typography.bodyLarge.fontSize,
+    fontWeight: DESIGN.typography.subtitle.fontWeight,
   },
   resetButton: {
-    backgroundColor: "#6c757d",
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: DESIGN.colors.textSecondary,
+    padding: DESIGN.spacing.sm,
+    borderRadius: DESIGN.borderRadius.sm,
     alignItems: "center",
   },
   resetButtonText: {
-    color: "#fff",
-    fontSize: 16,
+    color: DESIGN.colors.surface,
+    fontSize: DESIGN.typography.body.fontSize,
   },
   // Existing styles
   dropdown: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: DESIGN.spacing.sm,
   },
   option: {
-    padding: 10,
+    padding: DESIGN.spacing.sm,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 6,
-    marginRight: 8,
-    backgroundColor: "#f9f9f9",
+    borderColor: DESIGN.colors.borderLight,
+    borderRadius: DESIGN.borderRadius.sm,
+    marginRight: DESIGN.spacing.sm,
+    backgroundColor: DESIGN.colors.surfaceElevated,
   },
   optionSelected: {
-    backgroundColor: "#e0f7fa",
-    borderColor: "#00796b",
+    backgroundColor: DESIGN.colors.primary + "20",
+    borderColor: DESIGN.colors.primary,
   },
   optionDisabled: {
-    backgroundColor: "#f5f5f5",
-    borderColor: "#ddd",
+    backgroundColor: DESIGN.colors.surfaceElevated,
+    borderColor: DESIGN.colors.borderLight,
     opacity: 0.6,
   },
   optionDisabledText: {
-    color: "#999",
+    color: DESIGN.colors.textTertiary,
   },
   noSchemesNote: {
-    fontSize: 12,
-    color: "#666",
+    fontSize: DESIGN.typography.caption.fontSize,
+    color: DESIGN.colors.textSecondary,
     fontStyle: "italic",
-    marginTop: 5,
+    marginTop: DESIGN.spacing.xs,
   },
   quantityRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: DESIGN.spacing.sm,
   },
   inputWithIcon: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    marginBottom: 10,
-    backgroundColor: "#fff",
+    borderColor: DESIGN.colors.borderLight,
+    borderRadius: DESIGN.borderRadius.sm,
+    marginBottom: DESIGN.spacing.sm,
+    backgroundColor: DESIGN.colors.surface,
   },
   inputWithIconText: {
     flex: 1,
     borderWidth: 0,
     marginBottom: 0,
-    padding: 12,
+    padding: DESIGN.spacing.sm,
   },
   orderTypeRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 10,
+    marginBottom: DESIGN.spacing.sm,
   },
 });
 

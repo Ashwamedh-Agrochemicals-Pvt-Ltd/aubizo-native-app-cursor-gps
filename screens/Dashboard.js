@@ -129,6 +129,12 @@ function Dashboard() {
   // Initial mount and auth changes trigger
   useEffect(() => {
     if (user) {
+      const loadCachedUsername = async () => {
+        const cachedName = await authStorage.getUsername();
+        console.log("Cached username:", cachedName);
+        if (cachedName) setUsername(cachedName);
+      };
+      loadCachedUsername();
       checkPunchStatus();
     } else {
       // Clear state when user logs out

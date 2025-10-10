@@ -24,7 +24,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
-const TABS = ["All", "Pending", "Delivered", "Rejected", "Hold"];
+const TABS = ["All", "Pending", "Dispatched", "Rejected"];
 const TAB_COUNT = TABS.length;
 const TAB_WIDTH = width / TAB_COUNT;
 
@@ -40,11 +40,17 @@ const SearchBar = ({ searchQuery, setSearchQuery, onClose }) => {
 
   return (
     <View style={styles.searchContainer}>
+      <MaterialCommunityIcons
+        name="magnify"
+        size={20}
+        color={DESIGN.colors.textSecondary}
+        style={{ marginRight: DESIGN.spacing.xs }}
+      />
       <TextInput
         ref={inputRef}
         style={styles.searchInput}
         placeholder="Search by Dealer or Shop name..."
-        placeholderTextColor="#888"
+        placeholderTextColor={DESIGN.colors.textSecondary}
         value={searchQuery}
         onChangeText={setSearchQuery}
       />
@@ -116,9 +122,9 @@ function OrderScreen() {
   const statusMap = {
     0: "", // All
     1: "processing",
-    2: "delivered",
+    2: "dispatched",
     3: "cancelled",
-    4: "hold",
+  
   };
 
   // Fetch orders by status
@@ -181,33 +187,32 @@ function OrderScreen() {
             year: "numeric",
           })}
         </Text>
-        <Text style={styles.shopName}>{item.dealer_name}</Text>
-        <Text style={styles.dealerName}>{item.dealer_owner}</Text>
+
+        <Text style={styles.dealerName}>{item.dealer_name}</Text>
+        <Text style={styles.ownerName}>Owner: {item.dealer_owner}</Text>
 
         <View style={styles.amountRow}>
-          <Text style={styles.totalValue}>Amount : ₹ {item.total_order_value}</Text>
+          <Text style={styles.amount}>₹{item.total_order_value}</Text>
           <View
             style={[
               styles.statusContainer,
-              item.status === "draft" && styles.statusdrafted,
               item.status === "delivered" && styles.statusDelivered,
               item.status === "processing" && styles.statusPending,
               item.status === "cancelled" && styles.statusRejected,
               item.status === "hold" && styles.statusHold,
             ]}
           >
-            <Text
+            <Text 
               style={[
                 styles.statusText,
-                { fontSize: 14 },
-                item.status === "draft" && { color: "#080808ff" },
-                item.status === "delivered" && { color: "#07883dff" },
-                item.status === "processing" && { color: "#f5cd2cff" },
-                item.status === "cancelled" && { color: "#e42712ff" },
-                item.status === "hold" && { color: "#3498db" },
+                item.status === "delivered" && { color: DESIGN.colors.success },
+                item.status === "processing" && { color: DESIGN.colors.warning },
+                item.status === "cancelled" && { color: DESIGN.colors.error },
+                item.status === "hold" && { color: DESIGN.colors.info },
               ]}
             >
-              {item.status_display}
+              {item.status_display ||
+                item.status?.charAt(0).toUpperCase() + item.status?.slice(1)}
             </Text>
           </View>
         </View>
@@ -216,24 +221,22 @@ function OrderScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar
+        backgroundColor={DESIGN.colors.background}
+        barStyle="dark-content"
+      />
 
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialCommunityIcons
-            name="arrow-left"
-            size={24}
-            color={DESIGN.colors.textPrimary}
-          />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>List of Orders</Text>
+        <Text style={styles.headerTitle}>Orders</Text>
         <View style={styles.headerIcons}>
-          {/* 🔎 Toggle search */}
+          {/* Search Toggle */}
           <TouchableOpacity
             onPress={() => {
               if (showSearch) {
                 setShowSearch(false);
-                setSearchQuery(""); // reset text too
+                setSearchQuery("");
               } else {
                 setShowSearch(true);
               }
@@ -241,15 +244,6 @@ function OrderScreen() {
           >
             <MaterialCommunityIcons
               name="magnify"
-              size={30}
-              color={DESIGN.colors.textPrimary}
-              style={styles.icon}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity>
-            <MaterialCommunityIcons
-              name="filter-variant"
               size={30}
               color={DESIGN.colors.textPrimary}
               style={styles.icon}
@@ -321,6 +315,54 @@ function OrderScreen() {
               tintColor={DESIGN.colors.primary}
             />
           }
+          ListEmptyComponent={() => {
+            // Determine empty state based on context
+            let iconName, title, subtitle;
+            
+            if (showSearch && searchQuery) {
+              // Search mode with query
+              iconName = "magnify";
+              title = "No orders found";
+              subtitle = "Try different search terms";
+            } else if (activeTab === 1) {
+              // Pending tab
+              iconName = "clock-outline";
+              title = "No pending orders";
+              subtitle = "Pending orders will appear here";
+            } else if (activeTab === 2) {
+              // Delivered tab
+              iconName = "truck-delivery-outline";
+              title = "No delivered orders";
+              subtitle = "Delivered orders will appear here";
+            } else if (activeTab === 3) {
+              // Rejected tab
+              iconName = "close-circle-outline";
+              title = "No rejected orders";
+              subtitle = "Rejected orders will appear here";
+            } else if (activeTab === 4) {
+              // Hold tab
+              iconName = "pause-circle-outline";
+              title = "No orders on hold";
+              subtitle = "Orders on hold will appear here";
+            } else {
+              // All tab or general empty state
+              iconName = "package-variant-closed";
+              title = "No orders found";
+              subtitle = "Create your first order";
+            }
+
+            return (
+              <View style={styles.emptyContainer}>
+                <MaterialCommunityIcons
+                  name={iconName}
+                  size={64}
+                  color={DESIGN.colors.textSecondary}
+                />
+                <Text style={styles.emptyText}>{title}</Text>
+                <Text style={styles.emptySubtext}>{subtitle}</Text>
+              </View>
+            );
+          }}
         />
       )}
       {/* Bottom Add Button */}
@@ -334,7 +376,7 @@ function OrderScreen() {
             size={24}
             color={DESIGN.colors.surface}
           />
-        
+
         </TouchableOpacity>
       </View>
 
@@ -345,12 +387,16 @@ function OrderScreen() {
         onClose={() => setModalVisible(false)}
       />
 
-    </SafeAreaView>
+    </View>
 
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: DESIGN.colors.background,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -444,45 +490,63 @@ const styles = StyleSheet.create({
 
   },
   dealerName: {
-    marginVertical: DESIGN.spacing.xs,
-    fontStyle: 'italic',
-    fontWeight: "400",
-    fontSize: DESIGN.typography.body.fontSize,
-    color: DESIGN.colors.textPrimary,
-  },
-  shopName: {
     color: DESIGN.colors.primary,
     marginVertical: DESIGN.spacing.xs,
     fontWeight: "700",
     fontSize: DESIGN.typography.body.fontSize,
   },
+  shopName: {
+    color: DESIGN.colors.textSecondary,
+    fontSize: DESIGN.typography.caption.fontSize,
+    fontWeight: "500",
+    marginBottom: DESIGN.spacing.xs,
+  },
+  ownerName: {
+    marginVertical: DESIGN.spacing.xs,
+    fontStyle: "italic",
+    fontWeight: "400",
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.textPrimary,
+  },
   amountRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginTop: DESIGN.spacing.sm,
   },
-  totalValue: {
+  amount: {
     fontWeight: "600",
     fontSize: DESIGN.typography.body.fontSize,
     color: DESIGN.colors.textPrimary,
   },
-  paymentType: {
+  paymentMethod: {
     color: DESIGN.colors.accent,
     fontSize: DESIGN.typography.caption.fontSize,
+    marginTop: DESIGN.spacing.xs,
   },
   statusContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: DESIGN.spacing.sm,
     alignSelf: "flex-start",
     paddingHorizontal: DESIGN.spacing.sm,
     paddingVertical: DESIGN.spacing.xs,
     borderRadius: DESIGN.borderRadius.sm,
     backgroundColor: DESIGN.colors.surfaceElevated,
   },
+  statusDelivered: {
+    backgroundColor: DESIGN.colors.success + "20",
+  },
+  statusPending: {
+    backgroundColor: DESIGN.colors.warning + "20",
+  },
+  statusRejected: {
+    backgroundColor: DESIGN.colors.error + "20",
+  },
+  statusHold: {
+    backgroundColor: DESIGN.colors.info + "20",
+  },
   statusText: {
     fontSize: DESIGN.typography.caption.fontSize,
-    marginRight: DESIGN.spacing.xs,
     fontWeight: "500",
     color: DESIGN.colors.textSecondary,
   },
@@ -498,6 +562,26 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28, // perfect circle
     alignItems: "center",
+    justifyContent: "center",
+    ...DESIGN.shadows.medium,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: DESIGN.spacing.xl * 2,
+  },
+  emptyText: {
+    fontSize: DESIGN.typography.subtitle.fontSize,
+    fontWeight: "600",
+    color: DESIGN.colors.textSecondary,
+    marginTop: DESIGN.spacing.md,
+  },
+  emptySubtext: {
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.textSecondary,
+    marginTop: DESIGN.spacing.xs,
+    textAlign: "center",
     justifyContent: "center",
     ...DESIGN.shadows.medium,
   },

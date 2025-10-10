@@ -1030,7 +1030,7 @@ export default function CollectionForm({
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top }]}
+      style={[styles.container]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
       enabled
@@ -1404,7 +1404,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: DESIGN.spacing.sm,
   },
   resetButton: {
     backgroundColor: DESIGN.colors.surface,
