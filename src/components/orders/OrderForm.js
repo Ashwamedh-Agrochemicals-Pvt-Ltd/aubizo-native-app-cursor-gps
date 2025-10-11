@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   TextInput,
@@ -16,6 +16,7 @@ import {
 import apiClient from "../../api/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DESIGN from "../../theme";
+import { FontAwesome } from "@expo/vector-icons";
 
 const DROPDOWN_ROW_HEIGHT = 56;
 const MAX_DROPDOWN_HEIGHT = Math.round(Dimensions.get("window").height * 0.5);
@@ -932,7 +933,7 @@ export default function OrderForm() {
                     onPress={() => item.data.removeItemFromOrder(index)}
                     style={styles.removeButton}
                   >
-                    <Text style={styles.removeButtonText}>✕</Text>
+                    <FontAwesome name="times" size={20} color="white" />
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.orderItemDetails}>
@@ -1308,7 +1309,7 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     backgroundColor: DESIGN.colors.error,
-    borderRadius: DESIGN.spacing.sm,
+    borderRadius: DESIGN.spacing.md,
     width: DESIGN.iconSize.md,
     height: DESIGN.iconSize.md,
     justifyContent: "center",
@@ -1378,7 +1379,7 @@ const styles = StyleSheet.create({
   // Button Styles
   addItemButton: {
     backgroundColor: DESIGN.colors.success,
-    padding: DESIGN.spacing.sm,
+    padding: DESIGN.spacing.md,
     borderRadius: DESIGN.borderRadius.sm,
     alignItems: "center",
     marginTop: DESIGN.spacing.sm,
@@ -1405,7 +1406,7 @@ const styles = StyleSheet.create({
   },
   resetButton: {
     backgroundColor: DESIGN.colors.textSecondary,
-    padding: DESIGN.spacing.sm,
+    padding: DESIGN.spacing.md,
     borderRadius: DESIGN.borderRadius.sm,
     alignItems: "center",
   },

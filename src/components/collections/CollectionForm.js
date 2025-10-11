@@ -111,7 +111,7 @@ function PaymentMethodPicker({ value, onChange }) {
                       <Text style={styles.text}>
                         {method.name || "Unknown Method"}
                       </Text>
-                     
+
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -1068,14 +1068,6 @@ const DealerSearchSection = ({ data }) => {
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Select Dealer</Text>
-        {(data.selectedDealer || data.selectedInvoice) && (
-          <TouchableOpacity
-            style={styles.resetButton}
-            onPress={data.resetWorkflow}
-          >
-            <Text style={styles.resetButtonText}>Reset</Text>
-          </TouchableOpacity>
-        )}
       </View>
       <TextInput
         style={styles.input}
@@ -1249,7 +1241,7 @@ const PaymentFormSection = ({ data }) => {
       <View style={styles.selectedInvoiceInfo}>
         <Text style={styles.selectedInvoiceText}>
           {`Selected: ${(selectedInvoice.payment_number &&
-              selectedInvoice.payment_number.trim()) ||
+            selectedInvoice.payment_number.trim()) ||
             (selectedInvoice.invoice_number &&
               selectedInvoice.invoice_number.trim()) ||
             (selectedInvoice.number && selectedInvoice.number.trim()) ||
@@ -1696,7 +1688,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: DESIGN.colors.surfaceElevated,
     borderRadius: DESIGN.borderRadius.sm,
-    padding: DESIGN.spacing.lg,
+    padding: DESIGN.spacing.md,
     borderWidth: 1,
     borderColor: DESIGN.colors.borderLight,
     borderStyle: "dashed",
