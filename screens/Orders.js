@@ -124,7 +124,7 @@ function OrderScreen() {
     1: "processing",
     2: "dispatched",
     3: "cancelled",
-  
+
   };
 
   // Fetch orders by status
@@ -202,7 +202,7 @@ function OrderScreen() {
               item.status === "hold" && styles.statusHold,
             ]}
           >
-            <Text 
+            <Text
               style={[
                 styles.statusText,
                 item.status === "delivered" && { color: DESIGN.colors.success },
@@ -318,7 +318,7 @@ function OrderScreen() {
           ListEmptyComponent={() => {
             // Determine empty state based on context
             let iconName, title, subtitle;
-            
+
             if (showSearch && searchQuery) {
               // Search mode with query
               iconName = "magnify";
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: DESIGN.spacing.md,
-    paddingVertical: DESIGN.spacing.md,
+    paddingVertical: DESIGN.spacing.sm,
   },
   headerTitle: {
     flex: 1,
@@ -424,9 +424,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: DESIGN.colors.surface,
-    margin: DESIGN.spacing.md,
+    marginVertical: DESIGN.spacing.sm,
     borderRadius: DESIGN.borderRadius.sm,
     paddingHorizontal: DESIGN.spacing.sm,
+    marginHorizontal: DESIGN.spacing.md,
   },
   searchInput: {
     flex: 1,

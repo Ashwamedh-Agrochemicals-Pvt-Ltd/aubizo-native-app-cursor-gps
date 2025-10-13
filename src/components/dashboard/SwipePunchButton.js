@@ -125,15 +125,14 @@ export default SwipePunchButton;
 
 const styles = StyleSheet.create({
     container: {
-        position: "absolute",
-        bottom: 20,              // distance from bottom
-        left: 0,
-        right: 0,
+   
 
         alignItems: "center",
         paddingHorizontal: DESIGN.spacing.md,
-        backgroundColor: DESIGN.colors.surface,
+    //   paddingVertical: DESIGN.spacing.sm,
+        // backgroundColor: 'transparent',
         justifyContent: "center",
+        bottom: 10,
 
     },
     trackLabel: {

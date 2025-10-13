@@ -26,6 +26,7 @@ import GenericSettingsModal from "../src/components/GenericSettingsModal";
 import DESIGN from "../src/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import useAuth from "../src/auth/useAuth";
+import { TouchableWithoutFeedback } from "react-native-web";
 
 const INPUNCH_URL = process.env.EXPO_PUBLIC_INPUNCH_URL;
 const OUTPUNCH_URL = process.env.EXPO_PUBLIC_OUTPUNCH_URL;
@@ -47,6 +48,17 @@ function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState("User");
 
+  // Get time-based greeting
+  const getTimeBasedGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      return "Good Morning";
+    } else if (hour < 17) {
+      return "Good Afternoon";
+    } else {
+      return "Good Evening";
+    }
+  };
 
   // Create stable function reference for onSwipe
   const onSwipeHandler = useCallback(() => {
@@ -340,39 +352,68 @@ function Dashboard() {
         style={{ flex: 1 }}
         onPress={() => showLogoutText && setShowLogoutText(false)} // close on outside press
       >
-        {/* Header */}
+        {/* Custom Header */}
         <View style={styles.header}>
+          {/* Gradient Overlay Effect */}
+          <View style={[styles.headerGradientOverlay, { backgroundColor: '#000' }]} />
+
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Aubizo</Text>
+            {/* Top Row */}
+            <View style={styles.headerTopRow}>
+              <View style={styles.headerBrandSection}>
+                <View>
+                  <Text style={styles.headerTitle}>Aubizo</Text>
+                </View>
+              </View>
+
+              <View style={styles.headerActionsSection}>
+
+
+                <TouchableOpacity
+                  style={styles.logoutButton}
+                  onPress={() => setShowLogoutText(prev => !prev)}
+                >
+                  <Ionicons
+                    name="log-out-outline"
+                    size={18}
+                    color={DESIGN.colors.surface}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Bottom Row */}
+            <View style={styles.headerBottomRow}>
+              <View style={styles.headerStatusSection}>
+              </View>
+
+              <View style={styles.headerDateTimeSection}>
+                <Text style={styles.headerTime}>
+                  {new Date().toLocaleDateString('en-US', {
+                    weekday: 'short', // Mon, Tue, ...
+                    day: '2-digit',  // 13
+                    month: 'short',  // Oct
+
+                  })}
+                </Text>
+
+              </View>
+            </View>
           </View>
 
-
-          {/* Logout Button */}
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={() => setShowLogoutText(prev => !prev)} // toggle
-          >
-            <Ionicons
-              name="log-out-outline"
-              size={DESIGN.iconSize.md}
-              color={DESIGN.colors.error}
-            />
-          </TouchableOpacity>
-
-
+          {/* Logout Text Popup */}
           {showLogoutText && (
             <TouchableOpacity style={styles.logoutTextView} onPress={handleLogout}>
               <Text style={styles.logoutText}>Logout</Text>
             </TouchableOpacity>
           )}
-
-
         </View>
 
         {/* Scrollable Content */}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollViewContent}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -386,58 +427,83 @@ function Dashboard() {
           <View style={styles.mainContent}>
             {/* Greeting */}
             <View style={styles.greetingRow}>
-              <Text
-                style={styles.greetingText}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                Welcome, {dashboardData?.user_name || username}
-              </Text>
+              <View style={styles.welcomeContainer}>
+                <Text style={styles.welcomeText}>{getTimeBasedGreeting()}!</Text>
+                <Text
+                  style={styles.userNameText}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {dashboardData?.user_name || username}
+                </Text>
+              </View>
             </View>
 
             {/* Visit Overview */}
-            <TouchableOpacity
+            <TouchableHighlight
+              underlayColor="transparent"
               onPress={() => {
                 if (!dashboardData?.recent_visits?.length) return;
                 navigation.navigate("VisitHistory", {
                   visits: dashboardData.recent_visits,
                 });
-              }}
+              }
+              }
             >
               <View style={styles.section}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: DESIGN.spacing.xs }}>
-                  <Text
-                    style={{
-                      fontSize: DESIGN.typography.body.fontSize,
-                      fontWeight: DESIGN.typography.subtitle.fontWeight,
-                      color: DESIGN.colors.primary,
-                    }}
-                  >
+                <View style={styles.visitTitleRow}>
+                  <Text style={styles.visitTitleText}>
                     Visit Overview
                   </Text>
+                  <View style={styles.sectionBadge}>
+                    <Text style={styles.sectionBadgeText}>
+                      Today
+                    </Text>
+                  </View>
                 </View>
+
+                {/* Chevron in the middle of the card */}
+                {(dashboardData?.visit_summary?.total_visits || 0) > 0 && (
+                  <View style={styles.visitChevronContainer}>
+                    <View style={styles.visitChevron}>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color={DESIGN.colors.textSecondary}
+                      />
+                    </View>
+                  </View>
+                )}
 
                 <View style={styles.visitRow}>
-                  <Text style={styles.visitItem}>
-                    Total Visit: {dashboardData?.visit_summary?.total_visits || 0}
-                  </Text>
-                  <Text style={styles.visitItem}>
-                    Farmers: {dashboardData?.visit_summary?.farmer_visits || 0}
-                  </Text>
-                  <Text style={styles.visitItem}>
-                    Dealers: {dashboardData?.visit_summary?.dealer_visits || 0}
-                  </Text>
-                </View>
+                  <View style={styles.visitItemContainer}>
+                    <Text style={styles.visitCount}>
+                      {dashboardData?.visit_summary?.total_visits || 0}
+                    </Text>
+                    <Text style={styles.visitLabel}>Total Visits</Text>
+                  </View>
 
-                {/* Date Badge */}
-                <View style={styles.sectionBadge}>
-                  <Text style={styles.sectionBadgeText}>
-                    {`${new Date().getDate()}-${new Date().getMonth() + 1}-${new Date().getFullYear()}`}
-                  </Text>
+                  <View style={styles.visitDivider} />
+
+                  <View style={styles.visitItemContainer}>
+                    <Text style={styles.visitCount}>
+                      {dashboardData?.visit_summary?.farmer_visits || 0}
+                    </Text>
+                    <Text style={styles.visitLabel}>Farmers</Text>
+                  </View>
+
+                  <View style={styles.visitDivider} />
+
+                  <View style={styles.visitItemContainer}>
+                    <Text style={styles.visitCount}>
+                      {dashboardData?.visit_summary?.dealer_visits || 0}
+                    </Text>
+                    <Text style={styles.visitLabel}>Dealers</Text>
+                  </View>
                 </View>
 
               </View>
-            </TouchableOpacity>
+            </TouchableHighlight>
 
             {/* Action Cards */}
             <View style={styles.actionsGrid}>
@@ -506,22 +572,28 @@ function Dashboard() {
           {/* Activity Section */}
           <View style={styles.activitySection}>
             <View style={styles.activityHeader}>
-              <Text style={styles.activityTitle}>Today's Activity</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: DESIGN.spacing.sm }}>
+                <Ionicons
+                  name="time-outline"
+                  size={20}
+                  color={DESIGN.colors.textPrimary}
+                />
+                <Text style={styles.activityTitle}>Today's Activity</Text>
+              </View>
               {dashboardData?.punch_status?.punched_out && (
                 <Text style={styles.activitySubtitle}>
-                  Working Hours: {
+                  {
                     (() => {
                       const totalHours = dashboardData.working_hours;
                       const hrs = Math.floor(totalHours);
                       const mins = Math.round((totalHours - hrs) * 60);
 
                       if (hrs === 0) return `${mins} min`;
-                      return `${hrs} hr ${mins} min`;
+                      return `${hrs}h ${mins}m`;
                     })()
                   }
                 </Text>
               )}
-
             </View>
 
             {/* Punch In */}

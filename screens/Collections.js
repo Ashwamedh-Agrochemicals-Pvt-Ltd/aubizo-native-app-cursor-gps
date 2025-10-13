@@ -588,7 +588,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: DESIGN.spacing.md,
-    paddingVertical: DESIGN.spacing.md,
+    paddingVertical: DESIGN.spacing.sm,
   },
   headerTitle: {
     flex: 1,
@@ -610,15 +610,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: DESIGN.colors.surface,
-    margin: DESIGN.spacing.md,
+    marginVertical: DESIGN.spacing.sm,
     borderRadius: DESIGN.borderRadius.sm,
     paddingHorizontal: DESIGN.spacing.sm,
+    marginHorizontal: DESIGN.spacing.md,
   },
   searchInput: {
     flex: 1,
     height: 48,
     fontSize: DESIGN.typography.body.fontSize,
     paddingHorizontal: DESIGN.spacing.sm,
+
     color: DESIGN.colors.textPrimary,
   },
 

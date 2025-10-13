@@ -66,7 +66,7 @@ const TransactionDetails = ({ transactionId, visible = false, onClose }) => {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={true}>
+    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>

@@ -201,7 +201,7 @@ export default function VisitHistory({ route }) {
             {/* Farmers Section */}
             {(activeFilter === "all" || activeFilter === "farmers") && farmers.length > 0 && (
               <>
-                <Text style={styles.sectionHeader}>👨‍🌾 Farmers </Text>
+                <Text style={styles.sectionHeader}> Farmers </Text>
                 {farmers.map(renderVisitCard)}
               </>
             )}
@@ -209,7 +209,7 @@ export default function VisitHistory({ route }) {
             {/* Dealers Section */}
             {(activeFilter === "all" || activeFilter === "dealers") && dealers.length > 0 && (
               <>
-                <Text style={styles.sectionHeader}>🏪 Dealers </Text>
+                <Text style={styles.sectionHeader}> Dealers </Text>
                 {dealers.map(renderVisitCard)}
               </>
             )}
