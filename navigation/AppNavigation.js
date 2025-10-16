@@ -1,37 +1,78 @@
+// External Libraries
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+// React Navigation
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
+
+// Main Screens
 import Dashboard from "../screens/Dashboard";
 import OrderScreen from "../screens/Orders";
-import ProductScreen from "../screens/Pruducts";
+import ProductScreen from "../screens/Pruducts"; 
+import CollectionScreen from "../screens/Collections";
+import VisitHistory from "../screens/VisitHistory";
+
+// Farmer Related Screens
 import FarmerScreen from "../screens/Farmer";
 import FarmerVisitScreen from "../screens/FarmerVisit";
+import FarmerUpdateScreen from "../screens/FarmerUpdate";
+
+// Dealer Related Screens  
 import DealerScreen from "../screens/Dealer";
 import DealerUpdateScreen from "../screens/DealerUpdate";
 import DealerVisitScreen from "../screens/DealerVisit";
+
+// Product Related Screens
 import ProductDetailScreen from "../screens/ProductDetails";
-import FarmerUpdateScreen from "../screens/FarmerUpdate";
-import ScreenWrapper from "../src/components/ScreenWrapper";
-import LoginScreen from "../screens/Login";
+
+// Components
 import OrderForm from "../src/components/orders/OrderForm";
-import VisitHistory from "../screens/VisitHistory";
-import CollectionScreen from "../screens/Collections";
 import CollectionForm from "../src/components/collections/CollectionForm";
 
+// ================================================================
+// CONSTANTS & CONFIGURATIONS
+// ================================================================
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// Common screen options for all stack navigators
+const COMMON_STACK_OPTIONS = {
+  statusBarStyle: "dark",
+  statusBarColor: "#FFFFFF",
+};
+
+// Tab bar styling constants
+const TAB_BAR_CONFIG = {
+  height: 60,
+  activeTintColor: "#2E7D32",
+  inactiveTintColor: "#B0BEC5",
+  backgroundColor: "#FFFFFF",
+  borderTopWidth: 1,
+  borderRadius: 12,
+};
+
+// Screens where tab bar should be hidden
+const HIDDEN_TAB_SCREENS = {
+  dashboard: ["Farmer", "FarmerUpdate", "FarmerVisit", "Dealer", "DealerUpdate", "DealerVisit", "VisitHistory"],
+  products: ["Product Details"],
+  orders: ["OrderForm"],
+  collections: ["CollectionForm"],
+};
+
+// ================================================================
+// STACK NAVIGATORS
+// ================================================================
+
+/**
+ * Dashboard Stack Navigator
+ * Contains main dashboard and all farmer/dealer related screens
+ */
 function DashboardStack() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        statusBarStyle: "dark",
-        statusBarColor: "#FFFFFF",
-      }}
-    >
+    <Stack.Navigator screenOptions={COMMON_STACK_OPTIONS}>
       <Stack.Screen
         name="Dashboard"
         component={Dashboard}
@@ -42,8 +83,18 @@ function DashboardStack() {
         component={ProductScreen}
         options={{ title: "Product List" }}
       />
-      <Stack.Screen name="Product Details" component={ProductDetailScreen} />
-      <Stack.Screen name="Farmer" component={FarmerScreen} />
+      <Stack.Screen 
+        name="Product Details" 
+        component={ProductDetailScreen} 
+        options={{ title: "Product Details" }} 
+      />
+      
+      {/* Farmer Related Screens */}
+      <Stack.Screen 
+        name="Farmer" 
+        component={FarmerScreen} 
+        options={{ title: "Farmer" }} 
+      />
       <Stack.Screen
         name="FarmerUpdate"
         component={FarmerUpdateScreen}
@@ -55,7 +106,12 @@ function DashboardStack() {
         options={{ title: "Farmer Visit" }}
       />
 
-      <Stack.Screen name="Dealer" component={DealerScreen} />
+      {/* Dealer Related Screens */}
+      <Stack.Screen 
+        name="Dealer" 
+        component={DealerScreen} 
+        options={{ title: "Dealer" }} 
+      />
       <Stack.Screen
         name="DealerVisit"
         component={DealerVisitScreen}
@@ -66,24 +122,24 @@ function DashboardStack() {
         component={DealerUpdateScreen}
         options={{ title: "Update Dealer" }}
       />
-      {/* <Stack.Screen
-        name="Login"
-        component={LoginScreen}
-        options={{ headerShown: false }}
-      /> */}
-      <Stack.Screen name="VisitHistory" component={VisitHistory} options={{ title: "Visit History" }} />
+      
+      {/* Other Screens */}
+      <Stack.Screen 
+        name="VisitHistory" 
+        component={VisitHistory} 
+        options={{ title: "Visit History" }} 
+      />
     </Stack.Navigator>
   );
 }
 
+/**
+ * Orders Stack Navigator  
+ * Contains orders list and order creation form
+ */
 function OrdersStack() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        statusBarStyle: "dark",
-        statusBarColor: "#FFFFFF",
-      }}
-    >
+    <Stack.Navigator screenOptions={COMMON_STACK_OPTIONS}>
       <Stack.Screen
         name="Orders"
         component={OrderScreen}
@@ -92,96 +148,111 @@ function OrdersStack() {
       <Stack.Screen
         name="OrderForm"
         component={OrderForm}
-        options={{ title: "Order Form" }}
+        options={{ 
+          title: "Create Order", 
+          headerShown: true, 
+          headerBackTitle: "Back" 
+        }}
       />
     </Stack.Navigator>
   );
 }
 
+/**
+ * Collections Stack Navigator
+ * Contains collections list and collection creation form
+ */
 function CollectionsStack() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        statusBarStyle: "dark",
-        statusBarColor: "#FFFFFF",
-      }}
-    >
-      <Stack.Screen name="CollectionsHome" options={{ headerShown: false }}>
-        {(props) => (
-          <ScreenWrapper>
-            <CollectionScreen {...props} />
-          </ScreenWrapper>
-        )}
-      </Stack.Screen>
-      <Stack.Screen name="CollectionForm" component={CollectionForm} options={{ title: "Collection Form" }} />
+    <Stack.Navigator screenOptions={COMMON_STACK_OPTIONS}>
+      <Stack.Screen 
+        name="CollectionsHome" 
+        component={CollectionScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="CollectionForm" 
+        component={CollectionForm} 
+        options={{ 
+          title: "Create Collection", 
+          headerShown: true, 
+          headerBackTitle: "Back" 
+        }} 
+      />
     </Stack.Navigator>
   );
 }
 
-
-
+/**
+ * Products Stack Navigator
+ * Contains product list and product details screens
+ */
 function ProductStack() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        statusBarStyle: "dark",
-        statusBarColor: "#FFFFFF",
-      }}
-    >
+    <Stack.Navigator screenOptions={COMMON_STACK_OPTIONS}>
       <Stack.Screen
         name="Product"
         component={ProductScreen}
         options={{ title: "Product List" }}
       />
-      <Stack.Screen name="Product Details" component={ProductDetailScreen} />
+      <Stack.Screen 
+        name="Product Details" 
+        component={ProductDetailScreen}
+        options={{ title: "Product Details" }}
+      />
     </Stack.Navigator>
   );
 }
 
-//
-// 🔹 Tab Navigator (Root)
-//
+// ================================================================
+// HELPER FUNCTIONS
+// ================================================================
+
+/**
+ * Creates tab bar style configuration
+ * @param {number} totalHeight - Total height including safe area
+ * @param {number} safeAreaBottom - Safe area bottom padding
+ * @returns {object} Tab bar style object
+ */
+const createTabBarStyle = (totalHeight, safeAreaBottom) => ({
+  height: totalHeight,
+  paddingBottom: safeAreaBottom,
+  backgroundColor: TAB_BAR_CONFIG.backgroundColor,
+  borderTopWidth: TAB_BAR_CONFIG.borderTopWidth,
+  borderTopLeftRadius: TAB_BAR_CONFIG.borderRadius,
+  borderTopRightRadius: TAB_BAR_CONFIG.borderRadius,
+});
+
+// ================================================================
+// MAIN TAB NAVIGATOR
+// ================================================================
+
+/**
+ * Main App Navigation Component
+ * Bottom Tab Navigator containing all main app sections
+ */
 export function AppNavigation() {
   const insets = useSafeAreaInsets();
-
-  const tabBarHeight = 60;
+  
   const safeAreaBottom = insets.bottom || 10;
-  const totalHeight = tabBarHeight + safeAreaBottom;
+  const totalHeight = TAB_BAR_CONFIG.height + safeAreaBottom;
+  const defaultTabBarStyle = createTabBarStyle(totalHeight, safeAreaBottom);
 
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: "#2E7D32",
-        tabBarInactiveTintColor: "#B0BEC5",
-        tabBarStyle: {
-          height: totalHeight,
-          paddingBottom: safeAreaBottom,
-          backgroundColor: "#FFFFFF",
-          borderTopWidth: 1,
-          borderTopLeftRadius: 12, // Top Left
-          borderTopRightRadius: 12, // Top Right
-
-          headerShown: false,
-        },
+        tabBarActiveTintColor: TAB_BAR_CONFIG.activeTintColor,
+        tabBarInactiveTintColor: TAB_BAR_CONFIG.inactiveTintColor,
+        tabBarStyle: defaultTabBarStyle,
+        headerShown: false,
       }}
     >
       <Tab.Screen
         name="DashboardTab"
         component={DashboardStack}
         options={({ route }) => {
-          // 👇 get the active route inside DashboardStack
           const routeName = getFocusedRouteNameFromRoute(route) ?? "Dashboard";
-
-          // hide tab bar if not on DashboardHome
-          const hideOnScreens = [
-            "Farmer",
-            "FarmerUpdate",
-            "FarmerVisit",
-            "Dealer",
-            "DealerUpdate",
-            "DealerVisit",
-            "VisitHistory",
-          ];
+          const shouldHideTabBar = HIDDEN_TAB_SCREENS.dashboard.includes(routeName);
 
           return {
             tabBarLabel: "Home",
@@ -189,32 +260,17 @@ export function AppNavigation() {
               <MaterialCommunityIcons name="home" size={size} color={color} />
             ),
             headerShown: false,
-            tabBarStyle: hideOnScreens.includes(routeName)
-              ? { display: "none" }
-              : {
-                height: totalHeight,
-                paddingBottom: safeAreaBottom,
-                backgroundColor: "#FFFFFF",
-                borderTopWidth: 1,
-                borderTopLeftRadius: 12, // Top Left
-                borderTopRightRadius: 12, // Top Right
-
-              },
+            tabBarStyle: shouldHideTabBar ? { display: "none" } : defaultTabBarStyle,
           };
         }}
       />
-
 
       <Tab.Screen
         name="ProductsTab"
         component={ProductStack}
         options={({ route }) => {
-          // 👇 get the active route inside OrdersStack
-          const routeName =
-            getFocusedRouteNameFromRoute(route) ?? "ProductScreen";
-
-          // screens where tab bar should be hidden
-          const hideOnScreens = ["Product Details"];
+          const routeName = getFocusedRouteNameFromRoute(route) ?? "ProductScreen";
+          const shouldHideTabBar = HIDDEN_TAB_SCREENS.products.includes(routeName);
 
           return {
             tabBarLabel: "Products",
@@ -226,18 +282,7 @@ export function AppNavigation() {
               />
             ),
             headerShown: false,
-            tabBarStyle: hideOnScreens.includes(routeName)
-              ? { display: "none" }
-              : {
-               height: totalHeight,
-                paddingBottom: safeAreaBottom,
-                backgroundColor: "#FFFFFF",
-                borderTopWidth: 1,
-                borderTopLeftRadius: 12, // Top Left
-                borderTopRightRadius: 12, // Top Right
-
-              },
-
+            tabBarStyle: shouldHideTabBar ? { display: "none" } : defaultTabBarStyle,
           };
         }}
       />
@@ -246,12 +291,8 @@ export function AppNavigation() {
         name="OrdersTab"
         component={OrdersStack}
         options={({ route }) => {
-          // 👇 get the active route inside OrdersStack
-          const routeName =
-            getFocusedRouteNameFromRoute(route) ?? "OrderScreen";
-
-          // screens where tab bar should be hidden
-          const hideOnScreens = ["OrderForm"];
+          const routeName = getFocusedRouteNameFromRoute(route) ?? "OrderScreen";
+          const shouldHideTabBar = HIDDEN_TAB_SCREENS.orders.includes(routeName);
 
           return {
             tabBarLabel: "Orders",
@@ -263,16 +304,7 @@ export function AppNavigation() {
               />
             ),
             headerShown: false,
-            tabBarStyle: hideOnScreens.includes(routeName)
-              ? { display: "none" }
-              : {
-                height: totalHeight,
-                paddingBottom: safeAreaBottom,
-                backgroundColor: "#FFFFFF",
-                borderTopWidth: 1,
-                borderTopLeftRadius: 12, // Top Left
-                borderTopRightRadius: 12, // Top Right
-              },
+            tabBarStyle: shouldHideTabBar ? { display: "none" } : defaultTabBarStyle,
           };
         }}
       />
@@ -280,33 +312,22 @@ export function AppNavigation() {
       <Tab.Screen
         name="CollectionsTab"
         component={CollectionsStack}
-        options={({route}) => { 
-
+        options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route) ?? "CollectionsHome";
-
-          const hideOnScreens = ["CollectionForm"];
+          const shouldHideTabBar = HIDDEN_TAB_SCREENS.collections.includes(routeName);
 
           return {
-          tabBarLabel: "Collection",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons
-              name="folder"
-              size={size}
-              color={color}
-            />
-          ),
-          headerShown: false,
-          tabBarStyle: hideOnScreens.includes(routeName)
-            ? { display: "none" }
-            : {
-              height: totalHeight,  
-              paddingBottom: safeAreaBottom,
-              backgroundColor: "#FFFFFF",
-              borderTopWidth: 1,
-              borderTopLeftRadius: 12, // Top Left
-              borderTopRightRadius: 12, // Top Right
-            }
-        }
+            tabBarLabel: "Collections",
+            tabBarIcon: ({ color, size }) => ( 
+              <MaterialCommunityIcons
+                name="folder"
+                size={size}
+                color={color}
+              />
+            ),
+            headerShown: false,
+            tabBarStyle: shouldHideTabBar ? { display: "none" } : defaultTabBarStyle,
+          };
         }}
       />
 

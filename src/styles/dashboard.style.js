@@ -9,12 +9,7 @@ export default StyleSheet.create({
   // Header
   header: {
     backgroundColor: DESIGN.colors.primary,
-    height: "14%",
-    shadowColor: DESIGN.colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
+    height: "10%",
     position: 'relative',
   },
 
@@ -29,10 +24,8 @@ export default StyleSheet.create({
 
   headerContent: {
     flex: 1,
-    justifyContent: 'space-between',
-    paddingHorizontal: DESIGN.spacing.xl,
-    paddingTop: DESIGN.spacing.lg,
-    paddingBottom: DESIGN.spacing.md,
+    paddingHorizontal: DESIGN.spacing.md,
+    justifyContent: 'center',
   },
 
   headerTopRow: {
@@ -41,12 +34,6 @@ export default StyleSheet.create({
     alignItems: 'flex-start',
   },
 
-  headerBottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginTop: DESIGN.spacing.sm,
-  },
 
   headerBrandSection: {
     flexDirection: 'row',
@@ -139,34 +126,84 @@ export default StyleSheet.create({
     borderColor: DESIGN.colors.surface + '30',
   },
 
-  logoutButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: DESIGN.colors.surface + '20',
+  // Enhanced Logout Button
+  enhancedLogoutButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: "#000",
+    right: DESIGN.spacing.sm,
+    overflow: 'hidden',
   },
 
-  logoutTextView: {
-    position: "absolute",
-    bottom: DESIGN.spacing.xl, // place above the button
-    right: 70,
-    backgroundColor: DESIGN.colors.surface,
-    paddingVertical: DESIGN.spacing.xs,
-    paddingHorizontal: DESIGN.spacing.md,
-    borderRadius: DESIGN.borderRadius.sm,
-    elevation: 3, // shadow on Android
-    shadowColor: "#000", // shadow for iOS
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
+  logoutButtonInner: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+
+    borderColor: DESIGN.colors.surface + '40',
+
   },
-  logoutText: {
+
+  logoutButtonGlow: {
+    position: 'absolute',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: DESIGN.colors.surface + '10',
+
+  },
+
+  // Modern Logout Popup
+  modernLogoutPopup: {
+    position: "absolute",
+    top: 60,
+    right: DESIGN.spacing.lg,
+    backgroundColor: DESIGN.colors.surface,
+    borderRadius: DESIGN.borderRadius.lg,
+    elevation: 10,
+    zIndex: 1000,
+  },
+
+  logoutPopupContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: DESIGN.spacing.lg,
+    paddingVertical: DESIGN.spacing.md,
+    gap: DESIGN.spacing.sm,
+  },
+
+  logoutIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: DESIGN.colors.error + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  enhancedLogoutText: {
+    fontSize: 16,
+    fontWeight: '600',
     color: DESIGN.colors.error,
-    fontWeight: "600",
-    fontSize: DESIGN.spacing.md,
+    marginRight: DESIGN.spacing.xs,
+  },
+
+  logoutPopupArrow: {
+    position: 'absolute',
+    top: -8,
+    right: 20,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderBottomWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: DESIGN.colors.surface,
   },
 
   // ScrollView
@@ -180,10 +217,97 @@ export default StyleSheet.create({
 
   // Main Content
   mainContent: {
-    padding: DESIGN.spacing.md,
-    // backgroundColor: DESIGN.colors.background,
+    padding: DESIGN.spacing.sm,
   },
 
+  // Enhanced Greeting Styles
+  enhancedGreetingCard: {
+    position: 'relative',
+    marginBottom: DESIGN.spacing.lg,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: DESIGN.colors.surface,
+  },
+
+  greetingGradientOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: `rgba(46, 125, 50, 0.08)`, // primary color with transparency
+  },
+
+  greetingDecorations: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+
+  decorativeCircle1: {
+    position: 'absolute',
+    top: -20,
+    right: -20,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: `rgba(76, 175, 80, 0.1)`,
+  },
+
+  decorativeCircle2: {
+    position: 'absolute',
+    bottom: -30,
+    left: -15,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: `rgba(255, 143, 0, 0.08)`,
+  },
+
+  greetingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: DESIGN.spacing.md,
+   
+  },
+
+
+  enhancedWelcomeContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+
+  enhancedWelcomeText: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: DESIGN.colors.textSecondary,
+    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+
+  enhancedUserNameText: {
+    fontSize: 26,
+    fontWeight: '600',
+    color: DESIGN.colors.textPrimary,
+    letterSpacing: -0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+
+  pulseEffect: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: `rgba(76, 175, 80, 0.05)`,
+    borderRadius: 24,
+  },
+
+  // Legacy styles (keeping for compatibility)
   greetingRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -198,43 +322,14 @@ export default StyleSheet.create({
     elevation: 4,
   },
 
-  greetingText: {
-    flex: 1,
-    fontSize: 22,
-    fontWeight: "600",
-    color: DESIGN.colors.textPrimary,
-    marginRight: DESIGN.spacing.sm,
-  },
-
-  avatarPlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: DESIGN.colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: DESIGN.spacing.md,
-  },
-
-  avatarText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: DESIGN.colors.surface,
-  },
-
-  welcomeContainer: {
-    flex: 1,
-  },
-
   welcomeText: {
     fontSize: 16,
     fontWeight: "400",
     color: DESIGN.colors.textSecondary,
-    marginBottom: 2,
   },
 
   userNameText: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: DESIGN.colors.textPrimary,
   },
@@ -312,7 +407,7 @@ export default StyleSheet.create({
   },
 
   visitLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: DESIGN.colors.textSecondary,
     textAlign: "center",
     marginTop: 4,
@@ -354,7 +449,8 @@ export default StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: DESIGN.spacing.md,
-   
+    marginBottom: DESIGN.spacing.lg,
+
   },
 
   actionCard: {
@@ -387,7 +483,7 @@ export default StyleSheet.create({
   },
 
   actionTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
     color: DESIGN.colors.textPrimary,
     textAlign: "center",
@@ -399,15 +495,13 @@ export default StyleSheet.create({
     color: DESIGN.colors.textSecondary,
   },
 
-  // Activity Section
-  activitySection: {
-    flex: 1,
-    padding: DESIGN.spacing.md,
-    padding: DESIGN.spacing.md,
-    borderRadius: 16,
-    marginBottom: DESIGN.spacing.md,
-
-  },
+  // // Activity Section
+  // activitySection: {
+  //   flex: 1,
+  //   padding: DESIGN.spacing.md,
+  //   padding: DESIGN.spacing.md,
+  //   borderRadius: 16,  
+  // },
 
   activityHeader: {
     flexDirection: "row",
@@ -437,10 +531,7 @@ export default StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: DESIGN.spacing.md,
-
-
-
+    marginBottom: DESIGN.spacing.sm,
   },
 
   punchSectionRow: {
@@ -465,8 +556,8 @@ export default StyleSheet.create({
   },
 
   punchTime: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "500",
     color: DESIGN.colors.textPrimary,
   },
   loaderOverlay: {

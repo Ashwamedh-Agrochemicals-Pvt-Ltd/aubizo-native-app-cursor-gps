@@ -1,5 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useContext, useEffect, useRef, useState, useCallback, use } from "react";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import React, { useContext, useEffect, useRef, useState, useCallback, use } from "react";
 import {
   Alert,
   Text,
@@ -26,7 +26,7 @@ import GenericSettingsModal from "../src/components/GenericSettingsModal";
 import DESIGN from "../src/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import useAuth from "../src/auth/useAuth";
-import { TouchableWithoutFeedback } from "react-native-web";
+import { useFocusEffect } from "@react-navigation/native";
 
 const INPUNCH_URL = process.env.EXPO_PUBLIC_INPUNCH_URL;
 const OUTPUNCH_URL = process.env.EXPO_PUBLIC_OUTPUNCH_URL;
@@ -156,9 +156,23 @@ function Dashboard() {
     }
   }, [user, checkPunchStatus]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+
+      setShowLogoutText(false);
+
+    }, [])
+  );
+
   const onRefresh = useCallback(async () => {
+
     setRefreshing(true);
-    await checkPunchStatus(); // your existing API call
+
+    await checkPunchStatus();
+    setShowLogoutText(false);
+
+
+    // your existing API call
     setRefreshing(false);
   }, [checkPunchStatus]);
 
@@ -365,46 +379,42 @@ function Dashboard() {
                   <Text style={styles.headerTitle}>Aubizo</Text>
                 </View>
               </View>
+              <TouchableOpacity
+                style={styles.enhancedLogoutButton}
+                onPress={() => setShowLogoutText(prev => !prev)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.logoutButtonInner}>
+                  <FontAwesome
+                    name="power-off"
+                    size={20}
+                    color={DESIGN.colors.surface} />
+                </View>
+                <View style={styles.logoutButtonGlow} />
+              </TouchableOpacity>
 
-              <View style={styles.headerActionsSection}>
-
-
-                <TouchableOpacity
-                  style={styles.logoutButton}
-                  onPress={() => setShowLogoutText(prev => !prev)}
-                >
-                  <Ionicons
-                    name="log-out-outline"
-                    size={18}
-                    color={DESIGN.colors.surface}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Bottom Row */}
-            <View style={styles.headerBottomRow}>
-              <View style={styles.headerStatusSection}>
-              </View>
-
-              <View style={styles.headerDateTimeSection}>
-                <Text style={styles.headerTime}>
-                  {new Date().toLocaleDateString('en-US', {
-                    weekday: 'short', // Mon, Tue, ...
-                    day: '2-digit',  // 13
-                    month: 'short',  // Oct
-
-                  })}
-                </Text>
-
-              </View>
             </View>
           </View>
 
-          {/* Logout Text Popup */}
+          {/* Enhanced Logout Confirmation */}
           {showLogoutText && (
-            <TouchableOpacity style={styles.logoutTextView} onPress={handleLogout}>
-              <Text style={styles.logoutText}>Logout</Text>
+            <TouchableOpacity style={styles.modernLogoutPopup} onPress={handleLogout}>
+              <View style={styles.logoutPopupContent}>
+                <View style={styles.logoutIconCircle}>
+                  <FontAwesome
+                    name="sign-out"
+                    size={16}
+                    color={DESIGN.colors.error}
+                  />
+                </View>
+                <Text style={styles.enhancedLogoutText}>Sign Out</Text>
+                <FontAwesome
+                  name="angle-right"
+                  size={14}
+                  color={DESIGN.colors.textSecondary}
+                />
+              </View>
+              <View style={styles.logoutPopupArrow} />
             </TouchableOpacity>
           )}
         </View>
@@ -422,21 +432,42 @@ function Dashboard() {
               tintColor={DESIGN.colors.primary}
             />
           }
-        >
+         >
           {/* Main Content */}
           <View style={styles.mainContent}>
-            {/* Greeting */}
-            <View style={styles.greetingRow}>
-              <View style={styles.welcomeContainer}>
-                <Text style={styles.welcomeText}>{getTimeBasedGreeting()}!</Text>
-                <Text
-                  style={styles.userNameText}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {dashboardData?.user_name || username}
-                </Text>
+            
+            {/* Enhanced Greeting Section */}
+            <View style={styles.enhancedGreetingCard}>
+              {/* Gradient Background */}
+              <View style={styles.greetingGradientOverlay} />
+              
+              {/* Decorative Elements */}
+              <View style={styles.greetingDecorations}>
+                <View style={styles.decorativeCircle1} />
+                <View style={styles.decorativeCircle2} />
               </View>
+
+              <View style={styles.greetingContent}>
+              
+                {/* Welcome Text Section */}
+                <View style={styles.enhancedWelcomeContainer}>
+                  <Text style={styles.enhancedWelcomeText}>
+                    {getTimeBasedGreeting()}!
+                  </Text>
+                  <Text
+                    style={styles.enhancedUserNameText}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {dashboardData?.user_name || username}
+                  </Text>
+                 
+                </View>
+
+              </View>
+
+              {/* Animated Pulse Effect */}
+              <View style={styles.pulseEffect} />
             </View>
 
             {/* Visit Overview */}
@@ -466,8 +497,8 @@ function Dashboard() {
                 {(dashboardData?.visit_summary?.total_visits || 0) > 0 && (
                   <View style={styles.visitChevronContainer}>
                     <View style={styles.visitChevron}>
-                      <Ionicons
-                        name="chevron-forward"
+                      <FontAwesome
+                        name="angle-right"
                         size={20}
                         color={DESIGN.colors.textSecondary}
                       />
@@ -520,8 +551,8 @@ function Dashboard() {
                 activeOpacity={hasInpunch ? 0.7 : 1}
               >
                 <View style={{ alignItems: "center" }}>
-                  <Ionicons
-                    name="leaf-outline"
+                  <FontAwesome
+                    name="leaf"
                     size={DESIGN.iconSize.lg}
                     color={hasInpunch ? DESIGN.colors.primary : DESIGN.colors.textSecondary}
                     style={styles.actionIcon}
@@ -567,10 +598,10 @@ function Dashboard() {
                 </View>
               </TouchableHighlight>
             </View>
-          </View>
+          
 
-          {/* Activity Section */}
-          <View style={styles.activitySection}>
+           {/* Activity Section */} 
+          
             <View style={styles.activityHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: DESIGN.spacing.sm }}>
                 <Ionicons

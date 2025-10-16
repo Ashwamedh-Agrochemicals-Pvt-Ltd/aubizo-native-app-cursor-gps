@@ -2,7 +2,7 @@
 import { forwardRef, useRef, useEffect, useImperativeHandle } from "react";
 import { View, Text, Animated, PanResponder, ActivityIndicator, StyleSheet, TouchableHighlight } from "react-native";
 import DESIGN from "../../theme";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 
 
 
@@ -111,7 +111,7 @@ const SwipePunchButton = forwardRef(({ onSwipe, loading, hasInpunch }, ref) => {
                     {loading ? (
                         <ActivityIndicator size={24} color="#FFF" />
                     ) : (
-                        <MaterialCommunityIcons name="chevron-right" size={45} color="#FFF" />
+                        <FontAwesome name="chevron-right" size={30} color="#FFF" />
                     )}
 
                 </Animated.View>
@@ -125,15 +125,11 @@ export default SwipePunchButton;
 
 const styles = StyleSheet.create({
     container: {
-   
-
         alignItems: "center",
         paddingHorizontal: DESIGN.spacing.md,
-    //   paddingVertical: DESIGN.spacing.sm,
-        // backgroundColor: 'transparent',
+        paddingVertical: DESIGN.spacing.md,
+        backgroundColor: 'transparent',
         justifyContent: "center",
-        bottom: 10,
-
     },
     trackLabel: {
         ...DESIGN.typography.body,
@@ -156,7 +152,7 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         justifyContent: "center",
         alignItems: "center",
-        ...DESIGN.shadows.medium,
+        ...DESIGN.shadows.subtle,
         backgroundColor: DESIGN.colors.primary,
     },
     thumbText: {

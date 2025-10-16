@@ -108,6 +108,7 @@ export default function VisitHistory({ route }) {
     >
       <View style={styles.visitCardHeader}>
         <View style={styles.entityInfo}>
+
           <View style={styles.entityDetails}>
             {activeFilter === "all" && (
               <>
@@ -198,18 +199,24 @@ export default function VisitHistory({ route }) {
           renderEmptyState()
         ) : (
           <>
-            {/* Farmers Section */}
-            {(activeFilter === "all" || activeFilter === "farmers") && farmers.length > 0 && (
+            {/* Show visits based on active filter */}
+            {activeFilter === "all" && (
               <>
-                <Text style={styles.sectionHeader}> Farmers </Text>
+                <Text style={styles.sectionHeader}>All Visits</Text>
+                {filteredVisits.map(renderVisitCard)}
+              </>
+            )}
+            
+            {activeFilter === "farmers" && farmers.length > 0 && (
+              <>
+                <Text style={styles.sectionHeader}>Farmer Visits</Text>
                 {farmers.map(renderVisitCard)}
               </>
             )}
 
-            {/* Dealers Section */}
-            {(activeFilter === "all" || activeFilter === "dealers") && dealers.length > 0 && (
+            {activeFilter === "dealers" && dealers.length > 0 && (
               <>
-                <Text style={styles.sectionHeader}> Dealers </Text>
+                <Text style={styles.sectionHeader}>Dealer Visits</Text>
                 {dealers.map(renderVisitCard)}
               </>
             )}
@@ -229,7 +236,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: DESIGN.spacing.md,
     paddingVertical: DESIGN.spacing.md,
-    borderRadius: DESIGN.borderRadius.md,
     borderWidth: 1,
     borderColor: DESIGN.colors.border,
   

@@ -12,7 +12,6 @@ import {
   View,
   ActivityIndicator,
 } from "react-native";
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from "../../api/client";
 import { DealerSchema } from "../../validations/DealerSchema";
 import useMasterData from "../../hooks/useMasterData";
@@ -22,9 +21,9 @@ import InputFormField from "../form/appComponents/InputFormText";
 import OTPModal from "./OTPModal";
 import logger from "../../utility/logger";
 import LocationService from "../../utility/location";
+import showToast from "../../utility/showToast";
 
 function DealerForm({ location, stateDealerForm }) {
-  const queryClient = useQueryClient();
   const abortControllerRef = useRef(null);
 
   const { states, districts, talukas, loadStates, loadDistricts, loadTalukas } =
@@ -51,31 +50,37 @@ function DealerForm({ location, stateDealerForm }) {
   const [otpModalVisible, setOtpModalVisible] = useState(false);
   const [createdDealerId, setCreatedDealerId] = useState(null);
   const [locationPermission, setLocationPermission] = useState(null);
+  
+  // Loading states to replace React Query mutations
+  const [isCreatingDealer, setIsCreatingDealer] = useState(false);
+  const [isSendingOTP, setIsSendingOTP] = useState(false);
 
-  // React Query mutations
-  const createDealerMutation = useMutation({
-    mutationFn: async (payload) => {
+  /**
+   * Create dealer and handle success/error states
+   */
+  const createDealer = async (payload) => {
+    try {
+      setIsCreatingDealer(true);
+      
       // Create abort controller for this request
       abortControllerRef.current = new AbortController();
 
       const response = await apiClient.post('dealer/create/', payload, {
         signal: abortControllerRef.current.signal,
-        timeout: 0, // 10 second timeout
+        timeout: 0,
       });
-      return response.data;
-    },
-    onSuccess: (data, variables) => {
-      const dealerId = data?.id ?? data?.dealer_id ?? null;
+
+      const dealerId = response.data?.id ?? response.data?.dealer_id ?? null;
       setCreatedDealerId(dealerId);
 
       if (__DEV__) {
         logger.info('Dealer created successfully:', { dealerId });
       }
 
-      // Send OTP after successful creation with the current phone
-      sendOTPMutation.mutate({ dealerId, phone: variables.phone });
-    },
-    onError: (error) => {
+      // Send OTP after successful creation
+      await sendOTP({ dealerId, phone: payload.phone });
+      
+    } catch (error) {
       if (error.name === 'AbortError') {
         // Request was cancelled, do nothing
         return;
@@ -112,11 +117,18 @@ function DealerForm({ location, stateDealerForm }) {
       }
 
       Alert.alert("Error", "Failed to create dealer. Please try again.");
-    },
-  });
+    } finally {
+      setIsCreatingDealer(false);
+    }
+  };
 
-  const sendOTPMutation = useMutation({
-    mutationFn: async ({ dealerId, phone }) => {
+  /**
+   * Send OTP to dealer and handle success/error states
+   */
+  const sendOTP = async ({ dealerId, phone }) => {
+    try {
+      setIsSendingOTP(true);
+      
       if (!abortControllerRef.current) {
         abortControllerRef.current = new AbortController();
       }
@@ -131,31 +143,33 @@ function DealerForm({ location, stateDealerForm }) {
         if (resp?.data?.phone) {
           setPhoneForOTP(resp.data.phone);
         }
-
       }
 
       await apiClient.post(`dealer/${dealerId}/send-otp/`, {}, {
         signal: abortControllerRef.current.signal,
-        timeout: 10000, // 10 second timeout
+        timeout: 10000,
       });
-    },
-    onSuccess: () => {
+
       setOtpModalVisible(true);
       if (__DEV__) {
         logger.info('OTP sent successfully');
       }
-    },
-    onError: (error) => {
+      
+    } catch (error) {
       if (error.name === 'AbortError') {
         return;
       }
+      
       if (__DEV__) {
         logger.error('Error sending OTP:', error);
       }
+      
       setOtpModalVisible(true);
       Alert.alert("OTP Error", "Failed to send OTP. You can try resending from the modal.");
-    },
-  });
+    } finally {
+      setIsSendingOTP(false);
+    }
+  };
 
 
   // Get current location with proper error handling
@@ -194,17 +208,17 @@ function DealerForm({ location, stateDealerForm }) {
       console.log("🏪 [DealerForm] Starting handleSubmit...");
     }
     // Prevent double submission
-    if (isSubmitting || createDealerMutation.isPending && sendOTPMutation.isPending) {
+    if (isSubmitting || isCreatingDealer || isSendingOTP) {
       return;
     }
     setIsSubmitting(true);
-    // --- Case 1: Dealer already exists → Only resend OTP ---
-    if (createdDealerId) {
-      sendOTPMutation.mutate({ dealerId: createdDealerId, phone: values.phone },
-        { onSettled: () => setIsSubmitting(false) }
-      );
-      return;
-    }
+    
+    try {
+      // --- Case 1: Dealer already exists → Only resend OTP ---
+      if (createdDealerId) {
+        await sendOTP({ dealerId: createdDealerId, phone: values.phone });
+        return;
+      }
     // --- Case 2: First time dealer creation ---
     const { state, district, taluka } = formState;
 
@@ -235,18 +249,23 @@ function DealerForm({ location, stateDealerForm }) {
 
 
 
-    const startTime = Date.now();
-    setPhoneForOTP(payload.phone);
-    createDealerMutation.mutate(payload,
-      {
-        onSettled: () => setIsSubmitting(false)
-      });
+      const startTime = Date.now();
+      setPhoneForOTP(payload.phone);
+      await createDealer(payload);
 
-    const totalTime = Date.now() - startTime;
-    if (__DEV__) {
-      console.log(`🏪 [DealerForm] handleSubmit total time: ${totalTime}ms`);
+      const totalTime = Date.now() - startTime;
+      if (__DEV__) {
+        console.log(`🏪 [DealerForm] handleSubmit total time: ${totalTime}ms`);
+      }
+    } catch (error) {
+      // Error handling is already done in createDealer function
+      if (__DEV__) {
+        logger.error('Error in handleSubmit:', error);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [isSubmitting, createdDealerId, formState, location, getCurrentLocation, createDealerMutation, sendOTPMutation]);
+  }, [isSubmitting, createdDealerId, formState, location, getCurrentLocation, isCreatingDealer, isSendingOTP]);
 
   // Cleanup on unmount
 
@@ -272,7 +291,7 @@ function DealerForm({ location, stateDealerForm }) {
         validateOnBlur={true}
       >
         {({ values, handleSubmit, setFieldValue, dirty }) => {
-          const canSubmit = dirty && !createDealerMutation.isPending && !sendOTPMutation.isPending;
+          const canSubmit = dirty && !isCreatingDealer && !isSendingOTP;
 
           return (
             <View style={modernStyles.formContent}>
@@ -544,7 +563,7 @@ function DealerForm({ location, stateDealerForm }) {
                   accessibilityState={{ disabled: !canSubmit }}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  {isSubmitting || createDealerMutation.isPending || sendOTPMutation.isPending ? (
+                  {isSubmitting || isCreatingDealer || isSendingOTP ? (
                     <ActivityIndicator size="small" color={DESIGN.colors.surface} />
                   ) : (
                     <>
@@ -560,7 +579,7 @@ function DealerForm({ location, stateDealerForm }) {
         }}
       </Formik>
     </View>
-  ), [dropdowns, formState, states, districts, talukas, loadStates, loadDistricts, loadTalukas, handleSubmit, location, locationPermission, createdDealerId, createDealerMutation.isPending, sendOTPMutation.isPending]);
+  ), [dropdowns, formState, states, districts, talukas, loadStates, loadDistricts, loadTalukas, handleSubmit, location, locationPermission, createdDealerId, isCreatingDealer, isSendingOTP]);
 
   return (
     <KeyboardAvoidingView
@@ -589,10 +608,9 @@ function DealerForm({ location, stateDealerForm }) {
           setOtpModalVisible(false);
           stateDealerForm(false);
           setCreatedDealerId(null);
-
-          // Invalidate related queries
-          queryClient.invalidateQueries({ queryKey: ['dealers'] });
-          queryClient.invalidateQueries({ queryKey: ['nearby-dealers'] });
+          
+          // Show success message
+          showToast.success('Dealer created successfully!');
         }}
       />
     </KeyboardAvoidingView>

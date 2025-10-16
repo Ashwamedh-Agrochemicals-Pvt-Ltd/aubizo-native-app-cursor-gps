@@ -98,9 +98,8 @@ const SearchBarWithDropdown = ({
                 {item.shop_name || "Unknown Shop"}
               </Text>
               <Text style={styles.dealerItemSubtext}>
-                {`${item.owner_name || "Unknown Owner"} • ${
-                  item.phone || "No Phone"
-                }`}
+                {`${item.owner_name || "Unknown Owner"} • ${item.phone || "No Phone"
+                  }`}
               </Text>
             </TouchableOpacity>
           )}
@@ -149,7 +148,7 @@ function CollectionScreen({ navigation }) {
   // Handle hardware back button
   useFocusEffect(
     useCallback(() => {
-     
+
       const onBackPress = () => {
         if (modalVisible) {
           setModalVisible(false);
@@ -178,14 +177,14 @@ function CollectionScreen({ navigation }) {
 
 
   useFocusEffect(
-      React.useCallback(() => {
-        return () => {
-          setShowSearch(false);
-          setSearchQuery("");
-        };
-      }, [])
-    );
-  
+    React.useCallback(() => {
+      return () => {
+        setShowSearch(false);
+        setSearchQuery("");
+      };
+    }, [])
+  );
+
   // Fetch dealers based on search query
   const fetchDealers = async (search) => {
     if (!search || search.trim().length < 2) {
@@ -376,8 +375,8 @@ function CollectionScreen({ navigation }) {
             year: "numeric",
           })}
         </Text>
-        <Text style={styles.dealerName}>{item.dealer_info?.name || "N/A"}</Text>
-        <Text style={styles.shopName}>{item.dealer_info?.shop_name || ""}</Text>
+        <Text style={styles.dealerName}>{item.dealer_info?.shop_name || ""}</Text>
+        <Text style={styles.ownerName}>Owner: {item.dealer_info?.name || "N/A"}</Text>
 
         <View style={styles.amountRow}>
           <Text style={styles.amount}>₹ {item.amount}</Text>
@@ -513,12 +512,12 @@ function CollectionScreen({ navigation }) {
           ListEmptyComponent={() => {
             // Determine empty state based on context
             let iconName, title, subtitle;
-            
+
             if (showSearch && (searchQuery || selectedDealer)) {
               // Search mode with query/dealer selected
               iconName = "magnify";
               title = "No collections found";
-              subtitle = selectedDealer 
+              subtitle = selectedDealer
                 ? `No collections for ${selectedDealer.shop_name}`
                 : "Try different search terms";
             } else if (activeTab === 1) {
@@ -674,6 +673,12 @@ const styles = StyleSheet.create({
     fontSize: DESIGN.typography.body.fontSize,
   },
   shopName: {
+    color: DESIGN.colors.textSecondary,
+    fontSize: DESIGN.typography.caption.fontSize,
+    fontWeight: "500",
+    marginBottom: DESIGN.spacing.xs,
+  },
+  ownerName: {
     marginVertical: DESIGN.spacing.xs,
     fontStyle: "italic",
     fontWeight: "400",
