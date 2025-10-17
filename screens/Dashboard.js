@@ -27,6 +27,9 @@ import DESIGN from "../src/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import useAuth from "../src/auth/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
+import HamburgerButton from "../src/components/HamburgerButton";
+import DrawerOverlay from "../src/components/DrawerOverlay";
+import DrawerMenu from "../src/components/DrawerMenu";
 
 const INPUNCH_URL = process.env.EXPO_PUBLIC_INPUNCH_URL;
 const OUTPUNCH_URL = process.env.EXPO_PUBLIC_OUTPUNCH_URL;
@@ -42,11 +45,12 @@ function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const insets = useSafeAreaInsets();
   const hasInpunchRef = useRef(false);
-  const { logOut } = useAuth();
+
   const inpunchIdRef = useRef(null);
-  const [showLogoutText, setShowLogoutText] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState("User");
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   // Get time-based greeting
   const getTimeBasedGreeting = () => {
@@ -156,22 +160,12 @@ function Dashboard() {
     }
   }, [user, checkPunchStatus]);
 
-  useFocusEffect(
-    React.useCallback(() => {
-
-      setShowLogoutText(false);
-
-    }, [])
-  );
 
   const onRefresh = useCallback(async () => {
 
     setRefreshing(true);
 
     await checkPunchStatus();
-    setShowLogoutText(false);
-
-
     // your existing API call
     setRefreshing(false);
   }, [checkPunchStatus]);
@@ -332,29 +326,6 @@ function Dashboard() {
     checkRestrictions,
   ]);
 
-  const handleLogout = async () => {
-    try {
-
-      const result = await logOut();
-      if (__DEV__) {
-        console.log("Logout result:", result);
-      }
-      if (result && result.success) {
-        // Logout successful - the auth context will handle navigation to Login
-        showToast.success("Logged out successfully.");
-      } else {
-        showToast.error("Failed to log out. Try again.", "Error");
-      }
-    } catch (error) {
-      if (__DEV__) {
-        console.error("Logout error:", error);
-      }
-      showToast.error("Failed to log out. Try again.", "Error");
-    }
-    return;
-  };
-
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {loading && (
@@ -364,7 +335,7 @@ function Dashboard() {
       )}
       <Pressable
         style={{ flex: 1 }}
-        onPress={() => showLogoutText && setShowLogoutText(false)} // close on outside press
+
       >
         {/* Custom Header */}
         <View style={styles.header}>
@@ -379,44 +350,12 @@ function Dashboard() {
                   <Text style={styles.headerTitle}>Aubizo</Text>
                 </View>
               </View>
-              <TouchableOpacity
-                style={styles.enhancedLogoutButton}
-                onPress={() => setShowLogoutText(prev => !prev)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.logoutButtonInner}>
-                  <FontAwesome
-                    name="power-off"
-                    size={20}
-                    color={DESIGN.colors.surface} />
-                </View>
-                <View style={styles.logoutButtonGlow} />
-              </TouchableOpacity>
-
+              <HamburgerButton
+                onPress={() => setDrawerVisible(true)}
+                isActive={drawerVisible}
+              />
             </View>
           </View>
-
-          {/* Enhanced Logout Confirmation */}
-          {showLogoutText && (
-            <TouchableOpacity style={styles.modernLogoutPopup} onPress={handleLogout}>
-              <View style={styles.logoutPopupContent}>
-                <View style={styles.logoutIconCircle}>
-                  <FontAwesome
-                    name="sign-out"
-                    size={16}
-                    color={DESIGN.colors.error}
-                  />
-                </View>
-                <Text style={styles.enhancedLogoutText}>Sign Out</Text>
-                <FontAwesome
-                  name="angle-right"
-                  size={14}
-                  color={DESIGN.colors.textSecondary}
-                />
-              </View>
-              <View style={styles.logoutPopupArrow} />
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Scrollable Content */}
@@ -432,43 +371,45 @@ function Dashboard() {
               tintColor={DESIGN.colors.primary}
             />
           }
-         >
+        >
+
+          <View style={styles.enhancedGreetingCard}>
+            {/* Gradient Background */}
+            <View style={styles.greetingGradientOverlay} />
+
+            {/* Decorative Elements */}
+            <View style={styles.greetingDecorations}>
+              <View style={styles.decorativeCircle1} />
+              <View style={styles.decorativeCircle2} />
+            </View>
+
+            <View style={styles.greetingContent}>
+
+              {/* Welcome Text Section */}
+              <View style={styles.enhancedWelcomeContainer}>
+                <Text style={styles.enhancedWelcomeText}>
+                  {getTimeBasedGreeting()}!
+                </Text>
+                <Text
+                  style={[styles.enhancedUserNameText, { paddingLeft: 8 }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {dashboardData?.user_name || username}
+                </Text>
+
+              </View>
+
+            </View>
+
+            {/* Animated Pulse Effect */}
+            <View style={styles.pulseEffect} />
+          </View>
           {/* Main Content */}
           <View style={styles.mainContent}>
-            
+
             {/* Enhanced Greeting Section */}
-            <View style={styles.enhancedGreetingCard}>
-              {/* Gradient Background */}
-              <View style={styles.greetingGradientOverlay} />
-              
-              {/* Decorative Elements */}
-              <View style={styles.greetingDecorations}>
-                <View style={styles.decorativeCircle1} />
-                <View style={styles.decorativeCircle2} />
-              </View>
 
-              <View style={styles.greetingContent}>
-              
-                {/* Welcome Text Section */}
-                <View style={styles.enhancedWelcomeContainer}>
-                  <Text style={styles.enhancedWelcomeText}>
-                    {getTimeBasedGreeting()}!
-                  </Text>
-                  <Text
-                    style={styles.enhancedUserNameText}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {dashboardData?.user_name || username}
-                  </Text>
-                 
-                </View>
-
-              </View>
-
-              {/* Animated Pulse Effect */}
-              <View style={styles.pulseEffect} />
-            </View>
 
             {/* Visit Overview */}
             <TouchableHighlight
@@ -598,60 +539,57 @@ function Dashboard() {
                 </View>
               </TouchableHighlight>
             </View>
-          
 
-           {/* Activity Section */} 
-          
-            <View style={styles.activityHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: DESIGN.spacing.sm }}>
-                <Ionicons
-                  name="time-outline"
-                  size={20}
-                  color={DESIGN.colors.textPrimary}
-                />
-                <Text style={styles.activityTitle}>Today's Activity</Text>
+
+            {/* Activity Section */}
+            <View style={{ marginHorizontal: DESIGN.spacing.sm }}>
+              <View style={styles.activityHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: DESIGN.spacing.sm }}>
+                  <Text style={styles.activityTitle}>Today's Activity</Text>
+                </View>
+                {dashboardData?.punch_status?.punched_out && (
+                  <Text style={styles.activitySubtitle}>
+                    {
+                      (() => {
+                        const totalHours = dashboardData.working_hours;
+                        const hrs = Math.floor(totalHours);
+                        const mins = Math.round((totalHours - hrs) * 60);
+
+                        if (hrs === 0) return `${mins} min`;
+                        return `${hrs}h ${mins}m`;
+                      })()
+                    }
+                  </Text>
+                )}
               </View>
-              {dashboardData?.punch_status?.punched_out && (
-                <Text style={styles.activitySubtitle}>
-                  {
-                    (() => {
-                      const totalHours = dashboardData.working_hours;
-                      const hrs = Math.floor(totalHours);
-                      const mins = Math.round((totalHours - hrs) * 60);
 
-                      if (hrs === 0) return `${mins} min`;
-                      return `${hrs}h ${mins}m`;
-                    })()
-                  }
-                </Text>
+
+              {/* Punch In */}
+              {dashboardData?.punch_status?.punched_in && (
+                <View style={styles.punchSection}>
+                  <View style={styles.punchSectionRow}>
+                    <View style={styles.punchIconWrapper(DESIGN.colors.success)}>
+                      <Ionicons name="arrow-up" size={DESIGN.iconSize.md} color={DESIGN.colors.success} />
+                    </View>
+                    <Text style={styles.punchLabel}> Punch In </Text>
+                  </View>
+                  <Text style={styles.punchTime}>{dashboardData?.punch_status?.punch_in_time || "--:--"}</Text>
+                </View>
+              )}
+
+              {/* Punch Out */}
+              {dashboardData?.punch_status?.punched_out && (
+                <View style={styles.punchSection}>
+                  <View style={styles.punchSectionRow}>
+                    <View style={styles.punchIconWrapper(DESIGN.colors.error)}>
+                      <Ionicons name="arrow-down" size={DESIGN.iconSize.md} color={DESIGN.colors.error} />
+                    </View>
+                    <Text style={styles.punchLabel}> Punch Out </Text>
+                  </View>
+                  <Text style={styles.punchTime}>{dashboardData?.punch_status?.punch_out_time || "--:--"}</Text>
+                </View>
               )}
             </View>
-
-            {/* Punch In */}
-            {dashboardData?.punch_status?.punched_in && (
-              <View style={styles.punchSection}>
-                <View style={styles.punchSectionRow}>
-                  <View style={styles.punchIconWrapper(DESIGN.colors.success)}>
-                    <Ionicons name="arrow-up" size={DESIGN.iconSize.md} color={DESIGN.colors.success} />
-                  </View>
-                  <Text style={styles.punchLabel}> Punch In </Text>
-                </View>
-                <Text style={styles.punchTime}>{dashboardData?.punch_status?.punch_in_time || "--:--"}</Text>
-              </View>
-            )}
-
-            {/* Punch Out */}
-            {dashboardData?.punch_status?.punched_out && (
-              <View style={styles.punchSection}>
-                <View style={styles.punchSectionRow}>
-                  <View style={styles.punchIconWrapper(DESIGN.colors.error)}>
-                    <Ionicons name="arrow-down" size={DESIGN.iconSize.md} color={DESIGN.colors.error} />
-                  </View>
-                  <Text style={styles.punchLabel}> Punch Out </Text>
-                </View>
-                <Text style={styles.punchTime}>{dashboardData?.punch_status?.punch_out_time || "--:--"}</Text>
-              </View>
-            )}
           </View>
         </ScrollView>
 
@@ -679,6 +617,18 @@ function Dashboard() {
             secondaryText="Will do it later"
           />
         )}
+
+        {/* Drawer Overlay */}
+        <DrawerOverlay
+          visible={drawerVisible}
+          onClose={() => setDrawerVisible(false)}
+        >
+          <DrawerMenu
+            navigation={navigation}
+            onClose={() => setDrawerVisible(false)}
+            username={dashboardData?.user_name || username}
+          />
+        </DrawerOverlay>
       </Pressable>
     </View>
   );

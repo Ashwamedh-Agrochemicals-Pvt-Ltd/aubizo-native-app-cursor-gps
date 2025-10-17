@@ -21,7 +21,8 @@ import { navigation } from "../navigation/NavigationService";
 import apiClient from "../src/api/client"; // Your API client
 import OrderDetails from "../src/components/orders/OrderDetails";
 import { useFocusEffect } from "@react-navigation/native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useModulePermission } from "../src/hooks/usePermissions";
+import { MODULES } from "../src/auth/permissions";
 
 const { width } = Dimensions.get("window");
 const TABS = ["All", "Pending", "Dispatched", "Rejected"];
@@ -31,6 +32,7 @@ const TAB_WIDTH = width / TAB_COUNT;
 // 🔎 Separate Search Component
 const SearchBar = ({ searchQuery, setSearchQuery, onClose }) => {
   const inputRef = useRef(null);
+
 
   useEffect(() => {
     setTimeout(() => {
@@ -72,6 +74,7 @@ function OrderScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
+  const { canCreate, canRead, canUpdate, canDelete, enabled, loading: permissionsLoading } = useModulePermission(MODULES.ORDER);
 
   // Modal state
   const [modalVisible, setModalVisible] = useState(false);
@@ -366,19 +369,21 @@ function OrderScreen() {
         />
       )}
       {/* Bottom Add Button */}
-      <View style={styles.bottomButtonContainer}>
-        <TouchableOpacity onPress={() => navigation.navigate("OrderForm")}
-          style={styles.addButton}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons
-            name="plus"
-            size={24}
-            color={DESIGN.colors.surface}
-          />
+      {canCreate && (
+        <View style={styles.bottomButtonContainer}>
+          <TouchableOpacity onPress={() => navigation.navigate("OrderForm")}
+            style={styles.addButton}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons
+              name="plus"
+              size={24}
+              color={DESIGN.colors.surface}
+            />
 
-        </TouchableOpacity>
-      </View>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Order Details Modal */}
       <OrderDetails

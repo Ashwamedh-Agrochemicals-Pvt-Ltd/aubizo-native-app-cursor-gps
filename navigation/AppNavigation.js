@@ -10,7 +10,7 @@ import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 // Main Screens
 import Dashboard from "../screens/Dashboard";
 import OrderScreen from "../screens/Orders";
-import ProductScreen from "../screens/Pruducts"; 
+import ProductScreen from "../screens/Pruducts";
 import CollectionScreen from "../screens/Collections";
 import VisitHistory from "../screens/VisitHistory";
 
@@ -31,6 +31,11 @@ import ProductDetailScreen from "../screens/ProductDetails";
 import OrderForm from "../src/components/orders/OrderForm";
 import CollectionForm from "../src/components/collections/CollectionForm";
 
+import { useNavigationPermissions } from "../src/hooks/usePermissions";
+import { MODULES } from "../src/auth/permissions";
+import AnalyticsScreen from "../screens/Analytics";
+import DESIGN from "../src/theme";
+
 // ================================================================
 // CONSTANTS & CONFIGURATIONS
 // ================================================================
@@ -49,14 +54,14 @@ const TAB_BAR_CONFIG = {
   height: 60,
   activeTintColor: "#2E7D32",
   inactiveTintColor: "#B0BEC5",
-  backgroundColor: "#FFFFFF",
+  backgroundColor: DESIGN.colors.background,
   borderTopWidth: 1,
   borderRadius: 12,
 };
 
 // Screens where tab bar should be hidden
 const HIDDEN_TAB_SCREENS = {
-  dashboard: ["Farmer", "FarmerUpdate", "FarmerVisit", "Dealer", "DealerUpdate", "DealerVisit", "VisitHistory"],
+  dashboard: ["Farmer", "FarmerUpdate", "FarmerVisit", "Dealer", "DealerUpdate", "DealerVisit", "VisitHistory", "Analytics"],
   products: ["Product Details"],
   orders: ["OrderForm"],
   collections: ["CollectionForm"],
@@ -83,17 +88,17 @@ function DashboardStack() {
         component={ProductScreen}
         options={{ title: "Product List" }}
       />
-      <Stack.Screen 
-        name="Product Details" 
-        component={ProductDetailScreen} 
-        options={{ title: "Product Details" }} 
+      <Stack.Screen
+        name="Product Details"
+        component={ProductDetailScreen}
+        options={{ title: "Product Details" }}
       />
-      
+
       {/* Farmer Related Screens */}
-      <Stack.Screen 
-        name="Farmer" 
-        component={FarmerScreen} 
-        options={{ title: "Farmer" }} 
+      <Stack.Screen
+        name="Farmer"
+        component={FarmerScreen}
+        options={{ title: "Farmer" }}
       />
       <Stack.Screen
         name="FarmerUpdate"
@@ -107,10 +112,10 @@ function DashboardStack() {
       />
 
       {/* Dealer Related Screens */}
-      <Stack.Screen 
-        name="Dealer" 
-        component={DealerScreen} 
-        options={{ title: "Dealer" }} 
+      <Stack.Screen
+        name="Dealer"
+        component={DealerScreen}
+        options={{ title: "Dealer" }}
       />
       <Stack.Screen
         name="DealerVisit"
@@ -122,12 +127,22 @@ function DashboardStack() {
         component={DealerUpdateScreen}
         options={{ title: "Update Dealer" }}
       />
-      
+
       {/* Other Screens */}
-      <Stack.Screen 
-        name="VisitHistory" 
-        component={VisitHistory} 
-        options={{ title: "Visit History" }} 
+      <Stack.Screen
+        name="VisitHistory"
+        component={VisitHistory}
+        options={{ title: "Visit History" }}
+      />
+
+      {/* Analytics Screen */}
+      <Stack.Screen
+        name="Analytics"
+        component={AnalyticsScreen}
+        options={{
+          title: "Analytics",
+          headerShown: false // We handle header in the component
+        }}
       />
     </Stack.Navigator>
   );
@@ -148,10 +163,10 @@ function OrdersStack() {
       <Stack.Screen
         name="OrderForm"
         component={OrderForm}
-        options={{ 
-          title: "Create Order", 
-          headerShown: true, 
-          headerBackTitle: "Back" 
+        options={{
+          title: "Create Order",
+          headerShown: true,
+          headerBackTitle: "Back"
         }}
       />
     </Stack.Navigator>
@@ -165,19 +180,19 @@ function OrdersStack() {
 function CollectionsStack() {
   return (
     <Stack.Navigator screenOptions={COMMON_STACK_OPTIONS}>
-      <Stack.Screen 
-        name="CollectionsHome" 
+      <Stack.Screen
+        name="CollectionsHome"
         component={CollectionScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="CollectionForm" 
-        component={CollectionForm} 
-        options={{ 
-          title: "Create Collection", 
-          headerShown: true, 
-          headerBackTitle: "Back" 
-        }} 
+      <Stack.Screen
+        name="CollectionForm"
+        component={CollectionForm}
+        options={{
+          title: "Create Collection",
+          headerShown: true,
+          headerBackTitle: "Back"
+        }}
       />
     </Stack.Navigator>
   );
@@ -195,8 +210,8 @@ function ProductStack() {
         component={ProductScreen}
         options={{ title: "Product List" }}
       />
-      <Stack.Screen 
-        name="Product Details" 
+      <Stack.Screen
+        name="Product Details"
         component={ProductDetailScreen}
         options={{ title: "Product Details" }}
       />
@@ -233,11 +248,22 @@ const createTabBarStyle = (totalHeight, safeAreaBottom) => ({
  */
 export function AppNavigation() {
   const insets = useSafeAreaInsets();
-  
+
+  const {
+    loading,
+    showProducts,
+    showOrders,
+    showCollections
+  } = useNavigationPermissions();
+
   const safeAreaBottom = insets.bottom || 10;
   const totalHeight = TAB_BAR_CONFIG.height + safeAreaBottom;
   const defaultTabBarStyle = createTabBarStyle(totalHeight, safeAreaBottom);
 
+
+  if (loading) {
+    return null;
+  }
   return (
     <Tab.Navigator
       screenOptions={{
@@ -265,71 +291,79 @@ export function AppNavigation() {
         }}
       />
 
-      <Tab.Screen
-        name="ProductsTab"
-        component={ProductStack}
-        options={({ route }) => {
-          const routeName = getFocusedRouteNameFromRoute(route) ?? "ProductScreen";
-          const shouldHideTabBar = HIDDEN_TAB_SCREENS.products.includes(routeName);
+      {showProducts && (
+        <Tab.Screen
+          name="ProductsTab"
+          component={ProductStack}
+          options={({ route }) => {
+            const routeName = getFocusedRouteNameFromRoute(route) ?? "ProductScreen";
+            const shouldHideTabBar = HIDDEN_TAB_SCREENS.products.includes(routeName);
 
-          return {
-            tabBarLabel: "Products",
-            tabBarIcon: ({ color, size }) => (
-              <MaterialCommunityIcons
-                name="cube-outline"
-                size={size}
-                color={color}
-              />
-            ),
-            headerShown: false,
-            tabBarStyle: shouldHideTabBar ? { display: "none" } : defaultTabBarStyle,
-          };
-        }}
-      />
+            return {
+              tabBarLabel: "Products",
+              tabBarIcon: ({ color, size }) => (
+                <MaterialCommunityIcons
+                  name="cube-outline"
+                  size={size}
+                  color={color}
+                />
+              ),
+              headerShown: false,
+              tabBarStyle: shouldHideTabBar ? { display: "none" } : defaultTabBarStyle,
+            };
+          }}
+        />
+      )}
 
-      <Tab.Screen
-        name="OrdersTab"
-        component={OrdersStack}
-        options={({ route }) => {
-          const routeName = getFocusedRouteNameFromRoute(route) ?? "OrderScreen";
-          const shouldHideTabBar = HIDDEN_TAB_SCREENS.orders.includes(routeName);
 
-          return {
-            tabBarLabel: "Orders",
-            tabBarIcon: ({ color, size }) => (
-              <MaterialCommunityIcons
-                name="cart-outline"
-                size={size}
-                color={color}
-              />
-            ),
-            headerShown: false,
-            tabBarStyle: shouldHideTabBar ? { display: "none" } : defaultTabBarStyle,
-          };
-        }}
-      />
+      {showOrders && (
+        <Tab.Screen
+          name="OrdersTab"
+          component={OrdersStack}
+          options={({ route }) => {
+            const routeName = getFocusedRouteNameFromRoute(route) ?? "OrderScreen";
+            const shouldHideTabBar = HIDDEN_TAB_SCREENS.orders.includes(routeName);
 
-      <Tab.Screen
-        name="CollectionsTab"
-        component={CollectionsStack}
-        options={({ route }) => {
-          const routeName = getFocusedRouteNameFromRoute(route) ?? "CollectionsHome";
-          const shouldHideTabBar = HIDDEN_TAB_SCREENS.collections.includes(routeName);
+            return {
+              tabBarLabel: "Orders",
+              tabBarIcon: ({ color, size }) => (
+                <MaterialCommunityIcons
+                  name="cart-outline"
+                  size={size}
+                  color={color}
+                />
+              ),
+              headerShown: false,
+              tabBarStyle: shouldHideTabBar ? { display: "none" } : defaultTabBarStyle,
+            };
+          }}
+        />
 
-          return {
-            tabBarLabel: "Collections",
-            tabBarIcon: ({ color, size }) => ( 
-              <MaterialCommunityIcons
-                name="folder"
-                size={size}
-                color={color}
-              />
-            ),
-            headerShown: false,
-            tabBarStyle: shouldHideTabBar ? { display: "none" } : defaultTabBarStyle,
-          };
-        }}
-      />
+      )}
+
+      {showCollections && (
+        <Tab.Screen
+          name="CollectionsTab"
+          component={CollectionsStack}
+          options={({ route }) => {
+            const routeName = getFocusedRouteNameFromRoute(route) ?? "CollectionsHome";
+            const shouldHideTabBar = HIDDEN_TAB_SCREENS.collections.includes(routeName);
+
+            return {
+              tabBarLabel: "Collections",
+              tabBarIcon: ({ color, size }) => (
+                <MaterialCommunityIcons
+                  name="folder"
+                  size={size}
+                  color={color}
+                />
+              ),
+              headerShown: false,
+              tabBarStyle: shouldHideTabBar ? { display: "none" } : defaultTabBarStyle,
+            };
+          }}
+        />
+      )}
 
     </Tab.Navigator>
   );

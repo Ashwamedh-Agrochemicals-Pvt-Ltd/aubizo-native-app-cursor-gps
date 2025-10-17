@@ -21,6 +21,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import apiClient from "../src/api/client";
 import TransactionDetails from "../src/components/collections/TransactionDetails";
+import { useModulePermission } from "../src/hooks/usePermissions";
+import { MODULES } from "../src/auth/permissions";
 
 const { width } = Dimensions.get("window");
 const TAB_WIDTH = width / 3;
@@ -135,7 +137,12 @@ function CollectionScreen({ navigation }) {
   const [showDealerList, setShowDealerList] = useState(false);
   const [selectedDealer, setSelectedDealer] = useState(null);
   const suppressDealerFetchRef = useRef(false);
+  const { canCreate, loading: permissionsLoading } = useModulePermission(MODULES.PAYMENT);
 
+
+
+
+  
   const translateX = useRef(new Animated.Value(0)).current;
 
   const TABS = ["All", "Completed", "Pending"];
@@ -553,19 +560,21 @@ function CollectionScreen({ navigation }) {
       )}
 
       {/* Bottom Add Button */}
-      <View style={styles.bottomButtonContainer}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("CollectionForm")}
-          style={styles.addButton}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons
-            name="plus"
-            size={24}
-            color={DESIGN.colors.surface}
-          />
-        </TouchableOpacity>
-      </View>
+      {canCreate && (
+        <View style={styles.bottomButtonContainer}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("CollectionForm")}
+            style={styles.addButton}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons
+              name="plus"
+              size={24}
+              color={DESIGN.colors.surface}
+            />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Transaction Details Modal */}
       <TransactionDetails

@@ -15,7 +15,7 @@ export const handleLogout = async (setUser = null) => {
             return { success: true };
         }
 
-        await authStorage.removeToken();
+        await authStorage.clearAll();
         await AsyncStorage.clear();
 
         if (setUser) setUser(null); // This will update context

@@ -3,6 +3,7 @@ import logger from "../utility/logger";
 
 const key = "authToken";
 const USERNAME_KEY = "username";
+const PERMISSIONS_KEY = "userPermissions";
 
 const storeToken = async (authToken) => {
     try {
@@ -64,6 +65,42 @@ const getUsername = async () => {
     }
 };
 
+const storePermissions = async (permissions) => {
+    try {
+        await secureStore.setItemAsync(PERMISSIONS_KEY, JSON.stringify(permissions));
+    } catch (error) {
+        logger.error("Error storing permissions:", error);
+    }
+};
+
+const getPermissions = async () => {
+    try {
+        const permissions = await secureStore.getItemAsync(PERMISSIONS_KEY);
+        return permissions ? JSON.parse(permissions) : null;
+    } catch (error) {
+        logger.error("Error getting permissions:", error);
+        return null;
+    }
+};
+
+const removePermissions = async () => {
+    try {
+        await secureStore.deleteItemAsync(PERMISSIONS_KEY);
+    } catch (error) {
+        logger.error("Error removing permissions:", error);
+    }
+};
+
+const clearAll = async () => {
+    try {
+        await removeToken();
+        await secureStore.deleteItemAsync(USERNAME_KEY);
+        await removePermissions();
+    } catch (error) {
+        logger.error("Error clearing all auth data:", error);
+    }
+};
+
 export default {
     storeToken,
     getToken,
@@ -71,4 +108,8 @@ export default {
     removeToken,
     saveUsername,
     getUsername,
+    storePermissions,
+    getPermissions,
+    removePermissions,
+    clearAll,
 };

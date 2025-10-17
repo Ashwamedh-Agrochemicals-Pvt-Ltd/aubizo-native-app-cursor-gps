@@ -217,14 +217,13 @@ export default StyleSheet.create({
 
   // Main Content
   mainContent: {
-    padding: DESIGN.spacing.sm,
+    paddingHorizontal: DESIGN.spacing.md,
   },
 
   // Enhanced Greeting Styles
   enhancedGreetingCard: {
     position: 'relative',
-    marginBottom: DESIGN.spacing.lg,
-    borderRadius: 16,
+    marginBottom: DESIGN.spacing.md,
     overflow: 'hidden',
     backgroundColor: DESIGN.colors.surface,
   },
@@ -235,7 +234,7 @@ export default StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: `rgba(46, 125, 50, 0.08)`, // primary color with transparency
+    backgroundColor: `rgba(231, 185, 236, 0.2)`, // primary color with transparency
   },
 
   greetingDecorations: {
@@ -253,7 +252,7 @@ export default StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: `rgba(76, 175, 80, 0.1)`,
+    backgroundColor: `rgba(243, 196, 196, 0.3)`,
   },
 
   decorativeCircle2: {
@@ -263,7 +262,7 @@ export default StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: `rgba(255, 143, 0, 0.08)`,
+    backgroundColor: `rgba(253, 203, 5, 0.1)`,
   },
 
   greetingContent: {
@@ -277,24 +276,21 @@ export default StyleSheet.create({
   enhancedWelcomeContainer: {
     flex: 1,
     position: 'relative',
+    marginHorizontal: DESIGN.spacing.md,
   },
 
   enhancedWelcomeText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '500',
     color: DESIGN.colors.textSecondary,
-    marginBottom: 4,
-    letterSpacing: 0.5,
+   
   },
 
   enhancedUserNameText: {
-    fontSize: 26,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: '500',
     color: DESIGN.colors.textPrimary,
-    letterSpacing: -0.5,
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+  
   },
 
   pulseEffect: {
@@ -495,14 +491,6 @@ export default StyleSheet.create({
     color: DESIGN.colors.textSecondary,
   },
 
-  // // Activity Section
-  // activitySection: {
-  //   flex: 1,
-  //   padding: DESIGN.spacing.md,
-  //   padding: DESIGN.spacing.md,
-  //   borderRadius: 16,  
-  // },
-
   activityHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -512,8 +500,8 @@ export default StyleSheet.create({
 
   activityTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    color: DESIGN.colors.textPrimary,
+    fontWeight: "400",
+    color: DESIGN.colors.textSecondary,
   },
 
   activitySubtitle: {
@@ -536,7 +524,7 @@ export default StyleSheet.create({
 
   punchSectionRow: {
     flexDirection: "row",
-    gap: DESIGN.spacing.sm,
+    gap: DESIGN.spacing.md,
     alignItems: "center",
   },
 

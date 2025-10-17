@@ -49,7 +49,15 @@ function LoginScreen() {
 
       // Successful login
       await logIn(token);
-      showToast.success("You have logged in successfully.", "✅ Login Successful!");
+      // Fetch user permissions after successful login
+      try {
+        await permissionManager.fetchPermissions();
+        showToast.success("You have logged in successfully.", "✅ Login Successful!");
+      } catch (permError) {
+        console.warn("Failed to fetch permissions:", permError);
+        showToast.success("You have logged in successfully.", "✅ Login Successful!");
+        showToast.warning("Some features may not be available.", "⚠️ Permission Warning");
+      }
     } catch (error) {
       setFormError("Something went wrong. Please try again.");
     } finally {
