@@ -258,7 +258,7 @@ function CollectionScreen({ navigation }) {
     try {
       setLoading(true);
       // Always fetch all transactions for better filtering experience
-      const response = await apiClient.get("/payment/transactions/individual/");
+      const response = await apiClient.get("payment/transactions/individual/");
 
       console.log("API Response:", response.data);
 

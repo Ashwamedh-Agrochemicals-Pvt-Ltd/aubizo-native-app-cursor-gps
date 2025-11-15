@@ -18,7 +18,7 @@ import DESIGN from '../theme';
 import showToast from '../utility/showToast';
 import apiClient from '../api/client';
 
-const DrawerMenu = ({ navigation, onClose, username}) => {
+const DrawerMenu = ({ navigation, onClose, username }) => {
   const insets = useSafeAreaInsets();
   const { user, logOut } = useAuth();
   const { canRead: canViewAnalytics } = useModulePermission(MODULES.CORE);
@@ -60,7 +60,7 @@ const DrawerMenu = ({ navigation, onClose, username}) => {
               // Clear permissions from memory before logout
               permissionManager.clearPermissions();
               await logOut();
-              showToast.success('Logged out successfully', 'Goodbye!');
+             
             } catch (error) {
               showToast.error('Logout failed', 'Please try again');
             }
@@ -75,19 +75,24 @@ const DrawerMenu = ({ navigation, onClose, username}) => {
     setComingSoonModal({ visible: true, title: 'Profile' });
   };
 
+  const handleDealerList = () => {
+    onClose();
+    navigation.navigate('DealerList');
+  };
+
+  const handleFarmerList = () => {
+    onClose();
+    navigation.navigate('FarmerList');
+  };
+
+
   const handleAnalytics = () => {
     onClose();
     navigation.navigate('Analytics');
   };
 
-  const handleSettings = () => {
-    onClose();
-    setComingSoonModal({ visible: true, title: 'Settings' });
-  };
-
   const handleHelp = () => {
-    onClose();
-    setComingSoonModal({ visible: true, title: 'Help & Support' });
+   navigation.navigate("Hepl&Support")
   };
 
   const closeComingSoonModal = () => {
@@ -102,13 +107,23 @@ const DrawerMenu = ({ navigation, onClose, username}) => {
       onPress: handleProfile,
       show: true,
     },
+
     {
-      id: 'settings',
-      title: 'Settings',
-      icon: 'cog',
-      onPress: handleSettings,
+      id: 'dealer-list',
+      title: 'My Dealer List',
+      icon: 'account-group',
+      onPress: handleDealerList,
       show: true,
     },
+
+    {
+      id: 'Farmer-list',
+      title: 'My Farmer List',
+      icon: 'leaf',
+      onPress: handleFarmerList,
+      show: true,
+    },
+
     {
       id: 'help',
       title: 'Help & Support',
@@ -116,6 +131,7 @@ const DrawerMenu = ({ navigation, onClose, username}) => {
       onPress: handleHelp,
       show: true,
     },
+
     {
       id: 'analytics',
       title: 'Analytics',
@@ -159,7 +175,7 @@ const DrawerMenu = ({ navigation, onClose, username}) => {
       <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
         {menuItems.map((item) => {
           if (!item.show) return null;
-          
+
           return (
             <TouchableOpacity
               key={item.id}
@@ -191,7 +207,7 @@ const DrawerMenu = ({ navigation, onClose, username}) => {
           <Text style={styles.appName}>Aubizo</Text>
           <Text style={styles.appVersion}>Version 1.0.0</Text>
         </View>
-        
+
         {/* Logout Button */}
         <TouchableOpacity
           style={styles.logoutButton}
@@ -224,11 +240,11 @@ const DrawerMenu = ({ navigation, onClose, username}) => {
               />
               <Text style={styles.modalTitle}>Coming Soon</Text>
             </View>
-            
+
             <Text style={styles.modalMessage}>
               {comingSoonModal.title} feature is currently under development and will be available in a future update.
             </Text>
-            
+
             <TouchableOpacity
               style={styles.modalButton}
               onPress={closeComingSoonModal}
@@ -248,7 +264,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: DESIGN.colors.surface,
   },
-  
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -259,13 +275,13 @@ const styles = StyleSheet.create({
     borderBottomColor: DESIGN.colors.border,
     backgroundColor: DESIGN.colors.background,
   },
-  
+
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  
+
   avatar: {
     width: 48,
     height: 48,
@@ -275,31 +291,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: DESIGN.spacing.md,
   },
-  
+
   userDetails: {
     flex: 1,
   },
-  
+
   userName: {
     ...DESIGN.typography.subtitle,
     color: DESIGN.colors.textPrimary,
     marginBottom: 2,
   },
-  
+
   userRole: {
     ...DESIGN.typography.caption,
     color: DESIGN.colors.textSecondary,
   },
-  
+
   closeButton: {
     padding: DESIGN.spacing.xs,
   },
-  
+
   menuContainer: {
     flex: 1,
     paddingTop: DESIGN.spacing.md,
   },
-  
+
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -309,19 +325,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: DESIGN.colors.border,
   },
-  
+
   menuItemContent: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  
+
   menuItemText: {
     ...DESIGN.typography.body,
     color: DESIGN.colors.textPrimary,
     marginLeft: DESIGN.spacing.md,
   },
-  
+
   footer: {
     paddingHorizontal: DESIGN.spacing.lg,
     paddingVertical: DESIGN.spacing.md,
@@ -329,24 +345,24 @@ const styles = StyleSheet.create({
     borderTopColor: DESIGN.colors.border,
     backgroundColor: DESIGN.colors.background,
   },
-  
+
   appInfo: {
     alignItems: 'center',
     marginBottom: DESIGN.spacing.md,
   },
-  
+
   appName: {
     ...DESIGN.typography.subtitle,
     color: DESIGN.colors.primary,
     fontWeight: '600',
   },
-  
+
   appVersion: {
     ...DESIGN.typography.caption,
     color: DESIGN.colors.textTertiary,
     marginTop: 2,
   },
-  
+
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -355,7 +371,7 @@ const styles = StyleSheet.create({
     paddingVertical: DESIGN.spacing.md,
     borderRadius: DESIGN.borderRadius.md,
   },
-  
+
   logoutText: {
     ...DESIGN.typography.subtitle,
     color: DESIGN.colors.surface,

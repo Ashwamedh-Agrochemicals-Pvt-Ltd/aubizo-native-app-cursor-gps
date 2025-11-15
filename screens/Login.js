@@ -21,6 +21,7 @@ import showToast from "../src/utility/showToast";
 import DESIGN from "../src/theme";
 import styles from "../src/styles/login.style";
 
+
 function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -28,62 +29,88 @@ function LoginScreen() {
   const { logIn } = useAuth();
   const insets = useSafeAreaInsets();
 
+
+
+
   const handleSubmit = async ({ username, password }) => {
     setLoading(true);
-    setFormError(""); // Reset previous error
+    setFormError("");
+
+    username = username.trim();
+    password = password.trim();
+
+    console.log("=== LOGIN ATTEMPT ===");
+
+
     try {
       const response = await authApi.login(username, password);
 
-      // Handle invalid credentials
+
+      console.log("\n=== RAW API RESPONSE ===");
+      console.log("Status:", response.status);
+      console.log("Data:", response.data);
+
+
       if (response.status === 400 || response.data?.status === false) {
-        setFormError(response.data?.message || "Invalid credentials");
+        const errorMessage = response.data?.message || "Invalid credentials";
+        setFormError(errorMessage);
         return;
       }
 
-      // Handle missing token
-      const token = response.data?.data?.token;
-      if (!token) {
+
+      // ✅ Extract BOTH tokens
+      const accessToken = response.data?.data?.access;
+      const refreshToken = response.data?.data?.refresh;
+
+
+      console.log("\n=== TOKENS EXTRACTED ===");
+      console.log("Access Token:", accessToken ? "✅ Present" : "❌ Missing");
+      console.log("Refresh Token:", refreshToken ? "✅ Present" : "❌ Missing");
+
+
+      if (!accessToken || !refreshToken) {
+        console.log("\n❌ TOKENS MISSING");
         setFormError("Something went wrong. Please try again.");
         return;
       }
 
-      // Successful login
-      await logIn(token);
-      // Fetch user permissions after successful login
-      try {
-        await permissionManager.fetchPermissions();
-        showToast.success("You have logged in successfully.", "✅ Login Successful!");
-      } catch (permError) {
-        console.warn("Failed to fetch permissions:", permError);
-        showToast.success("You have logged in successfully.", "✅ Login Successful!");
-        showToast.warning("Some features may not be available.", "⚠️ Permission Warning");
-      }
+
+      // ✅ Save tokens
+      console.log("\n✅ LOGIN SUCCESSFUL - Saving tokens...");
+      await logIn(accessToken, refreshToken);
+
+
+      showToast.success("You have logged in successfully.", "✅ Login Successful!");
+
+
     } catch (error) {
+      console.error("\n=== ERROR OCCURRED ===");
+      console.error("Error:", error.message);
       setFormError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+
+
   return (
     <>
-      {/* Status bar */}
       <StatusBar
         translucent
         barStyle="light-content"
         backgroundColor={Platform.OS === "android" ? DESIGN.colors.primary : "transparent"}
       />
 
-      {/* Main Container */}
+
       <View style={styles.screen}>
-        {/* Header */}
         <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
           <View style={styles.headerContent}>
             <Text style={styles.headerTitle}>Aubizo</Text>
           </View>
         </View>
 
-        {/* Content */}
+
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardView}
@@ -94,24 +121,21 @@ function LoginScreen() {
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
-            {/* Login Form Card */}
             <View style={styles.loginCard}>
-              {/* Welcome Section */}
               <View style={styles.welcomeSection}>
                 <Text style={styles.welcomeTitle}>Welcome back</Text>
               </View>
 
-              {/* Form Error */}
+
               {formError ? <Text style={styles.formError}>{formError}</Text> : null}
 
-              {/* Form */}
+
               <AppForm
                 initialValues={{ username: "", password: "" }}
                 onSubmit={handleSubmit}
                 validationSchema={loginSchema}
               >
                 <View style={styles.formSection}>
-                  {/* Username Field */}
                   <View style={styles.fieldContainer}>
                     <AppFormField
                       name="username"
@@ -122,7 +146,7 @@ function LoginScreen() {
                     />
                   </View>
 
-                  {/* Password Field */}
+
                   <View style={styles.fieldContainer}>
                     <AppFormField
                       name="password"
@@ -146,7 +170,7 @@ function LoginScreen() {
                     />
                   </View>
 
-                  {/* Submit Button */}
+
                   <View style={styles.buttonContainer}>
                     {loading ? (
                       <View style={styles.loadingButton}>
@@ -171,4 +195,7 @@ function LoginScreen() {
   );
 }
 
+
 export default LoginScreen;
+
+

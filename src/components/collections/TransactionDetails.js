@@ -205,7 +205,7 @@ const TransactionDetails = ({ transactionId, visible = false, onClose }) => {
                     <View style={styles.detailRow}>
                       <Text style={styles.detailLabel}>Method:</Text>
                       <Text style={styles.detailValue}>
-                        {transactionDetails.payment_method_info.name || "N/A"}
+                        {transactionDetails.payment_method_info.label || "N/A"}
                       </Text>
                     </View>
                   </View>

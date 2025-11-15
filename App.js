@@ -39,7 +39,7 @@ Sentry.init({
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1,
   integrations: [
-    Sentry.mobileReplayIntegration(), 
+    Sentry.mobileReplayIntegration(),
     Sentry.feedbackIntegration()
   ],
 });
@@ -49,9 +49,9 @@ enableScreens();
 
 // Disable console logs in production
 if (!__DEV__) {
-  console.log = () => {};
-  console.warn = () => {};
-  console.error = () => {};
+  console.log = () => { };
+  console.warn = () => { };
+  console.error = () => { };
 }
 
 // Configure splash screen
@@ -131,16 +131,16 @@ function App() {
   const [user, setUser] = useState(null);
   const [isReady, setIsReady] = useState(false);
   const [isHydrating, setIsHydrating] = useState(true);
-  
+
   // Device restrictions hook
-  const { 
-    modalVisible, 
-    modalType, 
-    setModalVisible, 
-    checkRestrictions, 
-    openSettings 
+  const {
+    modalVisible,
+    modalType,
+    setModalVisible,
+    checkRestrictions,
+    openSettings
   } = useDeviceRestrictions();
-  
+
   // Back press handling
   const backPressCount = useRef(0);
 
@@ -224,7 +224,7 @@ function App() {
             {user ? <AppNavigation /> : <AuthNavigator />}
           </NavigationContainer>
         </AuthContext.Provider>
-        
+
         {/* Device Restrictions Modal */}
         {modalVisible && (
           <GenericSettingsModal
@@ -241,7 +241,7 @@ function App() {
             secondaryText="Will do it later"
           />
         )}
-        
+
         {/* Global Toast Notifications */}
         <Toast />
       </ErrorBoundary>

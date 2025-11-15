@@ -4,6 +4,7 @@ export default StyleSheet.create({
   // Container
   container: {
     flex: 1,
+
   },
 
   // Header
@@ -269,7 +270,7 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: DESIGN.spacing.md,
-   
+
   },
 
 
@@ -283,14 +284,14 @@ export default StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: DESIGN.colors.textSecondary,
-   
+
   },
 
   enhancedUserNameText: {
     fontSize: 22,
     fontWeight: '500',
     color: DESIGN.colors.textPrimary,
-  
+
   },
 
   pulseEffect: {

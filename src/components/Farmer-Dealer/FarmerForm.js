@@ -14,7 +14,6 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator
 } from "react-native";
-import DropDownPicker from "react-native-dropdown-picker";
 import { FarmerSchema } from "../../validations/FarmerSchema";
 import useMasterData from "../../hooks/useMasterData"
 import AppDropDownPicker from "../form/appComponents/AppDropDownPicker"
@@ -169,8 +168,10 @@ export default function FarmerForm({
         latitude: Number(latitude.toFixed(6)),
         longitude: Number(longitude.toFixed(6)),
         crop_details: cropDetails,
-        remark: values.remark?.trim() || "",
+
       };
+
+
 
       const response = await apiClient.post(`farmer/create/`, payload, {
         signal: abortControllerRef.current.signal,
@@ -257,12 +258,10 @@ export default function FarmerForm({
   return (
     <>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : 'height'}
         style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 80 }}
-          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <View style={modernStyles.formWrapper}>
@@ -270,7 +269,6 @@ export default function FarmerForm({
               initialValues={{
                 name: "",
                 mobile: "",
-                remark: "",
                 acre: "",
                 city: "",
                 Current_Product: ""
@@ -551,7 +549,7 @@ export default function FarmerForm({
                       </View>
 
                       <View style={modernStyles.dropdownContainer}>
-                        <DropDownPicker
+                        <AppDropDownPicker
                           open={dropdowns.irrigation}
                           setOpen={(open) => {
                             if (open) loadIrrigation();
@@ -613,7 +611,7 @@ export default function FarmerForm({
                       </View>
 
                       <View style={modernStyles.dropdownContainer}>
-                        <DropDownPicker
+                        <AppDropDownPicker
                           open={dropdowns.recommendedProduct}
                           setOpen={(open) => {
                             if (open) loadProducts();
@@ -645,35 +643,8 @@ export default function FarmerForm({
                           searchable={true}
                           searchablePlaceholder="Search Recommended Product"
                           listMode="SCROLLVIEW"
-                          maxHeight={200}
                           searchableError={() => "Recommended Product not found"}
                           accessibilityLabel="Recommended product selection dropdown"
-                        />
-                      </View>
-                    </View>
-
-                    {/* Additional Information Section */}
-                    <View style={modernStyles.section}>
-                      <View style={modernStyles.sectionHeader}>
-                        <MaterialCommunityIcons
-                          name="note-text"
-                          size={20}
-                          color={DESIGN.colors.primary}
-                        />
-                        <Text style={modernStyles.sectionTitle}>
-                          Additional Information
-                        </Text>
-                      </View>
-
-                      <View style={modernStyles.inputContainer}>
-                        <InputFormField
-                          name="remark"
-                          placeholder="Remark"
-                          placeholderTextColor="#6e6e6e"
-                          multiline
-                          numberOfLines={3}
-                          accessibilityLabel="Remark input"
-                          accessibilityHint="Enter additional remarks about the farmer"
                         />
                       </View>
                     </View>
@@ -850,8 +821,6 @@ export default function FarmerForm({
 const modernStyles = StyleSheet.create({
   formWrapper: {
     backgroundColor: DESIGN.colors.surface,
-    margin: DESIGN.spacing.lg,
-    borderRadius: DESIGN.borderRadius.lg,
     ...DESIGN.shadows.medium,
     overflow: "hidden",
   },

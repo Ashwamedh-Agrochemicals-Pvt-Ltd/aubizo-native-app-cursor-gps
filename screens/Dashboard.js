@@ -1,5 +1,5 @@
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
-import React, { useContext, useEffect, useRef, useState, useCallback, use } from "react";
+import { useContext, useEffect, useRef, useState, useCallback, use } from "react";
 import {
   Alert,
   Text,
@@ -7,7 +7,6 @@ import {
   View,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
   Pressable,
   ActivityIndicator
 } from "react-native";
@@ -25,8 +24,6 @@ import useDeviceRestrictions from "../src/hooks/useDeviceRestrictions";
 import GenericSettingsModal from "../src/components/GenericSettingsModal";
 import DESIGN from "../src/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import useAuth from "../src/auth/useAuth";
-import { useFocusEffect } from "@react-navigation/native";
 import HamburgerButton from "../src/components/HamburgerButton";
 import DrawerOverlay from "../src/components/DrawerOverlay";
 import DrawerMenu from "../src/components/DrawerMenu";
@@ -147,7 +144,6 @@ function Dashboard() {
     if (user) {
       const loadCachedUsername = async () => {
         const cachedName = await authStorage.getUsername();
-        console.log("Cached username:", cachedName);
         if (cachedName) setUsername(cachedName);
       };
       loadCachedUsername();
@@ -545,7 +541,7 @@ function Dashboard() {
             <View style={{ marginHorizontal: DESIGN.spacing.sm }}>
               <View style={styles.activityHeader}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: DESIGN.spacing.sm }}>
-                  <Text style={styles.activityTitle}>Today's Activity</Text>
+                  <Text style={styles.activityTitle}>Punch Activity</Text>
                 </View>
                 {dashboardData?.punch_status?.punched_out && (
                   <Text style={styles.activitySubtitle}>

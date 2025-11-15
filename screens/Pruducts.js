@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   FlatList,
   Image,
@@ -8,18 +8,49 @@ import {
   ActivityIndicator,
   RefreshControl,
   Dimensions,
+  TextInput,
+  BackHandler
 } from "react-native";
 import apiClient from "../src/api/client";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import DESIGN from "../src/theme";
+import { FontAwesome } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const PRODUCTELIST_URL = process.env.EXPO_PUBLIC_PRODUCTELIST_URL;
 
-// Screen width and dynamic card sizing
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_MARGIN = 16;
-const NUM_COLUMNS = SCREEN_WIDTH > 768 ? 3 : 2; // iPad > 768 width
+const NUM_COLUMNS = SCREEN_WIDTH > 768 ? 3 : 2;
 const CARD_WIDTH = (SCREEN_WIDTH - (NUM_COLUMNS + 1) * CARD_MARGIN) / NUM_COLUMNS;
+
+const SearchBar = ({ searchQuery, setSearchQuery, onClose }) => {
+  return (
+    <View style={{
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: DESIGN.colors.surface,
+      marginVertical: 8,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      marginHorizontal: 16,
+    }}>
+      <FontAwesome name="search" size={20} color={DESIGN.colors.textSecondary} style={{ marginRight: 8 }} />
+
+      <TextInput
+        style={{ flex: 1, height: 48, color: DESIGN.colors.textPrimary }}
+        placeholder="Search product..."
+        placeholderTextColor={DESIGN.colors.textSecondary}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
+
+      <TouchableOpacity onPress={onClose}>
+        <FontAwesome name="times-circle" size={24} color={DESIGN.colors.textPrimary} />
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 export default function ProductScreen() {
   const [groupedProducts, setGroupedProducts] = useState([]);
@@ -27,6 +58,9 @@ export default function ProductScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const navigation = useNavigation();
 
@@ -42,11 +76,27 @@ export default function ProductScreen() {
       }
       setGroupedProducts(grouped);
     } catch (err) {
-      console.error("Error fetching products:", err);
       setError("Failed to load products.");
       setGroupedProducts([]);
     }
   };
+
+  // Back Press Handling
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (showSearch) {
+          setShowSearch(false);
+          setSearchQuery("");
+          return true;
+        }
+        return false;
+      };
+
+      const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      return () => subscription.remove();
+    }, [showSearch])
+  );
 
   const fetchCategories = async () => {
     try {
@@ -56,9 +106,7 @@ export default function ProductScreen() {
         categoryMap[cat.id] = cat.name;
       });
       setCategories(categoryMap);
-    } catch (err) {
-      console.error("Error fetching categories:", err);
-    }
+    } catch (err) { }
   };
 
   const loadData = async () => {
@@ -76,6 +124,16 @@ export default function ProductScreen() {
     await loadData();
     setRefreshing(false);
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setShowSearch(false);
+        setSearchQuery("");
+      };
+    }, [])
+  );
+
 
   const renderRow = ({ item, index }) => (
     <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: CARD_MARGIN, paddingHorizontal: CARD_MARGIN }}>
@@ -150,29 +208,64 @@ export default function ProductScreen() {
     );
   }
 
-  if (groupedProducts.length === 0) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ fontSize: 16, color: "#555" }}>No products available</Text>
-      </View>
-    );
+  const flatProducts = groupedProducts.flat();
+  const filtered = searchQuery.trim()
+    ? flatProducts.filter(p =>
+      (p.title || p.name || "").toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    : flatProducts;
+
+  const groupedFiltered = [];
+  for (let i = 0; i < filtered.length; i += NUM_COLUMNS) {
+    groupedFiltered.push(filtered.slice(i, i + NUM_COLUMNS));
   }
 
+
+
   return (
-    <FlatList
-      data={groupedProducts}
-      renderItem={renderRow}
-      keyExtractor={(_item, index) => `row-${index}`}
-      contentContainerStyle={{ paddingVertical: CARD_MARGIN }}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={[DESIGN.colors.primary]}
-          tintColor={DESIGN.colors.primary}
+    <SafeAreaView style={{ flex: 1, backgroundColor: DESIGN.colors.background }}>
+      <View style={{
+        flexDirection: 'row',
+        paddingHorizontal: 16,
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: DESIGN.spacing.md,
+        borderBottomWidth: 2,
+        borderBottomColor: DESIGN.colors.border,
+      }}>
+        <Text style={{ fontSize: 20, fontWeight: "bold" }}>Product List</Text>
+
+        <TouchableOpacity onPress={() => setShowSearch(!showSearch)}>
+          <FontAwesome name="search" size={24} color="black" />
+        </TouchableOpacity>
+      </View>
+
+      {showSearch && (
+        <SearchBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onClose={() => {
+            setShowSearch(false);
+            setSearchQuery("");
+          }}
         />
-      }
-    />
+      )}
+
+      <FlatList
+        data={groupedFiltered}
+        renderItem={renderRow}
+        keyExtractor={(_item, index) => `row-${index}`}
+        contentContainerStyle={{ paddingVertical: CARD_MARGIN }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[DESIGN.colors.primary]}
+            tintColor={DESIGN.colors.primary}
+          />
+        }
+      />
+    </SafeAreaView>
   );
 }

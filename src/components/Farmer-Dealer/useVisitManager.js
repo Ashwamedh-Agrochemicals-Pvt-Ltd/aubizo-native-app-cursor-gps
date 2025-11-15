@@ -43,15 +43,6 @@ export default function useVisitManager(type) {
 
   const startVisit = async (entityId, location_id, punch_id, endpoint) => {
     try {
-      // const existingVisitId = await storage.get(VISIT_ID_KEY);
-
-      // if (existingVisitId) {
-      //   Alert.alert(
-      //     "Visit Already Started",
-      //     "You have already started a visit. Please end it before starting a new one."
-      //   );
-      //   return { error: "Visit already started." };
-      // }
 
       if (!punch_id) {
         Alert.alert(
@@ -62,7 +53,11 @@ export default function useVisitManager(type) {
       }
 
       const payload = { punch_id, location_id };
+
+      console.log("Starting Visit Payload:", payload);
       const response = await apiClient.post(endpoint, payload);
+
+      console.log("Start Visit Response:", response);
 
       if ([200, 201].includes(response.status)) {
         const visit_id = String(response.data.visit_id);

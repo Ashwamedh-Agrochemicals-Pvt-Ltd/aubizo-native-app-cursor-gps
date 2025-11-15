@@ -1,63 +1,143 @@
+// ============================================
+// FILE: client.js
+// Location: src/api/client.js
+// ============================================
+
 import axios from "axios";
 import AuthStorage from "../auth/storage";
 import { Alert } from "react-native";
-import { handleLogout } from "../auth/logoutHandler";
-import { logoutFromClient } from "../auth/useAuth";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 if (__DEV__) {
-  console.log("API URL:", API_URL);
+  console.log("🌐 API URL:", API_URL);
 }
 
 const apiClient = axios.create({
   baseURL: `${API_URL}`,
-  timeout: 30000, // 10 seconds
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor
+// ========================================
+// 🔒 TOKEN REFRESH QUEUE MANAGEMENT
+// ========================================
+let isRefreshing = false;
+let refreshPromise = null;
+
+// ✅ Refresh access token using refresh token
+const refreshAccessToken = async () => {
+  try {
+    const refreshToken = await AuthStorage.getRefreshToken();
+    if (!refreshToken) throw new Error("NO_REFRESH_TOKEN");
+
+    console.log("🔄 Refreshing access token...");
+
+    const response = await axios.post(`${API_URL}/auth/refresh/`, {
+      refresh: refreshToken,
+    });
+
+    const newAccessToken = response.data?.access;
+    const newRefreshToken = response.data?.refresh;
+
+    if (!newAccessToken) throw new Error("INVALID_REFRESH_RESPONSE");
+
+    await AuthStorage.storeToken(newAccessToken);
+
+    if (newRefreshToken) {
+      await AuthStorage.storeRefreshToken(newRefreshToken);
+      console.log("🔁 Refresh token rotated");
+    }
+
+    console.log("✅ Access token refreshed successfully");
+    return newAccessToken;
+  } catch (error) {
+    console.error("❌ Token refresh failed:", error.response?.data || error.message);
+    const { logoutFromClient } = await import("../auth/useAuth");
+    await logoutFromClient(true);
+
+    throw error;
+  }
+};
+
+// ========================================
+// 🎯 REQUEST INTERCEPTOR
+// (Attach token + Show "Token valid for" time)
+// ========================================
 apiClient.interceptors.request.use(
   async (config) => {
-    const token = await AuthStorage.getUser();
-    if (__DEV__) {
-      console.log("Token from storage:", token);
-    }
+    const token = await AuthStorage.getToken();
+    console.log("Token from storage:", token)
     if (token) {
-      config.headers.Authorization = `token ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
+
+      // ✅ Show remaining token validity in development mode
+      if (__DEV__) {
+        const info = AuthStorage.getTokenInfo(token);
+        if (info?.timeUntilExpiry !== undefined) {
+          const mins = Math.floor(info.timeUntilExpiry / 60);
+          const secs = info.timeUntilExpiry % 60;
+
+          console.log(
+            `⏳ Token valid for: ${mins}m ${secs}s`
+          );
+        }
+      }
     }
+
     return config;
   },
-  (error) => {
-    if (__DEV__) {
-      console.error("Request interceptor error:", error);
-    }
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
+
+// ========================================
+// 🎯 RESPONSE INTERCEPTOR (401-based refresh)
+// ========================================
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.log("Response:", error.response);
+    const originalRequest = error.config;
+    const status = error.response?.status;
 
-    const response = error.response;
-    const status = response?.status;
-    const data = response?.data?.detail?.detail || response?.data?.detail || "";
-    const message = (error.message || "").toLowerCase();
+    console.log("originalRequest:", originalRequest)
 
-    // 1️⃣ Check for 401 Unauthorized
-    if (
-      status === 401 &&
-      (data === "Authentication credentials were not provided." || data === "Invalid token.")
-    ) {
-      console.warn("Token invalid! Logging out...");
-      await logoutFromClient();
+    if (status === 401 && !originalRequest._retry) {
+      console.log("🚨 401 detected, attempting token refresh...");
 
+      originalRequest._retry = true;
+
+      if (isRefreshing && refreshPromise) {
+        console.log("⏳ Waiting for ongoing refresh...");
+        const newToken = await refreshPromise;
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return apiClient(originalRequest);
+      }
+
+      isRefreshing = true;
+      refreshPromise = refreshAccessToken()
+        .then((newToken) => {
+          isRefreshing = false;
+          refreshPromise = null;
+          return newToken;
+        })
+        .catch((err) => {
+          isRefreshing = false;
+          refreshPromise = null;
+          throw err;
+        });
+
+      try {
+        const newToken = await refreshPromise;
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        console.log("✅ Token refreshed → Retrying original request...");
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        return Promise.reject(refreshError);
+      }
     }
 
-    // 2️⃣ DNS / Network fail check
     if (!response || message.includes("network") || message.includes("dns") || message.includes("enotfound")) {
       setTimeout(() => {
         Alert.alert(
@@ -73,12 +153,12 @@ apiClient.interceptors.response.use(
       });
     }
 
-    // 3️⃣ Other API errors
     return Promise.reject({
       status: status || 500,
       reason: "API Error",
-      detail: response?.data || error.message,
+      detail: error.response.data || error.message,
     });
   }
 );
+
 export default apiClient;

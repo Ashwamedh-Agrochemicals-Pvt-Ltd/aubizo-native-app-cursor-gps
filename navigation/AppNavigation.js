@@ -32,9 +32,14 @@ import OrderForm from "../src/components/orders/OrderForm";
 import CollectionForm from "../src/components/collections/CollectionForm";
 
 import { useNavigationPermissions } from "../src/hooks/usePermissions";
-import { MODULES } from "../src/auth/permissions";
 import AnalyticsScreen from "../screens/Analytics";
 import DESIGN from "../src/theme";
+import DealerList from "../screens/DealerList";
+import DealerVerification from "../screens/DealerVerification";
+
+import FarmerList from "../screens/FarmerList"
+import DealerLedger from "../screens/DealerLedger";
+import HelpSupport from "../screens/Help&Support";
 
 // ================================================================
 // CONSTANTS & CONFIGURATIONS
@@ -61,7 +66,7 @@ const TAB_BAR_CONFIG = {
 
 // Screens where tab bar should be hidden
 const HIDDEN_TAB_SCREENS = {
-  dashboard: ["Farmer", "FarmerUpdate", "FarmerVisit", "Dealer", "DealerUpdate", "DealerVisit", "VisitHistory", "Analytics"],
+  dashboard: ["Farmer", "FarmerUpdate", "FarmerVisit", "Dealer", "DealerUpdate", "DealerVisit", "VisitHistory", "Analytics", "DealerList", "DealerVerification","FarmerList","DealerLedger","Hepl&Support"],
   products: ["Product Details"],
   orders: ["OrderForm"],
   collections: ["CollectionForm"],
@@ -86,7 +91,7 @@ function DashboardStack() {
       <Stack.Screen
         name="Products"
         component={ProductScreen}
-        options={{ title: "Product List" }}
+       options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Product Details"
@@ -98,7 +103,7 @@ function DashboardStack() {
       <Stack.Screen
         name="Farmer"
         component={FarmerScreen}
-        options={{ title: "Farmer" }}
+        options={{ title: "Farmers" }}
       />
       <Stack.Screen
         name="FarmerUpdate"
@@ -115,7 +120,7 @@ function DashboardStack() {
       <Stack.Screen
         name="Dealer"
         component={DealerScreen}
-        options={{ title: "Dealer" }}
+        options={{ title: "Dealers" }}
       />
       <Stack.Screen
         name="DealerVisit"
@@ -144,6 +149,53 @@ function DashboardStack() {
           headerShown: false // We handle header in the component
         }}
       />
+
+      <Stack.Screen
+        name="DealerList"
+        component={DealerList}
+        options={{
+          title: "Dealer List",
+          headerShown: false // We handle header in the component
+        }}
+      />
+
+      <Stack.Screen
+        name="FarmerList"
+        component={FarmerList}
+        options={{
+          title: "Farmer List",
+          headerShown: false // We handle header in the component
+        }}
+      />
+
+      <Stack.Screen
+        name="DealerVerification"
+        component={DealerVerification}
+        options={{
+          title: "Dealer Verification",
+          headerShown: true // We handle header in the component
+        }}
+      />
+
+      <Stack.Screen
+        name="DealerLedger"
+        component={DealerLedger}
+        options={{
+          title: "Dealer Ledger",
+          headerShown: true // We handle header in the component
+        }}
+      />
+
+      
+      <Stack.Screen
+        name="Hepl&Support"
+        component={HelpSupport}
+        options={{
+          title: "Help & Support",
+          headerShown: true // We handle header in the component
+        }}
+      />
+
     </Stack.Navigator>
   );
 }
@@ -208,7 +260,7 @@ function ProductStack() {
       <Stack.Screen
         name="Product"
         component={ProductScreen}
-        options={{ title: "Product List" }}
+        options={{ headerShown:false }}
       />
       <Stack.Screen
         name="Product Details"

@@ -1,7 +1,38 @@
-import client from './client';
+import apiClient from "./client"
 
-const login = (username, password) => client.post('auth/login/', { username, password });
+// ===================================
+// Login with JWT only
+// ===================================
+const login = (username, password) => {
+    return apiClient.post("/auth/login/", {
+        username,
+        password,
+        auth_type: "jwt",
+    });
+};
+
+// ===================================
+// Refresh JWT access token
+// ===================================
+const refreshToken = (refreshToken) => {
+    return apiClient.post("/auth/refresh/", {
+        refresh: refreshToken
+    });
+};
+
+// ===================================
+// Logout (blacklist JWT)
+// ===================================
+const logout = (refreshToken) => {
+    if (refreshToken) {
+        return apiClient.post("/auth/logout/", { refresh: refreshToken });
+    } else {
+        return apiClient.post("/auth/logout/", {});
+    }
+};
 
 export default {
     login,
-}
+    refreshToken,
+    logout,
+};

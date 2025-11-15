@@ -19,7 +19,7 @@ const showToast = {
   show: (message) => {
     showAndroidToast(message);
   },
-  
+
   success: (message, title = "Success", position = "top") => {
     Toast.show({
       type: "success",
@@ -29,16 +29,16 @@ const showToast = {
       visibilityTime: 1000,
     });
   },
-  error: (message, title = "Error") => {
+  error: (message, title = "Error", position = "top") => {
     Toast.show({
       type: "error",
       text1: title,
       text2: message,
       position,
-      visibilityTime: 1000,
+      visibilityTime: 2000,
     });
   },
-  info: (message, title = "Information") => {
+  info: (message, title = "Information", position = "top") => {
     Toast.show({
       type: "info",
       text1: title,

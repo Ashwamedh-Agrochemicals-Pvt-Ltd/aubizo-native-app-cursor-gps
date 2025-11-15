@@ -37,7 +37,7 @@ import apiClient from "../../api/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DESIGN from "../../theme";
 
-const DROPDOWN_ROW_HEIGHT = 56;
+const DROPDOWN_ROW_HEIGHT = 58;
 const MAX_DROPDOWN_HEIGHT = Math.round(Dimensions.get("window").height * 0.5);
 
 // ================= PaymentMethodPicker Component =================
@@ -53,13 +53,13 @@ function PaymentMethodPicker({ value, onChange }) {
   const fetchPaymentMethods = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get("/payment/methods/");
+      const response = await apiClient.get("payment/methods/");
 
       console.log("Payment Methods API Response:", response.data);
 
       // The API returns an array directly
-      if (Array.isArray(response.data)) {
-        setPaymentMethods(response.data);
+      if (Array.isArray(response.data.data)) {
+        setPaymentMethods(response.data.data);
       } else {
         console.log("Payment methods API response structure invalid:", response.data);
         setPaymentMethods([]);
@@ -181,14 +181,14 @@ function AmountInput({ value, onChange, maxAmount, label, placeholder }) {
 
 // ================= BankDetailsInput Component =================
 function BankDetailsInput({ paymentMethod, value, onChange }) {
-  const showBankFields =
-    paymentMethod &&
-    ["cheque", "bank_transfer"].includes(paymentMethod.method_type);
-  const showUPIFields =
-    paymentMethod && ["upi", "digital_wallet"].includes(paymentMethod.method_type);
 
-  const showCashNote =
-    paymentMethod && ["cash"].includes(paymentMethod.method_type);
+  const [error, setError] = useState("");
+
+  const methodKey = paymentMethod?.value ?? paymentMethod?.id ?? null;
+
+  const showBankFields = methodKey && ["cheque", "bank_transfer"].includes(methodKey);
+  const showUPIFields = methodKey && ["upi", "digital_wallet"].includes(methodKey);
+  const showCashNote = methodKey && methodKey === "cash";
 
   if (!showBankFields && !showUPIFields && !showCashNote) {
     return null;
@@ -221,8 +221,7 @@ function BankDetailsInput({ paymentMethod, value, onChange }) {
             }
             keyboardType="numeric"
           />
-          {paymentMethod.method_type === "cheque" && (
-            <>
+
               <TextInput
                 style={styles.input}
                 placeholder="Cheque Number"
@@ -235,13 +234,26 @@ function BankDetailsInput({ paymentMethod, value, onChange }) {
                 style={styles.input}
                 placeholder="Cheque Date (YYYY-MM-DD)"
                 value={value.cheque_date || ""}
-                onChangeText={(text) =>
-                  onChange({ ...value, cheque_date: text })
-                }
+                onChangeText={(text) => {
+                  const regex = /^\d{4}-\d{2}-\d{2}$/; 
+
+                  if (!regex.test(text)) {
+                    setError("Please enter date in YYYY-MM-DD format");
+                  } else {
+                    setError("");
+                  }
+
+                  onChange({ ...value, cheque_date: text });
+                }}
               />
+
+              {error ? (
+                <Text style={{ color: "red", marginTop: 4, marginLeft: 4 }}>
+                  {error}
+                </Text>
+              ) : null}
+
             </>
-          )}
-        </>
       )}
 
       {showUPIFields && (
@@ -526,49 +538,20 @@ export default function CollectionForm({
   // ========== Permission Management ==========
   const requestPermissions = async () => {
     try {
-      // Check current permissions
-      const [cameraPermission, mediaLibraryPermission] = await Promise.all([
-        ImagePicker.getCameraPermissionsAsync(),
-        ImagePicker.getMediaLibraryPermissionsAsync(),
-      ]);
+      // Only need media library permission for gallery/document picking
+      const mediaLibraryPermission = await ImagePicker.getMediaLibraryPermissionsAsync();
 
-      console.log("Current permissions:", {
-        camera: cameraPermission.status,
-        mediaLibrary: mediaLibraryPermission.status,
-      });
+      console.log("Current media permission:", mediaLibraryPermission.status);
 
-      // Check if we need to request permissions
-      const needsCameraPermission = cameraPermission.status !== "granted";
-      const needsMediaPermission = mediaLibraryPermission.status !== "granted";
-
-      if (needsCameraPermission || needsMediaPermission) {
-        // Request permissions directly without custom alert
-        const permissionRequests = [];
-
-        if (needsCameraPermission) {
-          permissionRequests.push(ImagePicker.requestCameraPermissionsAsync());
-        }
-
-        if (needsMediaPermission) {
-          permissionRequests.push(
-            ImagePicker.requestMediaLibraryPermissionsAsync()
-          );
-        }
-
-        const results = await Promise.all(permissionRequests);
-        const allGranted = results.every((result) => result.granted);
-
-        if (allGranted) {
-          showFileOptionsAfterPermission();
-        } else {
-          // Show simple message if permissions denied
-          console.log("Some permissions were denied");
-          showFileOptionsAfterPermission(); // Still show available options
-        }
-      } else {
-        // All permissions already granted
+      if (mediaLibraryPermission.status !== "granted") {
+        const result = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        // Continue to show options regardless — gallery option will be hidden if not granted
         showFileOptionsAfterPermission();
+        return;
       }
+
+      // Permission granted (or already granted)
+      showFileOptionsAfterPermission();
     } catch (error) {
       console.error("Error checking permissions:", error);
       console.log("Failed to check permissions");
@@ -638,59 +621,14 @@ export default function CollectionForm({
     }
   };
 
-  const takePhoto = async () => {
-    try {
-      // Request permission if not granted
-      const permissionResult =
-        await ImagePicker.requestCameraPermissionsAsync();
-      if (!permissionResult.granted) {
-        console.log("Camera permission denied");
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-        allowsMultipleSelection: false,
-        presentationStyle: "fullScreen",
-      });
-
-      console.log("Camera result:", result);
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const file = result.assets[0];
-        console.log("Photo taken successfully:", {
-          uri: file.uri,
-          width: file.width,
-          height: file.height,
-          fileSize: file.fileSize,
-        });
-        setSelectedFile(file);
-      } else {
-        console.log("Photo capture was canceled or failed");
-      }
-    } catch (error) {
-      console.error("Error taking photo:", error);
-      Alert.alert("Error", "Failed to take photo. Please try again.");
-    }
-  };
+  // takePhoto removed — camera capture option disabled per request
 
   const showFileOptionsAfterPermission = async () => {
     try {
-      // Check current permission status
-      const [cameraPermission, mediaLibraryPermission] = await Promise.all([
-        ImagePicker.getCameraPermissionsAsync(),
-        ImagePicker.getMediaLibraryPermissionsAsync(),
-      ]);
+      // Check current media permission status
+      const mediaLibraryPermission = await ImagePicker.getMediaLibraryPermissionsAsync();
 
       const options = [{ text: "Choose Document", onPress: pickDocument }];
-
-      // Only show camera option if permission is granted
-      if (cameraPermission.granted) {
-        options.unshift({ text: "Take Photo", onPress: takePhoto });
-      }
 
       // Only show gallery option if permission is granted
       if (mediaLibraryPermission.granted) {

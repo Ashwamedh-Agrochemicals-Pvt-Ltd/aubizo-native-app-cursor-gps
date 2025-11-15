@@ -21,15 +21,25 @@ import { FontAwesome } from "@expo/vector-icons";
 const DROPDOWN_ROW_HEIGHT = 56;
 const MAX_DROPDOWN_HEIGHT = Math.round(Dimensions.get("window").height * 0.5);
 
+// Helper to format money: prefer integer if whole number, otherwise two decimals
+const formatMoney = (num) => {
+  if (num === null || num === undefined || num === "") return "";
+  const n = Number(num);
+  if (isNaN(n)) return "";
+  return Number.isInteger(n) ? `${n}` : n.toFixed(2);
+};
+
 // ================= DiscountPriceInput Component =================
-function DiscountPriceInput({ dealerPriceNoGst, value, onChange }) {
+function DiscountPriceInput({ dealerPriceNoGst,dealerPriceWithGST, value, onChange }) {
   const [localPrice, setLocalPrice] = useState(value.price ?? "");
   const [localDiscount, setLocalDiscount] = useState(value.discount ?? "");
+  const [gstRate, setGstRate]=useState(value.gst_rate ?? "")
   const [note, setNote] = useState("");
 
   useEffect(() => {
     setLocalPrice(value.price ?? "");
     setLocalDiscount(value.discount ?? "");
+    setGstRate(value.gst_rate)
   }, [value]);
 
   const round2 = (num) => Math.round(num * 100) / 100;
@@ -56,6 +66,39 @@ function DiscountPriceInput({ dealerPriceNoGst, value, onChange }) {
     onChange({ price: newPrice, discount: d });
   };
 
+  const gstMultiplier = 1 + gstRate / 100;
+
+  const handleWithGSTPriceChange = (text) => {
+    const num = text === "" ? "" : Number(text);
+    setLocalPrice(text);
+
+    if (num === "" || isNaN(num)) {
+      onChange({ price: null, discount: null });
+      setNote("");
+      return;
+    }
+
+    // convert GST price to price without GST
+    const priceWithoutGST = round2(num / gstMultiplier);
+
+    // The dealer's maximum allowed without-GST price is dealerPriceNoGst
+    const maxNoGst = Number(dealerPriceNoGst) || 0;
+
+    let p = Math.min(Math.max(priceWithoutGST, 0), maxNoGst);
+    let newDiscount = maxNoGst > 0 ? round2((1 - p / maxNoGst) * 100) : 0;
+
+    if (p !== priceWithoutGST)
+      setNote(`Price must be between 0 and ${round2(maxNoGst * gstMultiplier)} (with GST)`);
+    else setNote("");
+
+    setLocalDiscount(String(newDiscount));
+
+    // Send **without GST price** in state
+    onChange({ price: p, discount: newDiscount });
+  };
+
+
+
   const handlePriceChange = (text) => {
     const num = text === "" ? "" : Number(text);
     setLocalPrice(text);
@@ -69,7 +112,8 @@ function DiscountPriceInput({ dealerPriceNoGst, value, onChange }) {
     let p = Math.min(Math.max(num, 0), dealerPriceNoGst);
     let newDiscount = round2((1 - p / dealerPriceNoGst) * 100);
 
-    if (p !== num) setNote(`Price must be between 0 and ${dealerPriceNoGst}`);
+    if (p !== num)
+      setNote(`Price must be between 0 and ${dealerPriceNoGst}`);
     else setNote("");
 
     setLocalDiscount(String(newDiscount));
@@ -91,9 +135,20 @@ function DiscountPriceInput({ dealerPriceNoGst, value, onChange }) {
 
       <TextInput
         style={styles.input}
-        placeholder="Enter Price ₹"
+        placeholder="Enter Price With GST ₹"
         keyboardType="numeric"
-        value={localPrice.toString()}
+        value={localPrice !== "" && !isNaN(Number(localPrice)) ? String(round2(Number(localPrice) * gstMultiplier)) : ""}
+        onChangeText={handleWithGSTPriceChange}
+      />
+      {note !== "" && (
+        <Text style={{ color: "red", fontSize: 12, marginTop: 4 }}>{note}</Text>
+      )}
+
+      <TextInput
+        style={styles.input}
+        placeholder="Enter Price Without GST ₹"
+        keyboardType="numeric"
+        value={localPrice !== null && localPrice !== undefined ? String(localPrice) : ""}
         onChangeText={handlePriceChange}
       />
       {note !== "" && (
@@ -301,6 +356,7 @@ export default function OrderForm() {
   // Price State
   const [price, setPrice] = useState("");
   const [dealerPriceNoGst, setDealerPriceNoGst] = useState("");
+  const [dealerPriceWithGst, setDealerPriceWithGst] = useState("");
   const [gstRate, setGstRate] = useState("");
   const [discount, setDiscount] = useState("");
   const [caseSize, setCaseSize] = useState("");
@@ -492,25 +548,48 @@ export default function OrderForm() {
     setSelectedPacking(packing);
     setShowPackingList(false);
 
-
-
-
     try {
       const response = await apiClient.get(
         `/order/api/packings/${packing.id}/details/`
       );
       if (response.data.success) {
-        setDealerPriceNoGst(response.data.data.dealer_price_per_unit_no_gst);
-        setGstRate(response.data.data.gst_rate);
-        setCaseSize(response.data.data.units_per_case || 0);
+        // API returns:
+        // - dealer_price_per_unit: price WITH GST
+        // - dealer_price_per_unit_no_gst: price WITHOUT GST (use this directly when available)
+        // - gst_rate: GST percentage
+        const resp = response.data.data;
+        const gst = parseFloat(resp.gst_rate ?? 0);
+
+        // Use the no-GST price directly from API if available
+        let priceNoGst = resp.dealer_price_per_unit_no_gst
+          ? Number(resp.dealer_price_per_unit_no_gst)
+          : null;
+
+        // If no-GST price not in API, calculate it from the with-GST price
+        if (priceNoGst === null || priceNoGst === undefined) {
+          const priceWithGst = Number(resp.dealer_price_per_unit || 0);
+          priceNoGst = gst !== 0 ? priceWithGst / (1 + gst / 100) : priceWithGst;
+        }
+
+        // Calculate with-GST price from no-GST
+        const priceWithGst = gst !== 0
+          ? priceNoGst * (1 + gst / 100)
+          : priceNoGst;
+
+        setDealerPriceNoGst(priceNoGst);
+        setDealerPriceWithGst(priceWithGst);
+        setGstRate(gst);
+        setCaseSize(resp.units_per_case || 0);
       } else {
         setDealerPriceNoGst("");
+        setDealerPriceWithGst("");
         setGstRate("");
         setCaseSize(0);
       }
     } catch (error) {
       console.log("Error fetching packing details", error);
       setDealerPriceNoGst("");
+      setDealerPriceWithGst("");
       setGstRate("");
       setCaseSize(0);
     }
@@ -748,7 +827,7 @@ export default function OrderForm() {
       const taxableAmount = itemSubtotal - discountAmount;
 
       // Use dynamic GST rate from the item if available
-      const gstRateForItem = parseFloat(gstRate) || 5; // fallback to 5%
+      const gstRateForItem = parseFloat(gstRate) || 0; // fallback to 5%
       const taxAmount = taxableAmount * (gstRateForItem / 100);
 
 
@@ -841,6 +920,7 @@ export default function OrderForm() {
           quantity,
           setQuantity,
           dealerPriceNoGst,
+          dealerPriceWithGst,
           gstRate,
           price,
           discount,
@@ -937,8 +1017,8 @@ export default function OrderForm() {
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.orderItemDetails}>
-                  {orderItem.packing_size} • {orderItem.quantity} {orderItem.quantity_unit} • ₹{orderItem.price}
-                  {orderItem.discount > 0 && ` • ${orderItem.discount}% off`} • Total: ₹{orderItem.item_total}
+                  {orderItem.packing_size} • {orderItem.quantity} {orderItem.quantity_unit} • ₹{formatMoney(orderItem.price)}
+                  {orderItem.discount > 0 && ` • ${orderItem.discount}% off`} • Total: ₹{formatMoney(orderItem.item_total)}
                 </Text>
                 <Text style={styles.orderItemType}>Type: {orderItem.product_order_type}</Text>
               </View>
@@ -1063,12 +1143,14 @@ export default function OrderForm() {
 
             {/* Dealer Price Display */}
             {item.data.selectedPacking && (
-              <TextInput
-                style={[styles.input, styles.readOnlyInput]}
-                value={item.data.dealerPriceNoGst ? `₹ ${item.data.dealerPriceNoGst} (No GST)` : ""}
-                editable={false}
-                placeholder="Dealer price (No GST)"
-              />
+              <>
+                <TextInput
+                  style={[styles.input, styles.readOnlyInput]}
+                  value={item.data.dealerPriceNoGst !== "" && item.data.dealerPriceNoGst != null ? `₹ ${formatMoney(item.data.dealerPriceNoGst)} (Per unit, No GST)` : ""}
+                  editable={false}
+                  placeholder="Dealer price (No GST)"
+                />
+              </>
             )}
 
 
@@ -1076,7 +1158,7 @@ export default function OrderForm() {
             {item.data.selectedPacking && (
               <TextInput
                 style={[styles.input, styles.readOnlyInput]}
-                value={item.data.gstRate ? `${item.data.gstRate}% GST` : ""}
+                value={item.data.gstRate !== "" && item.data.gstRate != null ? `${item.data.gstRate}% GST` : ""}
                 editable={false}
                 placeholder="Tax Rate"
               />
@@ -1087,7 +1169,8 @@ export default function OrderForm() {
             {item.data.selectedPacking && (
               <DiscountPriceInput
                 dealerPriceNoGst={Number(item.data.dealerPriceNoGst)}
-                value={{ price: item.data.price, discount: item.data.discount }}
+                dealerPriceWithGST={Number(item.data.dealerPriceWithGst)}
+                value={{ price: item.data.price, discount: item.data.discount, gst_rate: item.data.gstRate }}
                 onChange={({ price, discount }) => {
                   setPrice(price?.toString() ?? "");
                   setDiscount(discount?.toString() ?? "");
@@ -1108,7 +1191,7 @@ export default function OrderForm() {
             {item.data.selectedPacking && (
               <TextInput
                 style={[styles.input, styles.readOnlyInput]}
-                value={`₹${item.data.itemTotal} (Item Total)`}
+                value={item.data.itemTotal ? `₹ ${formatMoney(item.data.itemTotal)} (Item Total)` : ""}
                 editable={false}
                 placeholder="Item Total"
               />
