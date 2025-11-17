@@ -131,7 +131,6 @@ const DealerVerificationScreen = () => {
 
             if (!result.canceled && result.assets?.[0]) {
                 const fileAsset = result.assets[0];
-                const fileSize = fileAsset.fileSize || fileAsset.size;
 
                 Alert.alert(
                     'Confirm Upload',
@@ -151,8 +150,13 @@ const DealerVerificationScreen = () => {
                 );
             }
         } catch (error) {
+            if (error.code === 'E_DOCUMENT_PICKER_CANCELLED') {
+                console.log('Document picker was cancelled');
+                return;
+            }
+            
             console.error('Error picking document:', error);
-            Alert.alert('Error', 'Failed to select document');
+            Alert.alert('Error', 'Failed to select document. Please try again.');
         }
     };
 

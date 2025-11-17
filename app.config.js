@@ -43,11 +43,15 @@ export default ({ config }) => ({
         ITSAppUsesNonExemptEncryption: false,
         UIViewControllerBasedStatusBarAppearance: "NO",
         NSLocationWhenInUseUsageDescription:
-          "Aubizo uses your location to record attendance, show nearby dealers and farmers, and track your visits.",
+          "Aubizo needs your location to record your daily punch in and punch out times for accurate attendance tracking. For example, when you tap Punch In, we record your GPS coordinates along with the timestamp to document your work location and hours.",
+        NSLocationAlwaysAndWhenInUseUsageDescription:
+          "Aubizo needs your location to record your daily punch in and punch out times for accurate attendance tracking, and to show nearby dealers and farmers in your sales territory. For example, when you tap Punch In or Punch Out, we record your GPS coordinates along with the timestamp to document your work location and hours.",
         NSCameraUsageDescription: 
-          "Aubizo needs camera access to take photos of payment receipts and invoices for record keeping and transaction verification.",
+          "Aubizo uses your camera to capture photos of payment receipts and invoices. For example, when recording a payment transaction, you can take a photo of the receipt to upload as proof of payment, which helps reconcile accounts and prevent disputes.",
         NSPhotoLibraryUsageDescription: 
-          "Aubizo needs photo library access to select receipt images and documents to attach as proof of payment transactions."
+          "Aubizo accesses your photo library to attach receipt images and documents as proof of payment transactions. For example, when you record a collection payment, you can select a previously saved receipt photo from your library to attach to the transaction record.",
+        NSPhotoLibraryAddUsageDescription:
+          "Aubizo needs permission to save receipt photos to your photo library. For example, we may save captured receipt images to your library so you have a backup record of all payment documents."
       },
       supportsTablet: true,
       runtimeVersion: "1.0.0",
@@ -95,7 +99,7 @@ export default ({ config }) => ({
         "expo-location",
         {
           locationWhenInUsePermission:
-            "Aubizo uses your location to record attendance, show nearby dealers and farmers, and track your visits.",
+            "Aubizo needs your location to record your daily punch in and punch out times for accurate attendance tracking. For example, when you tap Punch In, we record your GPS coordinates along with the timestamp to document your work location and hours.",
           isAndroidBackgroundLocationEnabled: false,
         },
       ],
@@ -122,9 +126,8 @@ export default ({ config }) => ({
       [
         "expo-image-picker",
         {
-          photosPermission: "Aubizo needs access to your photos to upload receipt attachments.",
-          cameraPermission: "Aubizo needs access to your camera to take photos of receipts.",
-          // Enable all media types
+          photosPermission: "Aubizo accesses your photo library to attach receipt images and documents as proof of payment transactions. For example, when you record a collection payment, you can select a previously saved receipt photo from your library to attach to the transaction record.",
+          cameraPermission: "Aubizo uses your camera to capture photos of payment receipts and invoices. For example, when recording a payment transaction, you can take a photo of the receipt to upload as proof of payment, which helps reconcile accounts and prevent disputes.",
           mediaTypesAllowed: "All"
         }
       ],

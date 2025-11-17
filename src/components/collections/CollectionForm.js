@@ -538,23 +538,19 @@ export default function CollectionForm({
   // ========== Permission Management ==========
   const requestPermissions = async () => {
     try {
-      // Only need media library permission for gallery/document picking
       const mediaLibraryPermission = await ImagePicker.getMediaLibraryPermissionsAsync();
 
-      console.log("Current media permission:", mediaLibraryPermission.status);
-
       if (mediaLibraryPermission.status !== "granted") {
+        // Request permission (shows native iOS dialog with description)
         const result = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        // Continue to show options regardless — gallery option will be hidden if not granted
         showFileOptionsAfterPermission();
         return;
       }
 
-      // Permission granted (or already granted)
       showFileOptionsAfterPermission();
     } catch (error) {
       console.error("Error checking permissions:", error);
-      console.log("Failed to check permissions");
+      Alert.alert("Error", "Failed to check permissions. Please try again.");
     }
   };
 
