@@ -1,6 +1,7 @@
 // External Libraries
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ActivityIndicator, View } from "react-native";
 
 // React Navigation
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -31,7 +32,8 @@ import ProductDetailScreen from "../screens/ProductDetails";
 import OrderForm from "../src/components/orders/OrderForm";
 import CollectionForm from "../src/components/collections/CollectionForm";
 
-import { useNavigationPermissions } from "../src/hooks/usePermissions";
+// Permissions - use context instead of hook for app-level coordination
+import { usePermissionsContext } from "../src/contexts/PermissionsContext";
 import AnalyticsScreen from "../screens/Analytics";
 import DESIGN from "../src/theme";
 import DealerList from "../screens/DealerList";
@@ -66,7 +68,7 @@ const TAB_BAR_CONFIG = {
 
 // Screens where tab bar should be hidden
 const HIDDEN_TAB_SCREENS = {
-  dashboard: ["Farmer", "FarmerUpdate", "FarmerVisit", "Dealer", "DealerUpdate", "DealerVisit", "VisitHistory", "Analytics", "DealerList", "DealerVerification","FarmerList","DealerLedger","Hepl&Support"],
+  dashboard: ["Farmer", "FarmerUpdate", "FarmerVisit", "Dealer", "DealerUpdate", "DealerVisit", "VisitHistory", "Analytics", "DealerList", "DealerVerification", "FarmerList", "DealerLedger", "Hepl&Support"],
   products: ["Product Details"],
   orders: ["OrderForm"],
   collections: ["CollectionForm"],
@@ -91,7 +93,7 @@ function DashboardStack() {
       <Stack.Screen
         name="Products"
         component={ProductScreen}
-       options={{ headerShown: false }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Product Details"
@@ -186,7 +188,7 @@ function DashboardStack() {
         }}
       />
 
-      
+
       <Stack.Screen
         name="Hepl&Support"
         component={HelpSupport}
@@ -260,7 +262,7 @@ function ProductStack() {
       <Stack.Screen
         name="Product"
         component={ProductScreen}
-        options={{ headerShown:false }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Product Details"
@@ -301,21 +303,31 @@ const createTabBarStyle = (totalHeight, safeAreaBottom) => ({
 export function AppNavigation() {
   const insets = useSafeAreaInsets();
 
+  // Use permissions context for app-level permission coordination
+  // Prevents blank screens by waiting for permissions to load before rendering navigation
   const {
     loading,
+    isInitialized,
+    showDashboard,
     showProducts,
     showOrders,
-    showCollections
-  } = useNavigationPermissions();
+    showCollections,
+  } = usePermissionsContext();
 
   const safeAreaBottom = insets.bottom || 10;
   const totalHeight = TAB_BAR_CONFIG.height + safeAreaBottom;
   const defaultTabBarStyle = createTabBarStyle(totalHeight, safeAreaBottom);
 
-
-  if (loading) {
-    return null;
+  // Show loading indicator while permissions are being initialized
+  // This prevents blank screens when transitioning between auth states
+  if (loading || !isInitialized) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAFA' }}>
+        <ActivityIndicator size="large" color={DESIGN.colors.primary} />
+      </View>
+    );
   }
+
   return (
     <Tab.Navigator
       screenOptions={{

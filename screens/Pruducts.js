@@ -134,7 +134,6 @@ export default function ProductScreen() {
     }, [])
   );
 
-
   const renderRow = ({ item, index }) => (
     <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: CARD_MARGIN, paddingHorizontal: CARD_MARGIN }}>
       {item.map((product, i) => (
@@ -179,11 +178,27 @@ export default function ProductScreen() {
     </View>
   );
 
+  // ⭐ FIXED: Header visible even during loading
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center" }}>
-        <ActivityIndicator size="large" color={DESIGN.colors.primary} />
-      </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: DESIGN.colors.background }} edges={["top"]}>
+        <View style={{
+          flexDirection: "row",
+          paddingHorizontal: 16,
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingVertical: DESIGN.spacing.md,
+          borderBottomWidth: 2,
+          borderBottomColor: DESIGN.colors.border,
+        }}>
+          <Text style={{ fontSize: 20, fontWeight: "bold" }}>Product List</Text>
+          <FontAwesome name="search" size={24} color="black" />
+        </View>
+
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color={DESIGN.colors.primary} />
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -220,15 +235,16 @@ export default function ProductScreen() {
     groupedFiltered.push(filtered.slice(i, i + NUM_COLUMNS));
   }
 
-
-
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: DESIGN.colors.background }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: DESIGN.colors.background }}
+      edges={["top"]}
+    >
       <View style={{
-        flexDirection: 'row',
+        flexDirection: "row",
         paddingHorizontal: 16,
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        justifyContent: "space-between",
+        alignItems: "center",
         paddingVertical: DESIGN.spacing.md,
         borderBottomWidth: 2,
         borderBottomColor: DESIGN.colors.border,

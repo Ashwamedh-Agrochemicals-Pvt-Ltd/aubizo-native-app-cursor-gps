@@ -19,6 +19,7 @@ import AppNavigation from "./navigation/AppNavigation";
 import AuthNavigator from "./navigation/AuthNavigator";
 import { navigation } from "./navigation/NavigationService";
 import GenericSettingsModal from "./src/components/GenericSettingsModal";
+import { PermissionsProvider, usePermissionsContext } from "./src/contexts/PermissionsContext";
 
 // Utilities & Hooks
 import location from "./src/utility/location";
@@ -119,18 +120,22 @@ const errorStyles = {
 };
 
 // ================================================================
-// MAIN APP COMPONENT
+// MAIN APP COMPONENT (INNER)
 // ================================================================
 
 /**
- * Main App Component
- * Handles authentication, device restrictions, and navigation setup
+ * AppContent Component
+ * Handles authentication, device restrictions, and coordination of permission loading
+ * This component uses PermissionsContext
  */
-function App() {
+function AppContent() {
   // App state
   const [user, setUser] = useState(null);
   const [isReady, setIsReady] = useState(false);
   const [isHydrating, setIsHydrating] = useState(true);
+
+  // Permissions context for coordinating permission loading at app level
+  const { loadPermissions, clearPermissions } = usePermissionsContext();
 
   // Device restrictions hook
   const {
@@ -172,15 +177,27 @@ function App() {
 
   /**
    * Initialize app on startup
-   * Load authentication token, setup location, check device restrictions
+   * Coordinates: token loading → device restrictions → permission loading → ready
+   * 
+   * This ensures:
+   * 1. User is authenticated before loading permissions
+   * 2. Navigation doesn't mount until permissions are loaded
+   * 3. No blank screens during permission initialization
    */
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        // Step 1: Load authentication token
         await loadToken();
         setGlobalUserSetter(setUser);
-        await location.getStrictLocation();
+
+        // Step 2: Check device restrictions
         await checkRestrictions();
+
+        // Step 3: Request location permission in background (non-blocking)
+        location.getStrictLocation().catch((error) => {
+          if (__DEV__) console.warn("Background location request failed:", error);
+        });
       } catch (error) {
         if (__DEV__) console.error("App initialization failed:", error);
         Sentry.captureException(error);
@@ -192,6 +209,22 @@ function App() {
 
     initializeApp();
   }, [checkRestrictions]);
+
+  /**
+   * Load permissions when user changes
+   * Called after user token is loaded, before navigation renders
+   * Note: loadPermissions and clearPermissions are wrapped in useCallback in PermissionsContext,
+   * maintaining referential equality across renders
+   */
+  useEffect(() => {
+    if (user) {
+      // User just logged in or app started with existing token
+      loadPermissions();
+    } else {
+      // User logged out
+      clearPermissions();
+    }
+  }, [user]);
 
   /**
    * Load authentication token from storage
@@ -211,6 +244,7 @@ function App() {
     return (
       <View style={loadingStyles.container}>
         <ActivityIndicator size="large" color="#2E7D32" />
+        <Text style={loadingStyles.text}>Initializing...</Text>
       </View>
     );
   }
@@ -249,6 +283,18 @@ function App() {
   );
 }
 
+/**
+ * Outer App Component
+ * Wraps AppContent with PermissionsProvider for app-level permission management
+ */
+function App() {
+  return (
+    <PermissionsProvider>
+      <AppContent />
+    </PermissionsProvider>
+  );
+}
+
 // Loading screen styles
 const loadingStyles = {
   container: {
@@ -256,6 +302,12 @@ const loadingStyles = {
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#FAFAFA",
+  },
+  text: {
+    marginTop: 12,
+    fontSize: 14,
+    color: "#666666",
+    fontWeight: "500",
   },
 };
 

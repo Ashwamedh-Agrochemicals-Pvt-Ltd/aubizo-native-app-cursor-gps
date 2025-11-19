@@ -60,7 +60,7 @@ const DrawerMenu = ({ navigation, onClose, username }) => {
               // Clear permissions from memory before logout
               permissionManager.clearPermissions();
               await logOut();
-             
+
             } catch (error) {
               showToast.error('Logout failed', 'Please try again');
             }
@@ -71,7 +71,6 @@ const DrawerMenu = ({ navigation, onClose, username }) => {
   };
 
   const handleProfile = () => {
-    onClose();
     setComingSoonModal({ visible: true, title: 'Profile' });
   };
 
@@ -92,7 +91,8 @@ const DrawerMenu = ({ navigation, onClose, username }) => {
   };
 
   const handleHelp = () => {
-   navigation.navigate("Hepl&Support")
+    onClose();
+    navigation.navigate("Hepl&Support")
   };
 
   const closeComingSoonModal = () => {

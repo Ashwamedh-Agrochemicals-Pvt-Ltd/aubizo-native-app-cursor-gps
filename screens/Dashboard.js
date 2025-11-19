@@ -147,6 +147,8 @@ function Dashboard() {
         if (cachedName) setUsername(cachedName);
       };
       loadCachedUsername();
+      // Show loading indicator immediately while fetching punch status
+      setLoading(true);
       checkPunchStatus();
     } else {
       // Clear state when user logs out

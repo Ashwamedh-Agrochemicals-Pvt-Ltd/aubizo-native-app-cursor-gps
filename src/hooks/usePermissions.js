@@ -4,9 +4,45 @@ import authContext from '../auth/context';
 
 /**
  * Hook for managing user permissions
- * Provides permission checking and loading states
+ * When used within PermissionsContext, returns context permissions (no duplicate loading)
+ * When used outside, falls back to loading permissions independently
+ * 
+ * @returns {object} Permissions data and methods
  */
 export const usePermissions = () => {
+  // Try to use permissions context if available
+  let contextPermissions = null;
+  try {
+    // Dynamically import context to avoid circular dependencies
+    const PermissionsContext = require('../contexts/PermissionsContext').default;
+    const context = useContext(PermissionsContext);
+    if (context) {
+      contextPermissions = context;
+    }
+  } catch (e) {
+    // Context not available, will fall back to local loading
+  }
+
+  // If context is available, return context permissions immediately
+  if (contextPermissions) {
+    return {
+      permissions: contextPermissions.permissions,
+      loading: contextPermissions.loading,
+      error: contextPermissions.error,
+      hasPermission: contextPermissions.hasPermission,
+      isModuleEnabled: contextPermissions.isModuleEnabled,
+      getEnabledModules: contextPermissions.getEnabledModules,
+      refreshPermissions: contextPermissions.refreshPermissions,
+      canCreate: (module) => contextPermissions.hasPermission(module, PERMISSIONS.CREATE),
+      canRead: (module) => contextPermissions.hasPermission(module, PERMISSIONS.READ),
+      canUpdate: (module) => contextPermissions.hasPermission(module, PERMISSIONS.UPDATE),
+      canDelete: (module) => contextPermissions.hasPermission(module, PERMISSIONS.DELETE),
+      canSubmit: (module) => contextPermissions.hasPermission(module, PERMISSIONS.SUBMIT),
+      canApprove: (module) => contextPermissions.hasPermission(module, PERMISSIONS.APPROVE),
+    };
+  }
+
+  // Fallback: Load permissions independently if context not available
   const [permissions, setPermissions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
