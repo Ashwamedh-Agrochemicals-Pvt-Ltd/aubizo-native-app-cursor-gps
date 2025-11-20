@@ -192,6 +192,13 @@ function DealerList(props) {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    style={{ marginRight: 8 }}
+                >
+                    <Ionicons name="arrow-back" size={24} color={DESIGN.colors.textPrimary} />
+                </TouchableOpacity>
+
                 <Text style={styles.headerText}>Dealer List</Text>
                 <TouchableOpacity onPress={() => {
                     if (showSearch) {
@@ -248,7 +255,7 @@ function DealerList(props) {
                         const isSearch = showSearch && searchQuery.trim().length > 0;
                         if (isSearch) {
                             return (
-                                <View style={{ padding: 24, alignItems: 'center',justifyContent:'center' }}>
+                                <View style={{ padding: 24, alignItems: 'center', justifyContent: 'center' }}>
                                     <Text style={{ color: DESIGN.colors.textSecondary, fontSize: 16 }}>No dealers found for "{searchQuery}"</Text>
                                 </View>
                             );
@@ -268,7 +275,7 @@ function DealerList(props) {
                         }
 
                         return (
-                            <View style={{flex:1, padding: 24, alignItems: 'center', justifyContent:'center' }}>
+                            <View style={{ flex: 1, padding: 24, alignItems: 'center', justifyContent: 'center' }}>
                                 <Text style={{ fontSize: 18, fontWeight: '600', color: DESIGN.colors.textPrimary }}>{title}</Text>
                                 <Text style={{ marginTop: 8, color: DESIGN.colors.textSecondary, textAlign: 'center' }}>{subtitle}</Text>
                             </View>

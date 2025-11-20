@@ -92,53 +92,30 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ========================================
-// 🎯 RESPONSE INTERCEPTOR (401-based refresh)
-// ========================================
+// ---------- RESPONSE INTERCEPTOR (401 -> refresh) ----------
 apiClient.interceptors.response.use(
-  (response) => response,
+  (res) => res,
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
+    const errMsg = (error.message || "").toLowerCase();
+    const url = (originalRequest?.url || "").toLowerCase();
 
-    console.log("originalRequest:", originalRequest)
+    console.log("originalRequest:", url);
+    console.log("error.status:", status, "error.message:", error.message);
 
-    if (status === 401 && !originalRequest._retry) {
-      console.log("🚨 401 detected, attempting token refresh...");
-
-      originalRequest._retry = true;
-
-      if (isRefreshing && refreshPromise) {
-        console.log("⏳ Waiting for ongoing refresh...");
-        const newToken = await refreshPromise;
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return apiClient(originalRequest);
-      }
-
-      isRefreshing = true;
-      refreshPromise = refreshAccessToken()
-        .then((newToken) => {
-          isRefreshing = false;
-          refreshPromise = null;
-          return newToken;
-        })
-        .catch((err) => {
-          isRefreshing = false;
-          refreshPromise = null;
-          throw err;
-        });
-
-      try {
-        const newToken = await refreshPromise;
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        console.log("✅ Token refreshed → Retrying original request...");
-        return apiClient(originalRequest);
-      } catch (refreshError) {
-        return Promise.reject(refreshError);
-      }
+    // --------------------------------------------------------
+    // 1) BLOCK refresh logic for refresh/logout endpoints
+    // --------------------------------------------------------
+    if (url.includes("auth/refresh") || url.includes("auth/logout")) {
+      console.log("⚠️ Auth endpoint hit → not attempting refresh.");
+      return Promise.reject(error);
     }
 
-    if (!response || message.includes("network") || message.includes("dns") || message.includes("enotfound")) {
+    // --------------------------------------------------------
+    // 2) Network / DNS Errors
+    // --------------------------------------------------------
+    if (!error.response || errMsg.includes("network") || errMsg.includes("dns") || errMsg.includes("enotfound")) {
       setTimeout(() => {
         Alert.alert(
           "Network Issue",
@@ -153,12 +130,83 @@ apiClient.interceptors.response.use(
       });
     }
 
+    // --------------------------------------------------------
+    // 3) CHECK AGAIN → Logout endpoint should not refresh
+    // --------------------------------------------------------
+    if (url.includes("auth/logout")) {
+      console.log("🟡 Skipping refresh for logout API");
+      return Promise.reject(error);
+    }
+
+    // --------------------------------------------------------
+    // 4) Handle 401 (Token Expired)
+    // --------------------------------------------------------
+    if (status === 401 && !originalRequest._retry) {
+      console.log("🚨 401 detected → attempting token refresh...");
+      originalRequest._retry = true;
+
+      // If refresh is in progress → wait for it
+      if (isRefreshing && refreshPromise) {
+        console.log("⏳ Waiting for ongoing refresh…");
+        try {
+          const newToken = await refreshPromise;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return apiClient(originalRequest);
+        } catch (waitErr) {
+          console.error("❌ Error while waiting for refresh:", waitErr);
+          return Promise.reject(waitErr);
+        }
+      }
+
+      // Start new refresh
+      isRefreshing = true;
+
+      const refreshWithTimeout = () => {
+        const REFRESH_TIMEOUT_MS = 10000;
+        return Promise.race([
+          refreshAccessToken(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("REFRESH_TIMEOUT")), REFRESH_TIMEOUT_MS)
+          ),
+        ]);
+      };
+
+      refreshPromise = refreshWithTimeout()
+        .then((newToken) => newToken)
+        .finally(() => {
+          isRefreshing = false;
+          refreshPromise = null;
+        });
+
+      try {
+        const newToken = await refreshPromise;
+        console.log("✅ Token refreshed → retrying original request…");
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return apiClient(originalRequest);
+      } catch (refreshErr) {
+        console.error("❌ Refresh failed:", refreshErr);
+
+        // Clean tokens BEFORE logout (PREVENT LOOP)
+        await AuthStorage.removeToken();
+        await AuthStorage.removeRefreshToken();
+
+        const { logoutFromClient } = await import("../auth/useAuth");
+        await logoutFromClient(true);
+        return Promise.reject(refreshErr);
+      }
+    }
+
+    // --------------------------------------------------------
+    // 5) Default API errors
+    // --------------------------------------------------------
     return Promise.reject({
       status: status || 500,
       reason: "API Error",
-      detail: error.response.data || error.message,
+      detail: error.response?.data || error.message,
     });
   }
 );
+
+
 
 export default apiClient;

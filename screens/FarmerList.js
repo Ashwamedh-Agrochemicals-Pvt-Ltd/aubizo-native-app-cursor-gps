@@ -159,6 +159,12 @@ function FarmerList() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ marginRight: 8 }}
+        >
+          <Ionicons name="arrow-back" size={24} color={DESIGN.colors.textPrimary} />
+        </TouchableOpacity>
         <Text style={styles.headerText}>Farmer List</Text>
         <TouchableOpacity onPress={() => {
           if (showSearch) {
