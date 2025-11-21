@@ -1,6 +1,6 @@
 // Core React & React Native
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, View, Text, BackHandler } from "react-native";
+import { ActivityIndicator, View, Text, BackHandler, AppState } from "react-native";
 
 // Navigation
 import { NavigationContainer } from "@react-navigation/native";
@@ -135,7 +135,7 @@ function AppContent() {
   const [isHydrating, setIsHydrating] = useState(true);
 
   // Permissions context for coordinating permission loading at app level
-  const { loadPermissions, clearPermissions } = usePermissionsContext();
+  const { loadPermissions, clearPermissions, error: permissionError } = usePermissionsContext();
 
   // Device restrictions hook
   const {
@@ -148,6 +148,9 @@ function AppContent() {
 
   // Back press handling
   const backPressCount = useRef(0);
+  
+  // AppState for background/foreground detection
+  const appState = useRef(AppState.currentState);
 
   /**
    * Handle Android hardware back button
@@ -176,19 +179,71 @@ function AppContent() {
   }, []);
 
   /**
+   * Monitor AppState changes to validate tokens when app comes to foreground
+   * Critical for preventing white screens after app has been in background
+   */
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState) => {
+      // App is coming to foreground from background
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        if (__DEV__) console.log('🔄 App came to foreground, validating tokens...');
+        
+        if (user) {
+          try {
+            // Check if tokens are still valid
+            const accessToken = await authStorage.getToken();
+            const refreshToken = await authStorage.getRefreshToken();
+            
+            if (!accessToken || !refreshToken) {
+              if (__DEV__) console.warn('⚠️ Missing tokens, logging out...');
+              showToast.error('Session expired', 'Please login again');
+              await authStorage.clearAll();
+              setUser(null);
+              clearPermissions();
+              return;
+            }
+            
+            // Check if refresh token is ACTUALLY expired (no buffer)
+            const isRefreshExpired = authStorage.isRefreshTokenExpired(refreshToken);
+            if (isRefreshExpired) {
+              if (__DEV__) console.warn('⚠️ Refresh token expired, logging out...');
+              showToast.error('Session expired', 'Please login again');
+              await authStorage.clearAll();
+              setUser(null);
+              clearPermissions();
+              return;
+            }
+            
+            if (__DEV__) console.log('✅ Tokens validated successfully');
+          } catch (error) {
+            if (__DEV__) console.error('❌ Token validation failed:', error);
+            Sentry.captureException(error);
+          }
+        }
+      }
+      
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, [user, clearPermissions]);
+
+  /**
    * Initialize app on startup
-   * Coordinates: token loading → device restrictions → permission loading → ready
+   * Coordinates: token loading → validation → device restrictions → permission loading → ready
    * 
    * This ensures:
    * 1. User is authenticated before loading permissions
-   * 2. Navigation doesn't mount until permissions are loaded
-   * 3. No blank screens during permission initialization
+   * 2. Expired tokens are cleared immediately
+   * 3. Navigation doesn't mount until permissions are loaded
+   * 4. No blank screens during permission initialization
    */
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Step 1: Load authentication token
-        await loadToken();
+        // Step 1: Load and validate authentication tokens
+        await loadAndValidateToken();
         setGlobalUserSetter(setUser);
 
         // Step 2: Check device restrictions
@@ -227,15 +282,49 @@ function AppContent() {
   }, [user]);
 
   /**
-   * Load authentication token from storage
+   * Monitor permission loading errors
+   * If UNAUTHORIZED error occurs, logout user to prevent white screen
    */
-  const loadToken = async () => {
+  useEffect(() => {
+    if (permissionError === 'UNAUTHORIZED' && user) {
+      if (__DEV__) console.warn('⚠️ UNAUTHORIZED error detected, logging out user...');
+      setUser(null);
+    }
+  }, [permissionError, user]);
+
+  /**
+   * Load and validate authentication tokens from storage
+   * Clears tokens if they are expired to prevent white screen
+   */
+  const loadAndValidateToken = async () => {
     try {
-      const token = await authStorage.getUser();
-      if (token) setUser(token);
+      const accessToken = await authStorage.getToken();
+      const refreshToken = await authStorage.getRefreshToken();
+      
+      // If no tokens exist, user needs to login
+      if (!accessToken || !refreshToken) {
+        if (__DEV__) console.log('ℹ️ No stored tokens found');
+        return;
+      }
+      
+      // Check if refresh token is ACTUALLY expired (no buffer)
+      const isRefreshExpired = authStorage.isRefreshTokenExpired(refreshToken);
+      
+      if (isRefreshExpired) {
+        if (__DEV__) console.warn('⚠️ Stored refresh token is expired, clearing...');
+        await authStorage.clearAll();
+        return;
+      }
+      
+      // Tokens are valid, set user
+      if (__DEV__) console.log('✅ Valid tokens found, user authenticated');
+      setUser(accessToken);
+      
     } catch (error) {
-      if (__DEV__) console.error("Failed to load authentication token:", error);
+      if (__DEV__) console.error("Failed to load/validate tokens:", error);
       Sentry.captureException(error);
+      // Clear potentially corrupted tokens
+      await authStorage.clearAll().catch(() => {});
     }
   };
 

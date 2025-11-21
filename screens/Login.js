@@ -85,8 +85,18 @@ function LoginScreen() {
 
     } catch (error) {
       console.error("\n=== ERROR OCCURRED ===");
-      console.error("Error:", error.message);
-      setFormError("Something went wrong. Please try again.");
+      console.error("Error:", error);
+      console.error("Response:", error.response?.data);
+      
+      // Extract error message from backend response
+      const errorMessage = 
+        error.response?.data?.message || 
+        error.response?.data?.detail || 
+        error.message || 
+        "Something went wrong. Please try again.";
+      
+      setFormError(errorMessage);
+      showToast.error("Login Failed", errorMessage);
     } finally {
       setLoading(false);
     }

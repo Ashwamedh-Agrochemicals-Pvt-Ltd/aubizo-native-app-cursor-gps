@@ -9,7 +9,7 @@ import apiClient from "../api/client";
 
 let isLoggingOut = false;
 
-export const handleLogout = async (setUser) => {
+export const handleLogout = async (setUser, isSessionExpired = false) => {
     if (isLoggingOut) {
         logger.log("⏸️ Logout already in progress, skipping...");
         return { success: true };
@@ -17,49 +17,58 @@ export const handleLogout = async (setUser) => {
 
     isLoggingOut = true;
 
-    let wasExpiredLogout = false;
-
     try {
         const refreshToken = await authStorage.getRefreshToken();
         logger.log("🚪 Logging out user...");
 
+        // Try to blacklist refresh token on backend (if token is valid)
         if (refreshToken) {
             try {
-                const isExpired = authStorage.isTokenExpired(refreshToken);
+                // Use isRefreshTokenExpired (no buffer) for actual expiry check
+                const isExpired = authStorage.isRefreshTokenExpired(refreshToken);
 
                 if (!isExpired) {
-
+                    // Token is still valid, try to blacklist it
                     await apiClient.post("auth/logout/", { refresh: refreshToken });
                     logger.log("✅ Refresh token blacklisted on server");
                 } else {
-                    // ✅ Token expired → auto logout scenario
-                    wasExpiredLogout = true;
+                    // Token expired - already invalid on backend
                     logger.warn("⚠️ Refresh token expired, skipping logout API call");
                 }
             } catch (apiError) {
+                // Don't fail logout if backend call fails
                 const backendError = apiError?.response?.data || apiError?.message;
-                logger.warn("⚠️ Logout API failed, continuing cleanup:", backendError);
+                logger.warn("⚠️ Logout API failed (non-critical), continuing cleanup:", backendError);
             }
         }
 
-
+        // Always clear local storage regardless of API success
         await authStorage.clearAll();
         if (setUser) setUser(null);
 
-
-        if (wasExpiredLogout) {
-            showToast.error("Session expired", "Please login again.");
-            logger.log("🔐 Logged out due to expired session.");
+        // Show appropriate message
+        if (isSessionExpired) {
+            showToast.error("Session expired", "Please login again");
+            logger.log("🔐 Logged out due to expired session");
         } else {
             showToast.success('Logged out successfully', 'Goodbye!');
-            logger.log("✅ Logged out successfully.");
+            logger.log("✅ Logged out successfully");
         }
 
         return { success: true };
 
     } catch (error) {
-        showToast.error("Logout failed", "Something went wrong while logging out.");
+        // Even if logout fails, try to clear storage
         logger.error("❌ Logout error:", error);
+        
+        try {
+            await authStorage.clearAll();
+            if (setUser) setUser(null);
+        } catch (clearError) {
+            logger.error("❌ Failed to clear storage during error recovery:", clearError);
+        }
+        
+        showToast.error("Logout completed", "Please login again");
         return { success: false, error };
 
     } finally {

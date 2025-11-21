@@ -1,13 +1,12 @@
 import apiClient from "./client"
 
 // ===================================
-// Login with JWT only
+// Login with JWT (default and only method)
 // ===================================
 const login = (username, password) => {
     return apiClient.post("/auth/login/", {
         username,
         password,
-        auth_type: "jwt",
     });
 };
 

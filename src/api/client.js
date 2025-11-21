@@ -54,7 +54,16 @@ const refreshAccessToken = async () => {
     console.log("✅ Access token refreshed successfully");
     return newAccessToken;
   } catch (error) {
-    console.error("❌ Token refresh failed:", error.response?.data || error.message);
+    const errorDetail = error.response?.data?.detail || error.response?.data?.message || error.message;
+    const errorCode = error.response?.data?.code;
+    
+    console.error("❌ Token refresh failed:", {
+      detail: errorDetail,
+      code: errorCode,
+      status: error.response?.status
+    });
+    
+    // Import logout function dynamically to avoid circular dependency
     const { logoutFromClient } = await import("../auth/useAuth");
     await logoutFromClient(true);
 
@@ -143,6 +152,15 @@ apiClient.interceptors.response.use(
     // --------------------------------------------------------
     if (status === 401 && !originalRequest._retry) {
       console.log("🚨 401 detected → attempting token refresh...");
+      
+      // Check if backend explicitly says token is invalid
+      const errorCode = error.response?.data?.code;
+      const errorDetail = error.response?.data?.detail;
+      
+      if (errorCode === 'token_not_valid' || errorDetail?.includes('token')) {
+        console.warn('⚠️ Backend says token is invalid:', errorDetail);
+      }
+      
       originalRequest._retry = true;
 
       // If refresh is in progress → wait for it

@@ -181,6 +181,31 @@ const isTokenExpired = (token) => {
 };
 
 
+// Check if refresh token is ACTUALLY expired (no buffer time)
+// Used for logout validation and app startup checks
+const isRefreshTokenExpired = (token) => {
+  try {
+    if (!token) return true;
+
+    const decoded = jwtDecode(token);
+    const currentTime = Math.floor(Date.now() / 1000);
+    const expiryTime = decoded.exp;
+    
+    // No buffer time - check actual expiry
+    const isExpired = currentTime >= expiryTime;
+    
+    if (__DEV__ && isExpired) {
+      logger.log(`⚠️ Refresh token is actually expired`);
+    }
+    
+    return isExpired;
+  } catch (error) {
+    logger.error("❌ Error checking refresh token expiry:", error);
+    return true;
+  }
+};
+
+
 // ✅ Remove access token
 const removeToken = async () => {
   try {
@@ -416,6 +441,7 @@ export default {
   getRefreshToken,
   removeToken,
   isTokenExpired,
+  isRefreshTokenExpired,
   removeRefreshToken,
   getTokenInfo,
   getUser,

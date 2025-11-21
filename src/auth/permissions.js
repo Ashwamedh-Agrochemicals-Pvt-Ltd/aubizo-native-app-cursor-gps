@@ -59,7 +59,16 @@ class PermissionManager {
       throw new Error('Invalid permissions response');
     } catch (error) {
       console.error('Failed to fetch permissions:', error);
-      // Try to load cached permissions
+      
+      // Check if error is 401 (Unauthorized) - session expired
+      if (error.response?.status === 401 || error.status === 401) {
+        console.warn('⚠️ 401 Unauthorized while fetching permissions - token expired');
+        // Clear permissions and throw error to trigger logout in context
+        this.clearPermissions();
+        throw new Error('UNAUTHORIZED');
+      }
+      
+      // For other errors, try to load cached permissions
       return await this.loadCachedPermissions();
     } finally {
       this.isLoading = false;

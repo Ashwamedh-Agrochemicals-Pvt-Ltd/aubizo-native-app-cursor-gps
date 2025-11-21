@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import { permissionManager, MODULES } from '../auth/permissions';
+import authStorage from '../auth/storage';
+import showToast from '../utility/showToast';
 
 const PermissionsContext = createContext();
 
@@ -17,8 +19,25 @@ export const PermissionsProvider = ({ children }) => {
       setPermissions(userPermissions);
     } catch (err) {
       console.error('Failed to load permissions:', err);
-      setError(err.message);
-      setPermissions({});
+      
+      // Check if error is due to unauthorized access (expired tokens)
+      if (err.message === 'UNAUTHORIZED') {
+        console.warn('⚠️ Session expired while loading permissions, clearing auth...');
+        
+        // Clear all auth data
+        await authStorage.clearAll().catch(e => console.error('Failed to clear storage:', e));
+        
+        // Show user-friendly message
+        showToast.error('Session Expired', 'Please login again');
+        
+        // Set error state to trigger logout in App.js
+        setError('UNAUTHORIZED');
+        setPermissions(null);
+      } else {
+        // For other errors, set empty permissions and log error
+        setError(err.message);
+        setPermissions({});
+      }
     } finally {
       setLoading(false);
       setIsInitialized(true);
