@@ -21,6 +21,7 @@ import InputFormField from "../form/appComponents/InputFormText";
 import apiClient from "../../api/client";
 import Location from "../../utility/location";
 import DESIGN from "../../theme";
+import AppButton from "../form/appComponents/AppButton";
 
 export default function FarmerForm({
   location,
@@ -47,6 +48,11 @@ export default function FarmerForm({
   const [cropModalVisible, setCropModalVisible] = useState(false);
   const abortControllerRef = useRef(null);
 
+  const [hasAutoFilled, setHasAutoFilled] = useState(false);
+  const [pendingAutoFill, setPendingAutoFill] = useState(null);
+
+
+  const [cropSearchQuery, setCropSearchQuery] = useState('');
   const [dropdowns, setDropdowns] = useState({
     state: false,
     district: false,
@@ -76,6 +82,121 @@ export default function FarmerForm({
       }
     };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchLocationOnce = async () => {
+      if (pendingAutoFill || !isMounted) return;
+
+      try {
+        console.log("🔄 Fetching location...");
+        const result = await Location.getCurrentLocationDetails();
+        console.log("📍 Location fetched result:", result);
+
+        if (!isMounted) return;
+
+        if (result?.googleResults) {
+
+          // 👉 BEST RESULT FINDER (paste here)
+          const best =
+            result.googleResults.find((r) =>
+              r.address_components.some((c) =>
+                c.types.includes("administrative_area_level_4")
+              )
+            ) || result.googleResults[0];
+
+          console.log("🌎 Google BEST result:", best);
+
+          const get = (type) =>
+            best.address_components.find((c) => c.types.includes(type))?.long_name || null;
+
+          const autoFillData = {
+            stateName: get("administrative_area_level_1"),
+            districtName: get("administrative_area_level_3"),
+            talukaName:
+              get("administrative_area_level_4") ||
+              get("locality") ||
+              get("sublocality") ||
+              null,
+          };
+
+          console.log("📌 Pending auto-fill data:", autoFillData);
+          setPendingAutoFill(autoFillData);
+        }
+      } catch (error) {
+        console.log("❌ Auto location failed:", error);
+      }
+    };
+
+    fetchLocationOnce();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+
+  // Second effect: Auto-fill state when data is ready
+  useEffect(() => {
+    if (!pendingAutoFill || !pendingAutoFill.stateName || hasAutoFilled) return;
+
+    const fillState = async () => {
+      if (states.length === 0) {
+        await loadStates();
+        return;
+      }
+
+      const stateItem = states.find(s => {
+        const label = s.label || s.name;
+        return label.toLowerCase().includes(pendingAutoFill.stateName.toLowerCase());
+      });
+
+      if (stateItem) {
+        const stateValue = stateItem.value || stateItem.id;
+        setFormState(prev => ({ ...prev, state: stateValue, district: null, taluka: null }));
+        await loadDistricts(stateValue);
+      }
+    };
+
+    fillState();
+  }, [pendingAutoFill, states, hasAutoFilled]);
+
+  // Third effect: Auto-fill district when districts are loaded
+  useEffect(() => {
+    if (!pendingAutoFill || !pendingAutoFill.districtName || !formState.state || hasAutoFilled) return;
+    if (districts.length === 0) return;
+
+    const districtItem = districts.find(d => {
+      const label = d.label || d.name;
+      return label.toLowerCase().includes(pendingAutoFill.districtName.toLowerCase());
+    });
+
+    if (districtItem) {
+      const districtValue = districtItem.value || districtItem.id;
+      setFormState(prev => ({ ...prev, district: districtValue, taluka: null }));
+      loadTalukas(districtValue);
+    }
+  }, [pendingAutoFill, formState.state, districts, hasAutoFilled]);
+
+  // Fourth effect: Auto-fill taluka when talukas are loaded
+  useEffect(() => {
+    if (!pendingAutoFill || !pendingAutoFill.talukaName || !formState.district || hasAutoFilled) return;
+    if (talukas.length === 0) return;
+
+    const talukaItem = talukas.find(t => {
+      const label = t.label || t.name;
+      return label.toLowerCase().includes(pendingAutoFill.talukaName.toLowerCase());
+    });
+
+    if (talukaItem) {
+      const talukaValue = talukaItem.value || talukaItem.id;
+      setFormState(prev => ({ ...prev, taluka: talukaValue }));
+      setHasAutoFilled(true);
+      setPendingAutoFill(null); // Clear pending data
+      console.log("🎉 Auto-fill completed!");
+    }
+  }, [pendingAutoFill, formState.district, talukas, hasAutoFilled]);
 
   // Validate form state for submit button
   const isFormValid = (values, touched, errors) => {
@@ -171,9 +292,7 @@ export default function FarmerForm({
 
       };
 
-
-
-      const response = await apiClient.post(`farmer/create/`, payload, {
+      await apiClient.post(`farmer/create/`, payload, {
         signal: abortControllerRef.current.signal,
         timeout: 10000 // 10 second timeout for form submission
       });
@@ -376,6 +495,7 @@ export default function FarmerForm({
                               await loadStates();
                             }
                           }}
+
                           setValue={(callback) => {
                             const newState = callback(formState.state);
                             setFormState((prev) => ({
@@ -696,7 +816,11 @@ export default function FarmerForm({
             <Text style={modernStyles.modalTitle}>Select Crops</Text>
             <TouchableOpacity
               style={modernStyles.modalCloseButton}
-              onPress={() => setCropModalVisible(false)}
+              onPress={() => {
+                setCropSearchQuery('');
+                setSelectedCrops([]);
+                setCropModalVisible(false);
+              }}
               accessibilityRole="button"
               accessibilityLabel="Close crop selection"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -709,108 +833,145 @@ export default function FarmerForm({
             </TouchableOpacity>
           </View>
 
+          {/* Search Field */}
           <ScrollView
             contentContainerStyle={modernStyles.modalContent}
             showsVerticalScrollIndicator={false}
           >
-            {cropOptions.map((crop, index) => {
-              const selected = selectedCrops.find(
-                (c) => c.label === crop.label
-              );
 
-              return (
-                <View key={index} style={modernStyles.cropItem}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (selected) {
-                        setSelectedCrops((prev) =>
-                          prev.filter((c) => c.label !== crop.label)
-                        );
-                      } else {
-                        setSelectedCrops((prev) => [
-                          ...prev,
-                          {
-                            label: crop.label,
-                            value: crop.value,
-                            acre: "",
-                          },
-                        ]);
-                      }
-                    }}
-                    style={modernStyles.cropCheckbox}
-                    activeOpacity={0.7}
-                    accessibilityRole="checkbox"
-                    accessibilityLabel={`${selected ? 'Deselect' : 'Select'} ${crop.label}`}
-                    accessibilityState={{ checked: !!selected }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <MaterialCommunityIcons
-                      name={
-                        selected ? "checkbox-marked" : "checkbox-blank-outline"
-                      }
-                      size={24}
-                      color={
-                        selected
-                          ? DESIGN.colors.primary
-                          : DESIGN.colors.textSecondary
-                      }
-                    />
-                    <Text style={modernStyles.cropLabel}>{crop.label}</Text>
-                  </TouchableOpacity>
+            {/* Search Field inside ScrollView */}
+            <View style={modernStyles.searchContainer}>
+              <MaterialCommunityIcons
+                name="magnify"
+                size={20}
+                color={DESIGN.colors.textTertiary}
+                style={modernStyles.searchIcon}
+              />
+              <TextInput
+                style={modernStyles.searchInput}
+                placeholder="Search for crops..."
+                placeholderTextColor={DESIGN.colors.textTertiary}
+                onChangeText={(text) => setCropSearchQuery(text)}
+                value={cropSearchQuery}
+              />
+              {cropSearchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setCropSearchQuery('')}>
+                  <MaterialCommunityIcons
+                    name="close-circle"
+                    size={20}
+                    color={DESIGN.colors.textTertiary}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
 
-                  {selected && (
-                    <View style={modernStyles.acreInputContainer}>
-                      <TextInput
-                        style={modernStyles.acreInput}
-                        placeholder="Acre *"
-                        keyboardType="numeric"
-                        value={selected.acre}
-                        onChangeText={(text) =>
-                          setSelectedCrops((prev) =>
-                            prev.map((c) =>
-                              c.label === crop.label ? { ...c, acre: text } : c
-                            )
-                          )
-                        }
-                        placeholderTextColor={DESIGN.colors.textTertiary}
-                        accessibilityLabel={`Acre input for ${crop.label}`}
-                        accessibilityHint="Enter acre value for this crop"
-                      />
-                    </View>
-                  )}
-                </View>
-              );
-            })}
-
-            <TouchableOpacity
-              style={modernStyles.doneButton}
-              onPress={() => {
-                const isValid = selectedCrops.every(
-                  (crop) => crop.acre && crop.acre.trim() !== ""
+            {cropOptions
+              .filter(crop =>
+                crop.label.toLowerCase().includes(cropSearchQuery.toLowerCase())
+              )
+              .map((crop, index) => {
+                const selected = selectedCrops.find(
+                  (c) => c.label === crop.label
                 );
 
-                if (!isValid) {
-                  Alert.alert(
-                    "Validation Error",
-                    "Please enter acre value for all selected crops."
-                  );
-                  return;
-                }
+                return (
+                  <View key={index} style={modernStyles.cropItem}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (selected) {
+                          setSelectedCrops((prev) =>
+                            prev.filter((c) => c.label !== crop.label)
+                          );
+                        } else {
+                          setSelectedCrops((prev) => [
+                            ...prev,
+                            {
+                              label: crop.label,
+                              value: crop.value,
+                              acre: "",
+                            },
+                          ]);
+                        }
+                      }}
+                      style={modernStyles.cropCheckbox}
+                      activeOpacity={0.7}
+                      accessibilityRole="checkbox"
+                      accessibilityLabel={`${selected ? 'Deselect' : 'Select'} ${crop.label}`}
+                      accessibilityState={{ checked: !!selected }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <MaterialCommunityIcons
+                        name={
+                          selected ? "checkbox-marked" : "checkbox-blank-outline"
+                        }
+                        size={24}
+                        color={
+                          selected
+                            ? DESIGN.colors.primary
+                            : DESIGN.colors.textSecondary
+                        }
+                      />
+                      <Text style={modernStyles.cropLabel}>{crop.label}</Text>
+                    </TouchableOpacity>
 
-                setCropModalVisible(false);
-              }}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Done selecting crops"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <MaterialCommunityIcons
-                name="check"
-                size={24}
-                color={DESIGN.colors.surface}
+                    {selected && (
+                      <View style={modernStyles.acreInputContainer}>
+                        <TextInput
+                          style={modernStyles.acreInput}
+                          placeholder="Acre *"
+                          keyboardType="numeric"
+                          value={selected.acre}
+                          onChangeText={(text) =>
+                            setSelectedCrops((prev) =>
+                              prev.map((c) =>
+                                c.label === crop.label ? { ...c, acre: text } : c
+                              )
+                            )
+                          }
+                          placeholderTextColor={DESIGN.colors.textTertiary}
+                          accessibilityLabel={`Acre input for ${crop.label}`}
+                          accessibilityHint="Enter acre value for this crop"
+                        />
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+
+            <View style={modernStyles.modalButtons}>
+              <AppButton
+                title="Cancel"
+                style={[modernStyles.modalButton, modernStyles.cancelButton]}
+                onPress={() => {
+                  setCropSearchQuery('');
+                  setSelectedCrops([]);
+                  setCropModalVisible(false);
+                }}
               />
-              <Text style={modernStyles.doneButtonText}>Done</Text>
-            </TouchableOpacity>
+              <AppButton
+                title="Done"
+                style={[modernStyles.modalButton, modernStyles.doneButton]}
+                onPress={() => {
+                  const isValid = selectedCrops.every(
+                    (crop) =>
+                      crop.acre &&
+                      crop.acre.trim() !== "" &&
+                      parseFloat(crop.acre) > 0
+                  );
+
+                  if (!isValid) {
+                    Alert.alert(
+                      "Validation Error",
+                      "Please enter valid acre value (greater than 0) for all selected crops."
+                    );
+                    return;
+                  }
+
+                  setCropSearchQuery('');
+                  setCropModalVisible(false);
+                }}
+              />
+            </View>
           </ScrollView>
         </View>
       </Modal>
@@ -978,7 +1139,7 @@ const modernStyles = StyleSheet.create({
   },
 
   modalContent: {
-    padding: DESIGN.spacing.lg,
+    padding: DESIGN.spacing.md,
     paddingBottom: DESIGN.spacing.xl,
   },
 
@@ -990,6 +1151,7 @@ const modernStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: DESIGN.colors.borderLight,
     ...DESIGN.shadows.subtle,
+
   },
 
   cropCheckbox: {
@@ -1022,21 +1184,44 @@ const modernStyles = StyleSheet.create({
     minHeight: 44, // Accessibility minimum touch target
   },
 
-  doneButton: {
-    backgroundColor: DESIGN.colors.primary,
+  modalButtons: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: DESIGN.spacing.md,
-    borderRadius: DESIGN.borderRadius.md,
+    justifyContent: "space-between",
     marginTop: DESIGN.spacing.lg,
-    ...DESIGN.shadows.medium,
-    minHeight: 44, // Accessibility minimum touch target
   },
 
-  doneButtonText: {
-    ...DESIGN.typography.subtitle,
-    color: DESIGN.colors.surface,
-    marginLeft: DESIGN.spacing.sm,
+  modalButton: {
+    flex: 1,
+    marginHorizontal: DESIGN.spacing.sm,
+  },
+
+  cancelButton: {
+    backgroundColor: DESIGN.colors.textTertiary,
+  },
+
+  doneButton: {
+    backgroundColor: DESIGN.colors.primary,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: DESIGN.colors.surface,
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: DESIGN.colors.textPrimary,
+  },
+  clearSearchButton: {
+    padding: 4,
   },
 });

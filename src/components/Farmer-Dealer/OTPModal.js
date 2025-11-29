@@ -13,7 +13,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons"; // ✅ import icon
 import apiClient from "../../api/client";
 import DESIGN from "../../theme";
 
-function OTPModal({ visible, dealerId, onClose, onVerified, phone }) {
+function OTPModal({ visible, dealerId, onClose, onVerified, phone, setfetchDealer }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -69,7 +69,8 @@ function OTPModal({ visible, dealerId, onClose, onVerified, phone }) {
     }
     try {
       setSending(true);
-      await apiClient.post(`dealer/${dealerId}/send-otp/`);
+      const response = await apiClient.post(`dealer/${dealerId}/send-otp/`);
+      console.log(response.data)
       Alert.alert("Success", "OTP sent successfully to dealer's phone.");
       setResendCooldown(300);
     } catch (err) {
@@ -91,31 +92,37 @@ function OTPModal({ visible, dealerId, onClose, onVerified, phone }) {
 
     try {
       setVerifying(true);
-      const resp = await apiClient.post(`dealer/${dealerId}/verify-otp/`, {
-        otp: code,
-      });
+      const resp = await apiClient.post(`dealer/${dealerId}/verify-otp/`, { otp: code });
 
       if (resp?.data?.is_phone_verified === true) {
-        Alert.alert("Success", "OTP verified successfully.");
+        setfetchDealer();               // refresh dealer list
         if (typeof onVerified === "function") onVerified();
-      } else {
-        Alert.alert("Error", resp?.data?.message || "Invalid OTP");
+        onClose();                      // auto close modal
+        return;
       }
-      if (typeof onVerified === "function") onVerified();
+
     } catch (err) {
       console.error("Verify OTP error:", err.response?.data || err.message);
+
+      // Read backend error or fallback
       const msg =
+        err.response?.data?.error ||
         err.response?.data?.message ||
         err.response?.data?.detail ||
+        err.message ||
         "Failed to verify OTP";
-      Alert.alert("Error", msg);
+
+      console.log("Message", msg)
+      Alert.alert("Error", String(msg));
     } finally {
       setVerifying(false);
     }
   };
 
+
+
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="slide" >
       <View style={modalStyles.overlay}>
         <View style={modalStyles.container}>
           {/* 🔹 Close button */}

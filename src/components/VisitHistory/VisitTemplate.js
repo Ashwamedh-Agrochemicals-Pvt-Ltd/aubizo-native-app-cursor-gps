@@ -1,7 +1,6 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Alert, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import { Alert, StyleSheet, Text, View, ActivityIndicator } from "react-native";
 import * as Yup from "yup";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import apiClient from "../../api/client";
 import { navigation } from "../../../navigation/NavigationService";
 import storage from "../../utility/storage";
@@ -10,11 +9,13 @@ import SubmitButton from "../form/appComponents/SubmitButton";
 import InputFormField from "../form/appComponents/InputFormText";
 import DESIGN from "../../theme";
 import logger from "../../utility/logger";
+import AppDropDownPicker from "../form/appComponents/AppDropDownPicker";
 
 const validationSchema = Yup.object().shape({
+  visit_purpose: Yup.string().required("Visit purpose is required"),
   remark: Yup.string()
+    .notRequired()
     .trim()
-    .required("Remark is required")
     .min(5, "Remark must be at least 5 characters")
     .max(500, "Remark must be less than 500 characters"),
 });
@@ -27,83 +28,56 @@ const VisitForm = ({ storageKey, navigateTo }) => {
     async (values, { resetForm }) => {
       if (loading) return;
 
+      setLoading(true);
+      abortControllerRef.current = new AbortController();
+
       try {
-        setLoading(true);
-
-        // Create abort controller for this request
-        abortControllerRef.current = new AbortController();
-
         const visitId = await storage.get(storageKey);
-        console.log("Visit ID:", visitId);
 
         if (!visitId) {
           Alert.alert("Error", "Please start a new visit.");
           return;
         }
 
-        const payload = { remark: values.remark.trim() };
+        const payload = {
+          remark: values.remark.trim(),
+          visit_purpose: values.visit_purpose,
+        };
+
+        console.log("Visit End", payload);
+
         const response = await apiClient.patch(
-          `track/end-visit/${visitId}/`, // ✅ removed trailing slash
+          `track/end-visit/${visitId}/`,
           payload,
           { signal: abortControllerRef.current.signal }
         );
 
-        if (response.status === 200 || response.status === 204) {
-          resetForm();
-          await storage.remove(storageKey);
-          await storage.remove(storageKey.replace("VISIT", "START"));
-
-          Alert.alert("Success", "Visit ended successfully.");
-
-          if (navigation.isReady()) {
-            navigation.reset({
-              index: 1,
-              routes: [
-                { name: "Dashboard" },
-                { name: navigateTo },
-              ],
-            });
-          }
-        } else {
+        if (!(response.status === 200 || response.status === 204)) {
           Alert.alert("Error", "Failed to end visit. Please try again.");
+          return;
         }
+
+        // Clear form & reset visit storage
+        resetForm();
+        await storage.remove(storageKey);
+        await storage.remove(storageKey.replace("VISIT", "START"));
+
+        navigation.reset({
+          index: 1,
+          routes: [{ name: "Dashboard" }, { name: navigateTo }],
+        });
+
       } catch (error) {
         if (error.name === "AbortError") return;
 
-        if (__DEV__) {
-          logger.error("Visit end error:", error);
-        }
+        if (__DEV__) logger.error("Visit end error:", error);
 
-        if (error.response?.status === 401) {
+        if (error?.response?.status === 401) {
           Alert.alert("Session Expired", "Please log in again.");
           return;
         }
 
-        if (error.response?.status >= 400 && error.response?.status < 500) {
-          const errorMessage =
-            error.response?.data?.detail ||
-            error.response?.data?.message ||
-            "Please check your input and try again.";
-          Alert.alert("Validation Error", errorMessage);
-          return;
-        }
-
-        if (error.response?.status >= 500) {
-          Alert.alert("Server Error", "Something went wrong. Please try again later.");
-          return;
-        }
-
-        if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
-          Alert.alert("Connection Timeout", "Can't reach server. Please check your connection and try again.");
-          return;
-        }
-
-        if (!error.response) {
-          Alert.alert("Network Error", "Can't reach server. Please check your internet connection.");
-          return;
-        }
-
-        Alert.alert("Error", "Something went wrong while ending the visit.");
+        Alert.alert("Error", "Something went wrong. Please try again later.");
       } finally {
         setLoading(false);
         abortControllerRef.current = null;
@@ -112,43 +86,79 @@ const VisitForm = ({ storageKey, navigateTo }) => {
     [loading, storageKey, navigateTo]
   );
 
+
+  const [purposes, setPurposes] = useState([]);
+  const [openPurpose, setOpenPurpose] = useState(false);
+
+  useEffect(() => {
+    const fetchPurposes = async () => {
+      try {
+        const url = storageKey.includes("Dealer")
+          ? "/track/dealer-visit-purposes/"
+          : "/track/farmer-visit-purposes/";
+
+        const response = await apiClient.get(url);
+        if (response.data?.purposes) setPurposes(response.data.purposes);
+      } catch (err) {
+        Alert.alert("Error", "Failed to load visit purposes");
+      }
+    };
+    fetchPurposes();
+  }, []);
+
   return (
     <View style={modernStyles.container}>
       <View style={modernStyles.formContainer}>
         <AppForm
-          initialValues={{ remark: "" }}
+          initialValues={{ remark: "", visit_purpose: "" }}
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
-          validateOnChange
-          validateOnBlur
         >
-          <View style={modernStyles.inputSection}>
-            <Text style={modernStyles.inputLabel}>Visit Remarks</Text>
+          {({ values, setFieldValue, errors, touched }) => (
+            <>
+              <View style={modernStyles.inputSection}>
+                <Text style={modernStyles.inputLabel}>Visit Purpose</Text>
 
-            <InputFormField
-              name="remark"
-              placeholder="Enter your remarks about this visit..."
-              multiline
-              numberOfLines={4}
-              style={modernStyles.remarkInput}
-              accessibilityLabel="Visit remarks input"
-              accessibilityHint="Enter your remarks about this visit"
-            />
-          </View>
+                <AppDropDownPicker
+                  open={openPurpose}
+                  setOpen={setOpenPurpose}
+                  items={purposes}
+                  value={values.visit_purpose}
+                  setValue={(val) => setFieldValue("visit_purpose", val)}
+                  placeholder="Select visit purpose"
+                  searchable={false}
+                  maxHeight={180}
+                  zIndex={3000}
+                  error={touched.visit_purpose && errors.visit_purpose}
+                />
+              </View>
 
-          <View style={modernStyles.submitSection}>
-            <SubmitButton
-              title={loading ? "" : "Complete Visit"}
-              disabled={loading}
-              style={modernStyles.submitButton}
-            >
-              {loading && <ActivityIndicator color={DESIGN.colors.surface} size="small" />}
-            </SubmitButton>
-          </View>
+
+              <View style={[modernStyles.inputSection, { marginBottom: DESIGN.spacing.sm }]}>
+                <Text style={modernStyles.inputLabel}>Visit Remarks</Text>
+
+                <InputFormField
+                  name="remark"
+                  placeholder="Enter your remarks about this visit..."
+                  multiline
+                  numberOfLines={4}
+                  style={modernStyles.remarkInput}
+                />
+              </View>
+
+              <View style={modernStyles.submitSection}>
+                <SubmitButton
+                  title={loading ? "Completing..." : "Complete Visit"}
+                />
+
+              </View>
+            </>
+          )}
         </AppForm>
       </View>
     </View>
   );
+
 };
 
 const modernStyles = StyleSheet.create({
@@ -159,39 +169,24 @@ const modernStyles = StyleSheet.create({
     marginBottom: DESIGN.spacing.sm,
     marginTop: DESIGN.spacing.md,
     ...DESIGN.shadows.medium,
-    overflow: "hidden",
   },
   formContainer: {
-    padding: DESIGN.spacing.lg,
+    padding: DESIGN.spacing.md,
   },
-  inputSection: {
-    marginBottom: DESIGN.spacing.sm,
-  },
+
   inputLabel: {
     ...DESIGN.typography.subtitle,
     color: DESIGN.colors.textPrimary,
-    marginBottom: DESIGN.spacing.md,
   },
   remarkInput: {
-    minHeight: 70,
-    textAlignVertical: "top",
+    minHeight: 50,
     backgroundColor: DESIGN.colors.background,
     borderColor: DESIGN.colors.border,
-    padding: DESIGN.spacing.md,
   },
   submitSection: {
-    marginTop: DESIGN.spacing.md,
+    marginTop: DESIGN.spacing.sm,
   },
-  submitButton: {
-    backgroundColor: DESIGN.colors.primary,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: DESIGN.spacing.md,
-    borderRadius: DESIGN.borderRadius.md,
-    ...DESIGN.shadows.subtle,
-    minHeight: 44,
-  },
+
 });
 
 export default VisitForm;

@@ -1,4 +1,4 @@
-import { FontAwesome, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, TextInput, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,9 +6,8 @@ import DESIGN from '../src/theme';
 import { navigation } from '../navigation/NavigationService';
 import apiClient from '../src/api/client';
 
-
-
-const TABS = ["All", "Registered", "Unregistered"];
+// Updated TABS to include Blacklisted
+const TABS = ["All", "Registered", "Unregistered", "Blacklisted"];
 
 const SearchBar = ({ searchQuery, setSearchQuery, onClose }) => {
     const inputRef = useRef(null);
@@ -65,20 +64,71 @@ function DealerList(props) {
     const statusMap = {
         "All": "",
         "Registered": "registered",
-        "Unregistered": "unregistered"
+        "Unregistered": "unregistered",
+        "Blacklisted": "blacklisted"
     };
 
+    // Business status configuration
+    const businessStatusConfig = {
+        "active": {
+            label: "Active",
+            icon: "check-circle",
+            color: DESIGN.colors.success,
+            bgColor: '#E8F5E9'
+        },
+        "credit_hold": {
+            label: "Credit Hold",
+            icon: "pause-circle",
+            color: DESIGN.colors.warning,
+            bgColor: '#FFF3E0'
+        },
+        "under_scrutiny": {
+            label: "Under Scrutiny",
+            icon: "visibility",
+            color: DESIGN.colors.info,
+            bgColor: '#E3F2FD'
+        },
+        "notice_issued": {
+            label: "Notice Issued",
+            icon: "warning",
+            color: DESIGN.colors.warning,
+            bgColor: '#FFF3E0'
+        },
+        "court_case": {
+            label: "Court Case",
+            icon: "gavel",
+            color: DESIGN.colors.error,
+            bgColor: '#FFEBEE'
+        },
+        "blacklisted": {
+            label: "Blacklisted",
+            icon: "block",
+            color: DESIGN.colors.error,
+            bgColor: '#FFEBEE'
+        }
+    };
 
     const fetchDealers = async (registration_status = "") => {
         setLoading(true);
         try {
-            const response = await apiClient.get("dealer/individual/", { params: { status: registration_status } });
+            // For blacklisted tab, use the flagged-dealers endpoint
+            if (registration_status === "blacklisted") {
+                const response = await apiClient.get("dealer/flagged-dealers/");
+                // Filter only blacklisted dealers
+                const blacklistedData = response.data.filter(dealer =>
+                    dealer.business_status === "blacklisted"
+                );
+                setDealers(blacklistedData);
+            } else {
+                // For other tabs, use the regular endpoint
+                const response = await apiClient.get("dealer/individual/", { params: { status: registration_status } });
 
-            console.log("Dealer list", response.data)
+                console.log("Dealer list", response.data)
 
-            // Filter by status if provided
-            const data = registration_status ? response.data.filter(dealer => dealer.registration_status === registration_status) : [...response.data];
-            setDealers(data);
+                // Filter by status if provided
+                const data = registration_status ? response.data.filter(dealer => dealer.registration_status === registration_status) : [...response.data];
+                setDealers(data);
+            }
         } catch (error) {
             console.error("Error fetching dealers:", error);
         } finally {
@@ -86,12 +136,11 @@ function DealerList(props) {
         }
     };
 
-
     useEffect(() => {
         if (showSearch) {
-            fetchDealers(searchQuery); // no status filter in search mode
+            fetchDealers(searchQuery);
         } else {
-            fetchDealers(statusMap[TABS[activeTab]]); // pass string, not array
+            fetchDealers(statusMap[TABS[activeTab]]);
         }
     }, [activeTab, showSearch]);
 
@@ -99,14 +148,12 @@ function DealerList(props) {
         navigation.navigate('DealerVerification', { dealer: dealer.id });
     }
 
-
     const query = searchQuery?.toLowerCase() || '';
     const dataToRender = showSearch
         ? dealers.filter(dealer =>
             (dealer?.shop_name?.toLowerCase() || dealer?.owner_name?.toLowerCase() || '').includes(query)
         )
         : dealers;
-
 
     // In your dealer list component where you have the "View Ledger" button
     const handleViewLedger = (dealer) => {
@@ -119,6 +166,23 @@ function DealerList(props) {
         });
     };
 
+    const renderBusinessStatusBadge = (dealer) => {
+        const status = dealer.business_status;
+        const config = businessStatusConfig[status];
+
+        // Don't show any business status badges in the Blacklisted tab
+        if (!config || TABS[activeTab] === "Blacklisted") return null;
+
+        return (
+            <View style={[styles.businessStatusBadge, { backgroundColor: config.bgColor }]}>
+                <MaterialIcons name={config.icon} size={14} color={config.color} />
+                <Text style={[styles.businessStatusText, { color: config.color }]}>
+                    {config.label}
+                </Text>
+            </View>
+        );
+    };
+
     const renderDealerItem = (dealer) => (
         <View style={styles.card}>
             {/* Main Dealer Info - Touchable */}
@@ -127,32 +191,35 @@ function DealerList(props) {
                 onPress={() => handleOnPress(dealer)}
                 activeOpacity={0.7}
             >
-                {/* ✅ Show status badge only when active tab is "All" */}
-                {TABS[activeTab] === "All" && (
-                    <>
-                        {dealer.registration_status === "registered" && (
-                            <View style={styles.verifiedBadge}>
-                                <MaterialIcons name="verified" size={14} color={DESIGN.colors.success} />
-                                <Text style={styles.verifiedText}>Verified</Text>
-                            </View>
-                        )}
-                    </>
-                )}
+
+                {/* Show business status badge for all tabs except when dealer is active */}
+                {renderBusinessStatusBadge(dealer)}
 
                 {/* Left Section - Avatar and Info */}
                 <View style={styles.leftSection}>
                     {/* Avatar */}
-                    <View style={styles.avatar}>
+                    <View style={[
+                        styles.avatar,
+                    ]}>
                         <Ionicons name="person" size={24} color={DESIGN.colors.surface} />
                     </View>
 
                     {/* Dealer Info */}
                     <View style={styles.dealerInfo}>
                         <View style={styles.nameRow}>
-                            <Text style={styles.dealerName}>{dealer.shop_name}</Text>
+                            <Text style={[
+                                styles.dealerName,
+
+                            ]}>
+                                {dealer.shop_name}
+                            </Text>
                         </View>
 
-                        <Text style={styles.company}>{dealer.owner_name}</Text>
+                        <Text style={[
+                            styles.company,
+                        ]}>
+                            {dealer.owner_name}
+                        </Text>
 
                         {/* Contact Details */}
                         <View style={styles.contactRow}>
@@ -160,9 +227,12 @@ function DealerList(props) {
                             <Text style={styles.contactText}>{dealer.phone}</Text>
                         </View>
 
-                        {/* Registration Date */}
+                        {/* Registration Date or Status Date */}
                         <Text style={styles.registeredDate}>
-                            Registered: {dealer.registration_date}
+                            {dealer.business_status && dealer.business_status !== "active" && dealer.business_status_date
+                                ? `${businessStatusConfig[dealer.business_status]?.label || 'Status'}: ${new Date(dealer.business_status_date).toLocaleDateString()}`
+                                : `Registered: ${dealer.registration_date || 'N/A'}`
+                            }
                         </Text>
                     </View>
                 </View>
@@ -185,9 +255,6 @@ function DealerList(props) {
             </TouchableOpacity>
         </View>
     );
-
-
-
 
     return (
         <SafeAreaView style={styles.container}>
@@ -272,6 +339,9 @@ function DealerList(props) {
                         } else if (currentTab === 'Unregistered') {
                             title = 'No unregistered dealers';
                             subtitle = 'All dealers are registered.';
+                        } else if (currentTab === 'Blacklisted') {
+                            title = 'No blacklisted dealers';
+                            subtitle = 'There are no blacklisted dealers.';
                         }
 
                         return (
@@ -318,7 +388,6 @@ const styles = StyleSheet.create({
     },
     tab: {
         paddingVertical: 8,
-        paddingHorizontal: 16,
     },
     tabText: {
         fontSize: 16,
@@ -354,7 +423,6 @@ const styles = StyleSheet.create({
     mainContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        // Remove padding if you want the entire area touchable
     },
     leftSection: {
         flexDirection: 'row',
@@ -369,6 +437,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
+    },
+    blacklistedAvatar: {
+        backgroundColor: DESIGN.colors.error,
     },
     dealerInfo: {
         flex: 1,
@@ -404,7 +475,7 @@ const styles = StyleSheet.create({
     },
     verifiedBadge: {
         position: 'absolute',
-        bottom: 0,
+        top: 0,
         right: 10,
         flexDirection: 'row',
         alignItems: 'center',
@@ -420,6 +491,23 @@ const styles = StyleSheet.create({
         marginLeft: 4,
         fontWeight: '500',
     },
+    businessStatusBadge: {
+        position: 'absolute',
+        bottom: 0,
+        right: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: DESIGN.spacing.sm,
+        paddingVertical: 3,
+        borderRadius: DESIGN.borderRadius.md,
+        gap: 4,
+    },
+    businessStatusText: {
+        fontSize: 12,
+        marginLeft: 4,
+        fontWeight: '500',
+    },
+
     // Ledger Section Styles
     ledgerSection: {
         flexDirection: 'row',

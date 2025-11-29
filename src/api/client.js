@@ -31,11 +31,12 @@ let refreshPromise = null;
 const refreshAccessToken = async () => {
   try {
     const refreshToken = await AuthStorage.getRefreshToken();
+
     if (!refreshToken) throw new Error("NO_REFRESH_TOKEN");
 
     console.log("🔄 Refreshing access token...");
 
-    const response = await axios.post(`${API_URL}/auth/refresh/`, {
+    const response = await axios.post(`${API_URL}auth/refresh/`, {
       refresh: refreshToken,
     });
 
@@ -78,6 +79,8 @@ const refreshAccessToken = async () => {
 apiClient.interceptors.request.use(
   async (config) => {
     const token = await AuthStorage.getToken();
+    const refreshToken = await AuthStorage.getRefreshToken();
+    console.log("RefreshToken from storage:", refreshToken)
     console.log("Token from storage:", token)
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

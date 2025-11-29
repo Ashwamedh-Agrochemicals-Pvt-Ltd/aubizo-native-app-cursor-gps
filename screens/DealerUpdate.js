@@ -22,7 +22,6 @@ import showToast from "../src/utility/showToast";
 import AppDropDownPicker from "../src/components/form/appComponents/AppDropDownPicker";
 import { DealerSchema } from "../src/validations/DealerSchema";
 import InputFormField from "../src/components/form/appComponents/InputFormText";
-import AppFieldDropDownPicker from "../src/components/form/appComponents/AppFieldDropDownPicker";
 
 const STATE_URL = process.env.EXPO_PUBLIC_STATE_URL;
 const DISTRICT_URL = process.env.EXPO_PUBLIC_DISTRICT_URL;
@@ -55,7 +54,6 @@ const DealerUpdateScreen = () => {
     state: false,
     district: false,
     taluka: false,
-    agreement_status: false,
     secondaryPhoneRelation: false,
   });
 
@@ -63,7 +61,6 @@ const DealerUpdateScreen = () => {
     state: null,
     district: null,
     taluka: null,
-    agreement_status: null,
   });
 
   // Store original form state for dropdown comparison
@@ -71,7 +68,6 @@ const DealerUpdateScreen = () => {
     state: null,
     district: null,
     taluka: null,
-    agreement_status: null,
   });
 
   const [stateItems, setStateItems] = useState([]);
@@ -169,7 +165,6 @@ const DealerUpdateScreen = () => {
           state: selectedState.current?.value || null,
           district: selectedDistrict.current?.value || null,
           taluka: selectedTaluka.current?.value || null,
-          agreement_status: data.agreement_status || "active",
         };
 
         setFormState(initialFormState);
@@ -432,7 +427,6 @@ const DealerUpdateScreen = () => {
         secondary_phone: values.secondaryPhone ? values.secondaryPhone.trim() : "NA",
         pan_number: values.pan_number ? values.pan_number.trim() : "NA",
         gst_number: values.gst_number ? values.gst_number.trim() : "NA",
-        agreement_status: formState.agreement_status,
         billing_address: location.trim(),
         shipping_address: location.trim(),
         state_id: formState.state,
@@ -473,11 +467,6 @@ const DealerUpdateScreen = () => {
           secondary_phone_relation: dealer?.secondary_phone_relation || "",
           pan_number: dealer?.pan_number === "NA" ? "" : dealer?.pan_number || "",
           gst_number: dealer?.gst_number === "NA" ? "" : dealer?.gst_number || "",      
-          // Include agreement_status in Formik initial values so validationSchema
-          // (which requires agreement_status) passes. The dropdown itself uses
-          // `formState.agreement_status` for selection and payload; keeping this
-          // here avoids validation blocking while preserving current wiring.
-          agreement_status: dealer?.agreement_status || formState.agreement_status || "active",
         }}
         validationSchema={DealerSchema}
         onSubmit={handleSubmit}
@@ -493,8 +482,7 @@ const DealerUpdateScreen = () => {
           const dropdownChanged =
             formState.state !== originalFormState.state ||
             formState.district !== originalFormState.district ||
-            formState.taluka !== originalFormState.taluka ||
-            formState.agreement_status !== originalFormState.agreement_status;
+            formState.taluka !== originalFormState.taluka
 
           // Update verification status when phone changes
           React.useEffect(() => {
@@ -658,7 +646,6 @@ const DealerUpdateScreen = () => {
                           state: false,
                           district: false,
                           taluka: false,
-                          agreement_status: false,
                         }))
                       }
                       setValue={(callback) =>
@@ -756,7 +743,6 @@ const DealerUpdateScreen = () => {
                         state: open,
                         district: false,
                         taluka: false,
-                        agreement_status: false,
                         secondaryPhoneRelation: false,
                       }))
                     }
@@ -797,7 +783,6 @@ const DealerUpdateScreen = () => {
                         district: open,
                         taluka: false,
                         state: false,
-                        agreement_status: false,
                         secondaryPhoneRelation: false,
                       }))
                     }
@@ -837,7 +822,6 @@ const DealerUpdateScreen = () => {
                         taluka: open,
                         district: false,
                         state: false,
-                        agreement_status: false,
                         secondaryPhoneRelation: false,
                       }))
                     }
@@ -857,53 +841,6 @@ const DealerUpdateScreen = () => {
                     style={modernStyles.dropdown}
                     zIndex={900}
                     accessibilityLabel="Taluka selection dropdown"
-                  />
-                </View>
-              </View>
-
-              {/* Agreement & Remarks */}
-              <View style={modernStyles.section}>
-                <View style={modernStyles.sectionHeader}>
-                  <MaterialCommunityIcons
-                    name="file-check"
-                    size={22}
-                    color={DESIGN.colors.success}
-                  />
-                  <Text style={modernStyles.sectionTitle}>
-                    Agreement
-                  </Text>
-                </View>
-
-                <View style={modernStyles.dropdownContainer}>
-                  <Text style={modernStyles.fieldLabel}>Agreement Status *</Text>
-                  <AppFieldDropDownPicker
-                    open={dropdowns.agreement_status}
-                    value={formState.agreement_status}
-                    items={[
-                      { label: "Active", value: "active" },
-                      { label: "Inactive", value: "inactive" },
-                    ]}
-                    setOpen={(open) =>
-                      setDropdowns((prev) => ({
-                        ...prev,
-                        agreement_status: open,
-                        state: false,
-                        district: false,
-                        taluka: false,
-                        secondaryPhoneRelation: false,
-                      }))
-                    }
-                    setValue={(callback) => {
-                      const newValue = callback(formState.agreement_status);
-                      setFormState((prev) => ({
-                        ...prev,
-                        agreement_status: newValue,
-                      }));
-                    }}
-                    placeholder="Select agreement status"
-                    style={modernStyles.dropdown}
-                    zIndex={800}
-                    accessibilityLabel="Agreement status selection dropdown"
                   />
                 </View>
               </View>

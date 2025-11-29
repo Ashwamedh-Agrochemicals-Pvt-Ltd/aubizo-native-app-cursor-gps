@@ -8,17 +8,11 @@ const GOOGLE_API_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
 const GOOGLE_URL = process.env.EXPO_PUBLIC_GOOGLE_URL;
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-
+// utility/location.js - Update the getCurrentLocationDetails function
 const getCurrentLocationDetails = async () => {
   try {
-
-
     const granted = await requestLocationWhenNeeded();
     if (!granted) return;
-
-    await sleep(2000);
 
     const location = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Highest,
@@ -28,22 +22,37 @@ const getCurrentLocationDetails = async () => {
     });
     const { latitude, longitude } = location.coords;
 
-
     const url = `${GOOGLE_URL}?latlng=${latitude},${longitude}&key=${GOOGLE_API_KEY}`;
+
     let address = null;
+    let googleResults = null;
 
     try {
       const response = await axios.get(url, { timeout: 5000 });
       if (response.data.status === "OK" && response.data.results.length > 0) {
+        googleResults = response.data.results;
         address = response.data.results[0].formatted_address;
+
+        console.log("📍 Full Google Results:", googleResults);
       }
     } catch (geoError) {
-      address = null;
+      console.error("Google Geocoding API error:", geoError);
     }
 
-    return { latitude, longitude, address };
+    return {
+      latitude,
+      longitude,
+      address,
+      googleResults // Return the full results array
+    };
   } catch (error) {
-    return { latitude: null, longitude: null, address: null };
+    console.error("Location service error:", error);
+    return {
+      latitude: null,
+      longitude: null,
+      address: null,
+      googleResults: null
+    };
   }
 };
 

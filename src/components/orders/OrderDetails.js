@@ -14,15 +14,22 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  TouchableOpacity
+  TouchableOpacity,
+  Share,
+  Linking,
 } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
 import DESIGN from "../../theme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import apiClient from "../../api/client";
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
 const OrderDetails = ({ orderId, visible, onClose }) => {
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [order, setOrder] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const fetchOrderDetails = async () => {
     if (!orderId) return;
@@ -31,6 +38,7 @@ const OrderDetails = ({ orderId, visible, onClose }) => {
       const response = await apiClient.get(`/order/api/individual/orders/${orderId}/`);
       if (response.data.success) {
         setOrder(response.data.data);
+        setSelectedFile(null);
       }
     } catch (error) {
       console.error("Error fetching order details:", error);
@@ -67,19 +75,137 @@ const OrderDetails = ({ orderId, visible, onClose }) => {
     }
   };
 
+  const onShare = async () => {
+    try {
+      if (!order) return;
+
+      const itemsText = order.order_items
+        .map(
+          (item, index) =>
+            `${index + 1}) ${item.product_name} (${item.packing_size}) - Qty: ${item.quantity
+            } ${item.quantity_unit}`)
+        .join("\n");
+
+      const message = `
+🧾 *Order Summary*
+Order No: ${order.order_number}
+Status: ${order.status_display}
+
+👤 *Dealer Details*
+Name: ${order.dealer_name}
+Owner: ${order.dealer_owner}
+
+📍 *Billing Address*
+${order.dealer_shipping_address}
+
+📦 *Order Items*
+${itemsText}
+
+🚚 Expected Delivery: ${order.expected_delivery_date}
+🧑‍💼 Added By: ${order.added_by_name}`;
+
+      await Share.share({ message });
+    } catch (error) {
+      console.error("Error sharing:", error);
+    }
+  };
+
+  const pickLetterhead = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["image/*", "application/pdf"],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets?.[0]) {
+        setSelectedFile(result.assets[0]);
+      }
+    } catch (err) {
+      console.error("Picker error:", err);
+    }
+  };
+
+  const uploadLetterhead = async () => {
+    if (!selectedFile) return;
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+
+      formData.append("dealer_id", String(order.dealer_id));
+
+      const currentItems = order.order_items.map(item => ({
+        product: item.product_id || item.product,
+        quantity: item.quantity,
+        price: item.price,
+        discount: item.discount || 0,
+        tax: item.tax || 0,
+      }));
+      formData.append("order_items", JSON.stringify(currentItems));
+
+      formData.append("letterhead_document", {
+        uri: selectedFile.uri,
+        type: selectedFile.mimeType || "application/octet-stream",
+        name: selectedFile.name || `letterhead_${Date.now()}.pdf`,
+      });
+
+      const response = await apiClient.put(
+        `/order/api/orders/${orderId}/`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      if (response.data.success) {
+        Alert.alert("Success", "Letterhead uploaded successfully!");
+        fetchOrderDetails();
+      }
+    } catch (error) {
+      Alert.alert("Upload Failed", "Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeFile = () => setSelectedFile(null);
+
+  const openLetterhead = () => {
+    if (order?.letterhead_document) {
+      const url = `${apiClient.defaults.baseURL}${order.letterhead_document}`;
+      console.log(url)
+      Linking.openURL(url).catch(() => Alert.alert("Error", "Cannot open file"));
+    }
+  };
+
+  // Check if letterhead already exists
+  const hasLetterhead = order?.letterhead_document;
+
+
+
   return (
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Order Details</Text>
-            <TouchableOpacity onPress={onClose}>
-              <MaterialCommunityIcons
-                name="close"
-                size={24}
-                color={DESIGN.colors.textPrimary}
-              />
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+
+              <TouchableOpacity onPress={onShare}>
+                <MaterialCommunityIcons
+                  name="share-variant"
+                  size={24}
+                  color={DESIGN.colors.primary}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={onClose}>
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color={DESIGN.colors.textPrimary}
+                />
+              </TouchableOpacity>
+
+            </View>
           </View>
 
           {loading ? (
@@ -251,9 +377,65 @@ const OrderDetails = ({ orderId, visible, onClose }) => {
                     </View>
                   </View>
                 )}
+                {/* Letterhead Section */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Letterhead Document</Text>
+
+                  {hasLetterhead ? (
+                    // Show only view option when letterhead exists
+                    <TouchableOpacity onPress={openLetterhead} style={styles.letterheadButton}>
+                      <MaterialCommunityIcons name="file-check" size={26} color={DESIGN.colors.success} />
+                      <Text style={styles.letterheadText}>View Uploaded Letterhead</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    // Show upload option only when no letterhead exists
+                    <>
+                      {selectedFile ? (
+                        <View style={styles.fileContainer}>
+                          <View style={styles.fileInfo}>
+                            <MaterialCommunityIcons
+                              name={selectedFile.mimeType?.startsWith("image/") ? "image" : "file-document"}
+                              size={20}
+                              color={DESIGN.colors.primary}
+                            />
+                            <Text style={styles.fileName} numberOfLines={1}>
+                              {selectedFile.name || "Letterhead"}
+                            </Text>
+                          </View>
+                          <TouchableOpacity onPress={removeFile} style={styles.removeButton}>
+                            <MaterialCommunityIcons name="close-circle" size={24} color={DESIGN.colors.error} />
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <TouchableOpacity onPress={pickLetterhead} style={styles.uploadButton}>
+                          <MaterialCommunityIcons name="plus-circle-outline" size={24} color={DESIGN.colors.primary} />
+                          <Text style={styles.uploadButtonText}>Add Letterhead Document</Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {selectedFile && (
+                        <TouchableOpacity
+                          onPress={uploadLetterhead}
+                          disabled={uploading}
+                          style={[styles.uploadButton, { backgroundColor: DESIGN.colors.success, marginTop: 12 }]}
+                        >
+                          {uploading ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                          ) : (
+                            <>
+                              <MaterialCommunityIcons name="upload" size={24} color="#fff" />
+                              <Text style={[styles.uploadButtonText, { color: "#fff" }]}>Upload Letterhead</Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  )}
+                </View>
               </View>
             </ScrollView>
           )}
+
         </View>
       </View>
     </Modal>
@@ -432,6 +614,63 @@ const styles = StyleSheet.create({
     ...DESIGN.typography.caption,
     color: DESIGN.colors.textSecondary,
     fontStyle: "italic",
+  },
+  fileContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: DESIGN.colors.surfaceElevated,
+    borderRadius: DESIGN.borderRadius.sm,
+    padding: DESIGN.spacing.md,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.borderLight,
+  },
+  fileInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  fileName: {
+    flex: 1,
+    marginLeft: DESIGN.spacing.sm,
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.textPrimary,
+    fontWeight: "500",
+  },
+  removeButton: {
+    padding: DESIGN.spacing.xs,
+  },
+  uploadButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: DESIGN.colors.surfaceElevated,
+    borderRadius: DESIGN.borderRadius.sm,
+    padding: DESIGN.spacing.md,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.surface,
+    borderStyle: "dashed",
+  },
+  uploadButtonText: {
+    marginLeft: DESIGN.spacing.sm,
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.primary,
+    fontWeight: "500",
+  },
+  letterheadButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    backgroundColor: DESIGN.colors.surface,
+    borderRadius: DESIGN.borderRadius.sm,
+    borderWidth: 1.5,
+    borderColor: DESIGN.colors.success + "60",
+  },
+  letterheadText: {
+    marginLeft: 12,
+    color: DESIGN.colors.success,
+    fontWeight: "600",
+    fontSize: 15.5,
   },
 });
 

@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
   },
   text: {
-    textTransform: "uppercase",
+    textTransform: "capitalize",
     fontWeight: "bold",
     fontSize: 16,
     color: "#fff",

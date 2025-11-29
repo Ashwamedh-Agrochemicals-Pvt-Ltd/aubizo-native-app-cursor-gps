@@ -18,6 +18,7 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import DESIGN from "../../theme";
 import apiClient from "../../api/client";
+import { Share } from "react-native";
 
 const TransactionDetails = ({ transactionId, visible = false, onClose }) => {
   const [transactionDetails, setTransactionDetails] = useState(null);
@@ -65,19 +66,63 @@ const TransactionDetails = ({ transactionId, visible = false, onClose }) => {
     }
   };
 
+  const onShare = async () => {
+    if (!transactionDetails) return;
+
+    try {
+      const t = transactionDetails;
+
+      const message = `
+🧾 *Transaction Summary*
+
+*Transaction Number:* ${t.transaction_number}
+*Amount:* ₹${Number(t.amount).toLocaleString()}
+*Status:* ${t.status_display}
+      
+👤 *Dealer:* ${t?.payment_info?.dealer_name || "N/A"}
+*Invoice:* ${t?.payment_info?.payment_number || "N/A"}
+
+💰 *Invoice Amount:* ${t?.payment_info?.total_amount ? `₹${Number(t.payment_info.total_amount).toLocaleString()}` : "N/A"}
+*Pending Amount:* ${t?.payment_info?.pending_amount !== undefined ? `₹${Number(t.payment_info.pending_amount).toLocaleString()}` : "N/A"}
+
+💳 *Payment Method:* ${t?.payment_method_info?.label || "N/A"}
+
+🔁 *Reconciled:* ${t.is_reconciled ? "Yes" : "No"}
+${t.is_reconciled && t.reconciled_by_name ? `*Reconciled By:* ${t.reconciled_by_name}` : ""}
+${t.is_reconciled && t.reconciled_at ? `*Reconciled At:* ${formatDate(t.reconciled_at)}` : ""}
+
+`;
+
+      await Share.share({ message });
+    } catch (error) {
+      console.error("Error sharing transaction:", error);
+    }
+  };
+
+
   return (
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Collection Details</Text>
-            <TouchableOpacity onPress={onClose}>
-              <MaterialCommunityIcons
-                name="close"
-                size={24}
-                color={DESIGN.colors.textPrimary}
-              />
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <TouchableOpacity onPress={onShare}>
+                <MaterialCommunityIcons
+                  name="share-variant"
+                  size={24}
+                  color={DESIGN.colors.primary}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={onClose}>
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color={DESIGN.colors.textPrimary}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {loading ? (
@@ -127,11 +172,11 @@ const TransactionDetails = ({ transactionId, visible = false, onClose }) => {
                         styles.detailValue,
                         styles.statusText,
                         transactionDetails.status === "completed" &&
-                          styles.statusCompleted,
+                        styles.statusCompleted,
                         transactionDetails.status === "pending" &&
-                          styles.statusPending,
+                        styles.statusPending,
                         transactionDetails.status === "failed" &&
-                          styles.statusFailed,
+                        styles.statusFailed,
                       ]}
                     >
                       {transactionDetails.status_display}
@@ -174,26 +219,26 @@ const TransactionDetails = ({ transactionId, visible = false, onClose }) => {
 
                     {transactionDetails.payment_info.pending_amount !==
                       undefined && (
-                      <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>
-                          Remaining Amount:
-                        </Text>
-                        <Text
-                          style={[
-                            styles.detailValue,
-                            Number(
+                        <View style={styles.detailRow}>
+                          <Text style={styles.detailLabel}>
+                            Remaining Amount:
+                          </Text>
+                          <Text
+                            style={[
+                              styles.detailValue,
+                              Number(
+                                transactionDetails.payment_info.pending_amount
+                              ) > 0
+                                ? styles.pendingAmount
+                                : styles.completedAmount,
+                            ]}
+                          >
+                            {formatCurrency(
                               transactionDetails.payment_info.pending_amount
-                            ) > 0
-                              ? styles.pendingAmount
-                              : styles.completedAmount,
-                          ]}
-                        >
-                          {formatCurrency(
-                            transactionDetails.payment_info.pending_amount
-                          )}
-                        </Text>
-                      </View>
-                    )}
+                            )}
+                          </Text>
+                        </View>
+                      )}
                   </View>
                 )}
 
@@ -257,21 +302,21 @@ const TransactionDetails = ({ transactionId, visible = false, onClose }) => {
                 {(transactionDetails.remarks ||
                   transactionDetails.added_by_name ||
                   transactionDetails.approved_by_name) && (
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>
-                      Additional Information
-                    </Text>
+                    <View style={styles.section}>
+                      <Text style={styles.sectionTitle}>
+                        Additional Information
+                      </Text>
 
-                    {transactionDetails.remarks && (
-                      <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Remarks:</Text>
-                        <Text style={styles.detailValue}>
-                          {transactionDetails.remarks}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                )}
+                      {transactionDetails.remarks && (
+                        <View style={styles.detailRow}>
+                          <Text style={styles.detailLabel}>Remarks:</Text>
+                          <Text style={styles.detailValue}>
+                            {transactionDetails.remarks}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
               </View>
             </ScrollView>
           )}

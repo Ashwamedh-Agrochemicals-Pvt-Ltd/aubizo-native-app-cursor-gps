@@ -11,12 +11,15 @@ import {
   ScrollView,
   Alert,
   Dimensions,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import apiClient from "../../api/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DESIGN from "../../theme";
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 
 const DROPDOWN_ROW_HEIGHT = 56;
 const MAX_DROPDOWN_HEIGHT = Math.round(Dimensions.get("window").height * 0.5);
@@ -29,24 +32,57 @@ const formatMoney = (num) => {
   return Number.isInteger(n) ? `${n}` : n.toFixed(2);
 };
 
+// ================= LetterheadAttachment Component =================
+const LetterheadAttachment = ({ file, onPress, onRemove }) => (
+  <View>
+    <Text style={styles.sectionTitle}>Letterhead Document (Optional)</Text>
+    {file ? (
+      <View style={styles.fileContainer}>
+        <View style={styles.fileInfo}>
+          <MaterialCommunityIcons
+            name={file.mimeType?.startsWith("image/") ? "image" : "file-document"}
+            size={20}
+            color={DESIGN.colors.primary}
+          />
+          <Text style={styles.fileName} numberOfLines={1}>
+            {file.name || "Letterhead"}
+          </Text>
+          {file.fileSize && (
+            <Text style={styles.fileSize}>
+              {`${(file.fileSize / 1024).toFixed(1)} KB`}
+            </Text>
+          )}
+        </View>
+        <TouchableOpacity onPress={onRemove} style={styles.removeButton}>
+          <MaterialCommunityIcons name="close-circle" size={24} color={DESIGN.colors.error} />
+        </TouchableOpacity>
+      </View>
+    ) : (
+      <TouchableOpacity onPress={onPress} style={styles.uploadButton}>
+        <MaterialCommunityIcons name="plus-circle-outline" size={24} color={DESIGN.colors.primary} />
+        <Text style={styles.uploadButtonText}>Add Letterhead Document</Text>
+      </TouchableOpacity>
+    )}
+  </View>
+);
+
 // ================= DiscountPriceInput Component =================
-function DiscountPriceInput({ dealerPriceNoGst,dealerPriceWithGST, value, onChange }) {
+function DiscountPriceInput({ dealerPriceNoGst, dealerPriceWithGST, value, onChange }) {
   const [localPrice, setLocalPrice] = useState(value.price ?? "");
   const [localDiscount, setLocalDiscount] = useState(value.discount ?? "");
-  const [gstRate, setGstRate]=useState(value.gst_rate ?? "")
+  const [gstRate, setGstRate] = useState(value.gst_rate ?? "");
   const [note, setNote] = useState("");
 
   useEffect(() => {
     setLocalPrice(value.price ?? "");
     setLocalDiscount(value.discount ?? "");
-    setGstRate(value.gst_rate)
+    setGstRate(value.gst_rate);
   }, [value]);
 
   const round2 = (num) => Math.round(num * 100) / 100;
 
   const handleDiscountChange = (text) => {
-    // Remove % symbol if user types it
-    const cleanText = text.replace('%', '');
+    const cleanText = text.replace("%", "");
     const num = cleanText === "" ? "" : Number(cleanText);
     setLocalDiscount(cleanText);
 
@@ -78,10 +114,7 @@ function DiscountPriceInput({ dealerPriceNoGst,dealerPriceWithGST, value, onChan
       return;
     }
 
-    // convert GST price to price without GST
     const priceWithoutGST = round2(num / gstMultiplier);
-
-    // The dealer's maximum allowed without-GST price is dealerPriceNoGst
     const maxNoGst = Number(dealerPriceNoGst) || 0;
 
     let p = Math.min(Math.max(priceWithoutGST, 0), maxNoGst);
@@ -92,12 +125,8 @@ function DiscountPriceInput({ dealerPriceNoGst,dealerPriceWithGST, value, onChan
     else setNote("");
 
     setLocalDiscount(String(newDiscount));
-
-    // Send **without GST price** in state
     onChange({ price: p, discount: newDiscount });
   };
-
-
 
   const handlePriceChange = (text) => {
     const num = text === "" ? "" : Number(text);
@@ -112,8 +141,7 @@ function DiscountPriceInput({ dealerPriceNoGst,dealerPriceWithGST, value, onChan
     let p = Math.min(Math.max(num, 0), dealerPriceNoGst);
     let newDiscount = round2((1 - p / dealerPriceNoGst) * 100);
 
-    if (p !== num)
-      setNote(`Price must be between 0 and ${dealerPriceNoGst}`);
+    if (p !== num) setNote(`Price must be between 0 and ${dealerPriceNoGst}`);
     else setNote("");
 
     setLocalDiscount(String(newDiscount));
@@ -123,7 +151,6 @@ function DiscountPriceInput({ dealerPriceNoGst,dealerPriceWithGST, value, onChan
   return (
     <View style={{ marginBottom: 15 }}>
       <View style={styles.inputWithIcon}>
-
         <TextInput
           style={[styles.input, styles.inputWithIconText]}
           placeholder="Enter Discount %"
@@ -132,7 +159,6 @@ function DiscountPriceInput({ dealerPriceNoGst,dealerPriceWithGST, value, onChan
           onChangeText={handleDiscountChange}
         />
       </View>
-
       <TextInput
         style={styles.input}
         placeholder="Enter Price With GST ₹"
@@ -140,10 +166,7 @@ function DiscountPriceInput({ dealerPriceNoGst,dealerPriceWithGST, value, onChan
         value={localPrice !== "" && !isNaN(Number(localPrice)) ? String(round2(Number(localPrice) * gstMultiplier)) : ""}
         onChangeText={handleWithGSTPriceChange}
       />
-      {note !== "" && (
-        <Text style={{ color: "red", fontSize: 12, marginTop: 4 }}>{note}</Text>
-      )}
-
+      {note !== "" && <Text style={{ color: "red", fontSize: 12, marginTop: 4 }}>{note}</Text>}
       <TextInput
         style={styles.input}
         placeholder="Enter Price Without GST ₹"
@@ -151,9 +174,7 @@ function DiscountPriceInput({ dealerPriceNoGst,dealerPriceWithGST, value, onChan
         value={localPrice !== null && localPrice !== undefined ? String(localPrice) : ""}
         onChangeText={handlePriceChange}
       />
-      {note !== "" && (
-        <Text style={{ color: "red", fontSize: 12, marginTop: 4 }}>{note}</Text>
-      )}
+      {note !== "" && <Text style={{ color: "red", fontSize: 12, marginTop: 4 }}>{note}</Text>}
     </View>
   );
 }
@@ -172,9 +193,7 @@ function QuantityInput({ value, onChange }) {
   };
 
   return (
-
     <View style={styles.quantityRow}>
-
       <TextInput
         style={[styles.input, { flex: 1, marginRight: 8, marginBottom: 0 }]}
         placeholder="Quantity"
@@ -182,21 +201,16 @@ function QuantityInput({ value, onChange }) {
         value={value.quantity !== null ? String(value.quantity) : ""}
         onChangeText={handleQuantityChange}
       />
-
       {QUANTITY_UNIT_CHOICES.map((unit) => (
         <TouchableOpacity
           key={unit}
-          style={[
-            styles.option,
-            value.quantity_unit === unit && styles.optionSelected,
-          ]}
+          style={[styles.option, value.quantity_unit === unit && styles.optionSelected]}
           onPress={() => handleUnitChange(unit)}
         >
           <Text>{unit}</Text>
         </TouchableOpacity>
       ))}
     </View>
-
   );
 }
 
@@ -251,12 +265,10 @@ function OrderTypePicker({ productId, value, onChange }) {
 
   return (
     <View style={{ marginBottom: 15 }}>
-      {/* Order Type Picker */}
       <View style={styles.dropdown}>
         <View style={styles.orderTypeRow}>
           {orderTypes.map((t) => {
-            const isSchemeDisabled =
-              t.value === "scheme" && (!schemes || schemes.length === 0);
+            const isSchemeDisabled = t.value === "scheme" && (!schemes || schemes.length === 0);
             return (
               <TouchableOpacity
                 key={t.value}
@@ -268,18 +280,12 @@ function OrderTypePicker({ productId, value, onChange }) {
                 onPress={() => !isSchemeDisabled && handleSelectOrderType(t.value)}
                 disabled={isSchemeDisabled}
               >
-                <Text
-                  style={isSchemeDisabled ? styles.optionDisabledText : {}}
-                >
-                  {t.label}
-                </Text>
+                <Text style={isSchemeDisabled ? styles.optionDisabledText : {}}>{t.label}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
       </View>
-
-      {/* Scheme Dropdown */}
       {value?.order_type === "scheme" && (
         <View style={{ marginTop: 10 }}>
           {loading && <ActivityIndicator />}
@@ -290,9 +296,7 @@ function OrderTypePicker({ productId, value, onChange }) {
                 onPress={() => setShowSchemeList(!showSchemeList)}
               >
                 <Text>
-                  {value?.scheme_id
-                    ? schemes.find((s) => s.id === value.scheme_id)?.name
-                    : "Select Scheme"}
+                  {value?.scheme_id ? schemes.find((s) => s.id === value.scheme_id)?.name : "Select Scheme"}
                 </Text>
               </TouchableOpacity>
               {showSchemeList && (
@@ -361,7 +365,9 @@ export default function OrderForm() {
   const [discount, setDiscount] = useState("");
   const [caseSize, setCaseSize] = useState("");
   const [itemTotal, setItemTotal] = useState("0.00");
-  const insets = useSafeAreaInsets();
+
+  // Letterhead State
+  const [selectedLetterhead, setSelectedLetterhead] = useState(null);
 
   // Order Type State
   const [orderType, setOrderType] = useState({
@@ -374,6 +380,8 @@ export default function OrderForm() {
     quantity: null,
     quantity_unit: "units",
   });
+
+  const insets = useSafeAreaInsets();
 
   // ========== Dealer Search ==========
   const fetchDealers = async (search) => {
@@ -402,9 +410,7 @@ export default function OrderForm() {
   };
 
   useEffect(() => {
-    if (suppressDealerFetchRef.current) {
-      return;
-    }
+    if (suppressDealerFetchRef.current) return;
     const delayDebounce = setTimeout(() => {
       fetchDealers(dealerQuery);
     }, 400);
@@ -413,35 +419,27 @@ export default function OrderForm() {
 
   const handleDealerInputChange = (text) => {
     setDealerDisplayValue(text);
-
-    if (suppressDealerFetchRef.current) {
-      return;
-    }
-
+    if (suppressDealerFetchRef.current) return;
     if (text === selectedDealer?.shop_name) {
       setDealerQuery("");
       setShowDealerList(false);
       return;
     }
-
     if (text.length < 2) {
       setDealers([]);
       setShowDealerList(false);
       return;
     }
-
     setDealerQuery(text);
   };
-
 
   const handleSelectDealer = (dealer) => {
     setDealerDisplayValue(dealer.shop_name);
     setSelectedDealer(dealer);
     setShowDealerList(false);
-    setDealers([]); // Clear suggestions array
-    setDealerQuery(""); // Clear query
+    setDealers([]);
+    setDealerQuery("");
     suppressDealerFetchRef.current = true;
-    // Reset suppress flag after microtask
     setTimeout(() => {
       suppressDealerFetchRef.current = false;
     }, 0);
@@ -475,9 +473,7 @@ export default function OrderForm() {
   };
 
   useEffect(() => {
-    if (suppressProductFetchRef.current) {
-      return;
-    }
+    if (suppressProductFetchRef.current) return;
     const delayDebounce = setTimeout(() => {
       fetchProducts(productQuery);
     }, 400);
@@ -486,39 +482,31 @@ export default function OrderForm() {
 
   const handleProductInputChange = (text) => {
     setProductDisplayValue(text);
-
-    if (suppressProductFetchRef.current) {
-      return;
-    }
-
+    if (suppressProductFetchRef.current) return;
     if (text === selectedProduct?.name) {
       setProductQuery("");
       setShowProductList(false);
       return;
     }
-
     if (text.length < 2) {
       setProducts([]);
       setShowProductList(false);
       return;
     }
-
     setProductQuery(text);
   };
-
 
   const handleSelectProduct = async (product) => {
     setProductDisplayValue(product.name);
     setSelectedProduct(product);
     setShowProductList(false);
     setShowPackingList(false);
-    setProducts([]); // Clear suggestions array
-    setProductQuery(""); // Clear query
+    setProducts([]);
+    setProductQuery("");
     setSelectedPacking(null);
     setDealerPriceNoGst("");
-    setGstRate(""); // reset dealer price
+    setGstRate("");
     suppressProductFetchRef.current = true;
-    // Reset suppress flag after microtask
     setTimeout(() => {
       suppressProductFetchRef.current = false;
     }, 0);
@@ -526,9 +514,7 @@ export default function OrderForm() {
 
     try {
       setLoadingPacking(true);
-      const response = await apiClient.get(
-        `/order/api/products/${product.id}/packings/`
-      );
+      const response = await apiClient.get(`/order/api/products/${product.id}/packings/`);
       if (response.data.success) {
         setPackings(response.data.data);
         setShowPackingList(false);
@@ -549,32 +535,21 @@ export default function OrderForm() {
     setShowPackingList(false);
 
     try {
-      const response = await apiClient.get(
-        `/order/api/packings/${packing.id}/details/`
-      );
+      const response = await apiClient.get(`/order/api/packings/${packing.id}/details/`);
       if (response.data.success) {
-        // API returns:
-        // - dealer_price_per_unit: price WITH GST
-        // - dealer_price_per_unit_no_gst: price WITHOUT GST (use this directly when available)
-        // - gst_rate: GST percentage
         const resp = response.data.data;
         const gst = parseFloat(resp.gst_rate ?? 0);
 
-        // Use the no-GST price directly from API if available
         let priceNoGst = resp.dealer_price_per_unit_no_gst
           ? Number(resp.dealer_price_per_unit_no_gst)
           : null;
 
-        // If no-GST price not in API, calculate it from the with-GST price
         if (priceNoGst === null || priceNoGst === undefined) {
           const priceWithGst = Number(resp.dealer_price_per_unit || 0);
           priceNoGst = gst !== 0 ? priceWithGst / (1 + gst / 100) : priceWithGst;
         }
 
-        // Calculate with-GST price from no-GST
-        const priceWithGst = gst !== 0
-          ? priceNoGst * (1 + gst / 100)
-          : priceNoGst;
+        const priceWithGst = gst !== 0 ? priceNoGst * (1 + gst / 100) : priceNoGst;
 
         setDealerPriceNoGst(priceNoGst);
         setDealerPriceWithGst(priceWithGst);
@@ -595,20 +570,12 @@ export default function OrderForm() {
     }
   };
 
-
-
-
   // ========== Item Total Calculation ==========
   const calculateItemTotal = () => {
-    // Return 0.00 if any required input is missing/invalid
     if (!selectedProduct || !selectedPacking || !quantity.quantity || !price || !gstRate) {
       return "0.00";
     }
 
-
-
-
-    // Case size validation for case quantity unit
     if (quantity.quantity_unit === "case" && (!caseSize || caseSize <= 0)) {
       return "0.00";
     }
@@ -624,16 +591,12 @@ export default function OrderForm() {
         return "0.00";
       }
 
-      // Calculate total units
       let totalUnits = quantityValue;
       if (quantity.quantity_unit === "case") {
         totalUnits = quantityValue * caseSizeValue;
       }
 
-      // Calculate per-unit gross price (price + GST)
       const perUnitGross = priceValue * (1 + gstRateValue / 100);
-
-      // Calculate item total
       const itemTotal = perUnitGross * totalUnits;
 
       return itemTotal.toFixed(2);
@@ -643,14 +606,12 @@ export default function OrderForm() {
     }
   };
 
-  // Update item total whenever relevant values change
   useEffect(() => {
     const newItemTotal = calculateItemTotal();
     setItemTotal(newItemTotal);
   }, [selectedProduct, selectedPacking, quantity, price, discount, gstRate, caseSize]);
 
   // ========== Order Management Functions ==========
-  // Add item to order
   const addItemToOrder = () => {
     if (!selectedDealer) {
       Alert.alert("Error", "Please select a dealer first");
@@ -662,7 +623,6 @@ export default function OrderForm() {
       return;
     }
 
-    // Validate order type and scheme
     if (!orderType.order_type) {
       Alert.alert("Error", "Please select an order type");
       return;
@@ -673,20 +633,17 @@ export default function OrderForm() {
       return;
     }
 
-    // Validate quantity
     const quantityValue = parseFloat(quantity.quantity);
     if (isNaN(quantityValue) || quantityValue <= 0) {
       Alert.alert("Error", "Please enter a valid quantity greater than 0");
       return;
     }
 
-    // Validate case size for case quantity unit
     if (quantity.quantity_unit === "case" && (!caseSize || caseSize <= 0)) {
       Alert.alert("Error", "No case size available for this product. Please contact administrator.");
       return;
     }
 
-    // Validate price and discount
     const priceValue = parseFloat(price);
     const discountValue = parseFloat(discount) || 0;
     const dealerPriceValue = parseFloat(dealerPriceNoGst);
@@ -712,14 +669,11 @@ export default function OrderForm() {
       discount: discountValue,
       item_total: parseFloat(itemTotal),
       remark: "",
-      // For display purposes
       product_name: selectedProduct.name,
       packing_size: selectedPacking.packing_size,
     };
 
     setOrderItems([...orderItems, newItem]);
-
-    // Reset current item fields
     resetCurrentItemFields();
   };
 
@@ -746,7 +700,65 @@ export default function OrderForm() {
     setOrderItems(updatedItems);
   };
 
-  // Submit order
+  // ========== Letterhead File Handling ==========
+  const pickLetterheadDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: [
+          "image/*",
+          "application/pdf",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const file = result.assets[0];
+        setSelectedLetterhead(file);
+      }
+    } catch (error) {
+      console.error("Error picking letterhead:", error);
+      Alert.alert("Error", "Failed to pick document");
+    }
+  };
+
+  const pickLetterheadImage = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("Permission required", "Please allow photo access to upload letterhead");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        allowsEditing: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const file = result.assets[0];
+        setSelectedLetterhead(file);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+    }
+  };
+
+  const showLetterheadOptions = () => {
+    Alert.alert("Upload Letterhead", "Choose letterhead document or photo:", [
+      { text: "Choose Document", onPress: pickLetterheadDocument },
+      { text: "Choose from Gallery", onPress: pickLetterheadImage },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
+  const removeLetterhead = () => {
+    setSelectedLetterhead(null);
+  };
+
+  // ========== Order Submission ==========
   const submitOrder = async () => {
     if (!selectedDealer) {
       Alert.alert("Error", "Please select a dealer");
@@ -761,45 +773,88 @@ export default function OrderForm() {
     try {
       setIsSubmitting(true);
 
-      const orderData = {
+      // Prepare common data
+      const baseData = {
         dealer_id: selectedDealer.id,
-        remark: orderRemark,
+        remark: orderRemark || "",
         order_items: orderItems.map(item => ({
           product: item.product,
           product_packing: item.product_packing,
           product_order_type: item.product_order_type,
-          product_scheme: item.product_scheme,
+          product_scheme: item.product_scheme || null,
           quantity: item.quantity,
           quantity_unit: item.quantity_unit,
-          price: item.price,
-          discount: item.discount,
-          item_total: item.item_total,
-          remark: item.remark,
+          price: parseFloat(item.price).toFixed(2),
+          discount: parseFloat(item.discount || 0).toFixed(2),
+          item_total: parseFloat(item.item_total).toFixed(2),
+          remark: item.remark || "",
         })),
       };
 
-      const response = await apiClient.post("/order/api/orders/create/", orderData);
+      let response;
 
-      console.log("Order: ", response.data);
+      if (selectedLetterhead) {
+        // CASE 1: WITH LETTERHEAD → multipart/form-data + order_items as JSON string
+        const formData = new FormData();
 
+        formData.append("dealer_id", selectedDealer.id.toString());
+        formData.append("remark", orderRemark || "");
+        formData.append("order_items", JSON.stringify(baseData.order_items));
+
+        // Attach file properly
+        formData.append("letterhead_document", {
+          uri: selectedLetterhead.uri,
+          type: selectedLetterhead.mimeType || "application/octet-stream",
+          name: selectedLetterhead.name || `letterhead_${Date.now()}.${selectedLetterhead.mimeType?.split("/")[1] || "pdf"}`,
+        });
+
+        console.log("Submitting order WITH letterhead (multipart + JSON string)");
+
+        response = await apiClient.post("/order/api/orders/create/", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 30000,
+        });
+      } else {
+        // CASE 2: WITHOUT LETTERHEAD → application/json
+        console.log("Submitting order WITHOUT letterhead (JSON)");
+
+        response = await apiClient.post("/order/api/orders/create/", baseData);
+      }
 
       if (response.data.success) {
         Alert.alert(
           "Success",
-          `Order ${response.data.data.dealer_owner} created successfully`,
+          "Order created successfully!",
           [{ text: "OK", onPress: resetForm }]
         );
       } else {
-        Alert.alert("Error", "Failed to create order");
+        const errorMsg = response.data.errors
+          ? Object.values(response.data.errors).flat().join(", ")
+          : response.data.message || "Failed to create order";
+        Alert.alert("Error", errorMsg);
       }
     } catch (error) {
-      console.error("Error creating order:", error);
-      Alert.alert("Error", "Failed to create order. Please try again.");
+      console.error("Order submission error:", error.response?.data || error);
+
+      let errorMessage = "Failed to create order. Please try again.";
+
+      if (error.response?.data) {
+        if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response.data.errors) {
+          errorMessage = Object.values(error.response.data.errors).flat().join(", ");
+        }
+      }
+
+      Alert.alert("Error", errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // ========== Form Reset ==========
   const resetForm = () => {
     setOrderItems([]);
     setOrderRemark("");
@@ -808,45 +863,33 @@ export default function OrderForm() {
     setSelectedDealer(null);
     setShowDealerList(false);
     resetCurrentItemFields();
+    setSelectedLetterhead(null); // Reset letterhead
   };
 
-  // Calculate order totals for display
+  // ========== Order Totals Calculation ==========
   const calculateOrderTotals = () => {
     let subtotal = 0;
     let totalDiscount = 0;
     let totalTax = 0;
     let grandTotal = 0;
 
-
-
-
-    orderItems.forEach(item => {
-      // Calculate based on actual item totals from backend logic
+    orderItems.forEach((item) => {
       const itemSubtotal = item.quantity * item.price;
       const discountAmount = itemSubtotal * (item.discount / 100);
       const taxableAmount = itemSubtotal - discountAmount;
-
-      // Use dynamic GST rate from the item if available
-      const gstRateForItem = parseFloat(gstRate) || 0; // fallback to 5%
+      const gstRateForItem = parseFloat(gstRate) || 0;
       const taxAmount = taxableAmount * (gstRateForItem / 100);
-
-
-
 
       subtotal += itemSubtotal;
       totalDiscount += discountAmount;
       totalTax += taxAmount;
 
-      // Use the calculated item_total if available, otherwise calculate
       if (item.item_total) {
         grandTotal += parseFloat(item.item_total);
       } else {
         grandTotal += taxableAmount + taxAmount;
       }
     });
-
-
-
 
     return {
       subtotal: subtotal.toFixed(2),
@@ -856,52 +899,38 @@ export default function OrderForm() {
     };
   };
 
-
-
-
-  // Create sections data for FlatList
+  // ========== Render Sections ==========
   const renderSections = () => {
     const sections = [];
 
-
-    // Header section
-    sections.push({
-      id: 'header',
-      type: 'header',
-      data: { selectedDealer }
-    });
-
-
     // Dealer search section
     sections.push({
-      id: 'dealer-search',
-      type: 'dealer-search',
+      id: "dealer-search",
+      type: "dealer-search",
       data: {
         dealerDisplayValue,
         handleDealerInputChange,
         loadingDealer,
         showDealerList,
         dealers,
-        handleSelectDealer
-      }
+        handleSelectDealer,
+      },
     });
-
 
     // Order items section
     if (orderItems.length > 0) {
       sections.push({
-        id: 'order-items',
-        type: 'order-items',
-        data: { orderItems, removeItemFromOrder, calculateOrderTotals }
+        id: "order-items",
+        type: "order-items",
+        data: { orderItems, removeItemFromOrder, calculateOrderTotals },
       });
     }
-
 
     // Add new item section
     if (selectedDealer) {
       sections.push({
-        id: 'add-item',
-        type: 'add-item',
+        id: "add-item",
+        type: "add-item",
         data: {
           productDisplayValue,
           handleProductInputChange,
@@ -926,40 +955,49 @@ export default function OrderForm() {
           discount,
           caseSize,
           itemTotal,
-          addItemToOrder
-        }
+          addItemToOrder,
+        },
       });
     }
-
 
     // Order remarks section
     if (orderItems.length > 0) {
       sections.push({
-        id: 'order-remarks',
-        type: 'order-remarks',
-        data: { orderRemark, setOrderRemark }
+        id: "order-remarks",
+        type: "order-remarks",
+        data: { orderRemark, setOrderRemark },
       });
     }
 
+    // Letterhead attachment section
+    if (orderItems.length > 0) {
+      sections.push({
+        id: "letterhead-attachment",
+        type: "letterhead-attachment",
+        data: {
+          selectedLetterhead,
+          showLetterheadOptions,
+          removeLetterhead,
+        },
+      });
+    }
 
     // Submit button section
     if (orderItems.length > 0) {
       sections.push({
-        id: 'submit-buttons',
-        type: 'submit-buttons',
-        data: { isSubmitting, submitOrder, resetForm, orderItems }
+        id: "submit-buttons",
+        type: "submit-buttons",
+        data: { isSubmitting, submitOrder, resetForm, orderItems },
       });
     }
-
 
     return sections;
   };
 
-
+  // ========== Render Section ==========
   const renderSection = ({ item }) => {
     switch (item.type) {
-
-      case 'dealer-search':
+      case "dealer-search":
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Select Dealer</Text>
@@ -996,12 +1034,10 @@ export default function OrderForm() {
                 </ScrollView>
               </View>
             )}
-
           </View>
         );
 
-
-      case 'order-items':
+      case "order-items":
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Order Items ({item.data.orderItems.length})</Text>
@@ -1017,47 +1053,46 @@ export default function OrderForm() {
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.orderItemDetails}>
-                  {orderItem.packing_size} • {orderItem.quantity} {orderItem.quantity_unit} • ₹{formatMoney(orderItem.price)}
-                  {orderItem.discount > 0 && ` • ${orderItem.discount}% off`} • Total: ₹{formatMoney(orderItem.item_total)}
+                  {orderItem.packing_size} • {orderItem.quantity} {orderItem.quantity_unit} • ₹
+                  {formatMoney(orderItem.price)}
+                  {orderItem.discount > 0 && ` • ${orderItem.discount}% off`} • Total: ₹
+                  {formatMoney(orderItem.item_total)}
                 </Text>
                 <Text style={styles.orderItemType}>Type: {orderItem.product_order_type}</Text>
               </View>
             ))}
-
-            {/* Order Totals */}
-            {(() => {
-              const totals = item.data.calculateOrderTotals();
-              return (
-                <View style={styles.totalsContainer}>
-                  <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>Subtotal:</Text>
-                    <Text style={styles.totalValue}>₹{totals.subtotal}</Text>
-                  </View>
-                  <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>Discount:</Text>
-                    <Text style={styles.totalValue}>-₹{totals.totalDiscount}</Text>
-                  </View>
-                  <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>Tax (5%):</Text>
-                    <Text style={styles.totalValue}>₹{totals.totalTax}</Text>
-                  </View>
-                  <View style={[styles.totalRow, styles.grandTotalRow]}>
-                    <Text style={styles.grandTotalLabel}>Total:</Text>
-                    <Text style={styles.grandTotalValue}>₹{totals.grandTotal}</Text>
-                  </View>
-                </View>
-              );
-            })()}
+            <View style={styles.totalsContainer}>
+              {(() => {
+                const totals = item.data.calculateOrderTotals();
+                return (
+                  <>
+                    <View style={styles.totalRow}>
+                      <Text style={styles.totalLabel}>Subtotal:</Text>
+                      <Text style={styles.totalValue}>₹{totals.subtotal}</Text>
+                    </View>
+                    <View style={styles.totalRow}>
+                      <Text style={styles.totalLabel}>Discount:</Text>
+                      <Text style={styles.totalValue}>-₹{totals.totalDiscount}</Text>
+                    </View>
+                    <View style={styles.totalRow}>
+                      <Text style={styles.totalLabel}>Tax (5%):</Text>
+                      <Text style={styles.totalValue}>₹{totals.totalTax}</Text>
+                    </View>
+                    <View style={[styles.totalRow, styles.grandTotalRow]}>
+                      <Text style={styles.grandTotalLabel}>Total:</Text>
+                      <Text style={styles.grandTotalValue}>₹{totals.grandTotal}</Text>
+                    </View>
+                  </>
+                );
+              })()}
+            </View>
           </View>
         );
 
-
-      case 'add-item':
+      case "add-item":
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Add New Item</Text>
-
-            {/* Product Search */}
             <TextInput
               style={styles.input}
               placeholder="Search product..."
@@ -1091,41 +1126,31 @@ export default function OrderForm() {
                 </ScrollView>
               </View>
             )}
-
-            {/* Packing Selection */}
-            {selectedProduct && packings.length > 0 && (
+            {item.data.selectedProduct && item.data.packings.length > 0 && (
               <View style={{ marginBottom: 10 }}>
                 <TouchableOpacity
                   style={styles.input}
-                  onPress={() => setShowPackingList(!showPackingList)}
+                  onPress={() => item.data.setShowPackingList(!item.data.showPackingList)}
                 >
-                  <Text style={selectedPacking ? styles.text : styles.placeholder}>
-                    {selectedPacking
-                      ? `${selectedPacking.packing_size}`
-                      : "Select packing"}
+                  <Text style={item.data.selectedPacking ? styles.text : styles.placeholder}>
+                    {item.data.selectedPacking ? `${item.data.selectedPacking.packing_size}` : "Select packing"}
                   </Text>
                 </TouchableOpacity>
-
-
-                {showPackingList && (
+                {item.data.showPackingList && (
                   <View style={styles.list}>
-                    {packings.map((item) => (
+                    {item.data.packings.map((packing) => (
                       <TouchableOpacity
-                        key={item.id}
+                        key={packing.id}
                         style={styles.item}
-                        onPress={() => handleSelectPacking(item)}
+                        onPress={() => item.data.handleSelectPacking(packing)}
                       >
-                        <Text style={styles.text}>{item.packing_size}</Text>
+                        <Text style={styles.text}>{packing.packing_size}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
                 )}
               </View>
             )}
-
-
-
-            {/* Order Type Picker */}
             {item.data.selectedProduct && (
               <OrderTypePicker
                 productId={item.data.selectedProduct.id}
@@ -1133,61 +1158,45 @@ export default function OrderForm() {
                 onChange={item.data.setOrderType}
               />
             )}
-
-
-            {/* Quantity Input */}
             {item.data.selectedProduct && (
               <QuantityInput value={item.data.quantity} onChange={item.data.setQuantity} />
             )}
-
-
-            {/* Dealer Price Display */}
             {item.data.selectedPacking && (
               <>
                 <TextInput
                   style={[styles.input, styles.readOnlyInput]}
-                  value={item.data.dealerPriceNoGst !== "" && item.data.dealerPriceNoGst != null ? `₹ ${formatMoney(item.data.dealerPriceNoGst)} (Per unit, No GST)` : ""}
+                  value={
+                    item.data.dealerPriceNoGst !== "" && item.data.dealerPriceNoGst != null
+                      ? `₹ ${formatMoney(item.data.dealerPriceNoGst)} (Per unit, No GST)`
+                      : ""
+                  }
                   editable={false}
                   placeholder="Dealer price (No GST)"
                 />
+                <TextInput
+                  style={[styles.input, styles.readOnlyInput]}
+                  value={item.data.gstRate !== "" && item.data.gstRate != null ? `${item.data.gstRate}% GST` : ""}
+                  editable={false}
+                  placeholder="Tax Rate"
+                />
+                <DiscountPriceInput
+                  dealerPriceNoGst={Number(item.data.dealerPriceNoGst)}
+                  dealerPriceWithGST={Number(item.data.dealerPriceWithGst)}
+                  value={{ price: item.data.price, discount: item.data.discount, gst_rate: item.data.gstRate }}
+                  onChange={({ price, discount }) => {
+                    setPrice(price?.toString() ?? "");
+                    setDiscount(discount?.toString() ?? "");
+                  }}
+                />
               </>
             )}
-
-
-            {/* Tax Rate Display */}
-            {item.data.selectedPacking && (
-              <TextInput
-                style={[styles.input, styles.readOnlyInput]}
-                value={item.data.gstRate !== "" && item.data.gstRate != null ? `${item.data.gstRate}% GST` : ""}
-                editable={false}
-                placeholder="Tax Rate"
-              />
-            )}
-
-
-            {/* Price & Discount Input */}
-            {item.data.selectedPacking && (
-              <DiscountPriceInput
-                dealerPriceNoGst={Number(item.data.dealerPriceNoGst)}
-                dealerPriceWithGST={Number(item.data.dealerPriceWithGst)}
-                value={{ price: item.data.price, discount: item.data.discount, gst_rate: item.data.gstRate }}
-                onChange={({ price, discount }) => {
-                  setPrice(price?.toString() ?? "");
-                  setDiscount(discount?.toString() ?? "");
-                }}
-              />
-            )}
-
-
-            {/* Case Size Warning */}
-            {item.data.selectedPacking && item.data.quantity.quantity_unit === "case" && (!item.data.caseSize || item.data.caseSize <= 0) && (
-              <Text style={{ color: "red", fontSize: 12, marginBottom: 10 }}>
-                ⚠️ No case size available for this product
-              </Text>
-            )}
-
-
-            {/* Item Total Display */}
+            {item.data.selectedPacking &&
+              item.data.quantity.quantity_unit === "case" &&
+              (!item.data.caseSize || item.data.caseSize <= 0) && (
+                <Text style={{ color: "red", fontSize: 12, marginBottom: 10 }}>
+                  ⚠️ No case size available for this product
+                </Text>
+              )}
             {item.data.selectedPacking && (
               <TextInput
                 style={[styles.input, styles.readOnlyInput]}
@@ -1196,27 +1205,21 @@ export default function OrderForm() {
                 placeholder="Item Total"
               />
             )}
-
-
-            {/* Add Item Button */}
             {item.data.selectedProduct &&
               item.data.selectedPacking &&
               item.data.quantity.quantity &&
               item.data.price &&
-              (item.data.quantity.quantity_unit === "units" || (item.data.quantity.quantity_unit === "case" && item.data.caseSize > 0)) &&
+              (item.data.quantity.quantity_unit === "units" ||
+                (item.data.quantity.quantity_unit === "case" && item.data.caseSize > 0)) &&
               item.data.itemTotal !== "0.00" && (
-                <TouchableOpacity
-                  style={styles.addItemButton}
-                  onPress={item.data.addItemToOrder}
-                >
+                <TouchableOpacity style={styles.addItemButton} onPress={item.data.addItemToOrder}>
                   <Text style={styles.addItemButtonText}>Add Item to Order</Text>
                 </TouchableOpacity>
               )}
           </View>
         );
 
-
-      case 'order-remarks':
+      case "order-remarks":
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Order Remarks (Optional)</Text>
@@ -1231,8 +1234,18 @@ export default function OrderForm() {
           </View>
         );
 
+      case "letterhead-attachment":
+        return (
+          <View style={styles.section}>
+            <LetterheadAttachment
+              file={item.data.selectedLetterhead}
+              onPress={item.data.showLetterheadOptions}
+              onRemove={item.data.removeLetterhead}
+            />
+          </View>
+        );
 
-      case 'submit-buttons':
+      case "submit-buttons":
         return (
           <View style={styles.section}>
             <TouchableOpacity
@@ -1248,29 +1261,23 @@ export default function OrderForm() {
                 </Text>
               )}
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.resetButton}
-              onPress={item.data.resetForm}
-            >
+            <TouchableOpacity style={styles.resetButton} onPress={item.data.resetForm}>
               <Text style={styles.resetButtonText}>Reset Form</Text>
             </TouchableOpacity>
           </View>
         );
-
 
       default:
         return null;
     }
   };
 
-
   return (
     <View style={{ flex: 1, paddingBottom: insets.bottom }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0} // adjust offset as needed
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
       >
         <FlatList
           style={styles.container}
@@ -1279,12 +1286,10 @@ export default function OrderForm() {
           renderItem={renderSection}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 20 }} // ensures last field isn't hidden
+          contentContainerStyle={{ paddingBottom: 20 }}
         />
       </KeyboardAvoidingView>
     </View>
-
-
   );
 }
 
@@ -1292,23 +1297,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: DESIGN.colors.background,
-  },
-  header: {
-    backgroundColor: DESIGN.colors.surface,
-    padding: DESIGN.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: DESIGN.colors.borderLight,
-    marginBottom: DESIGN.spacing.sm,
-  },
-  headerTitle: {
-    fontSize: DESIGN.typography.title.fontSize,
-    fontWeight: DESIGN.typography.title.fontWeight,
-    color: DESIGN.colors.textPrimary,
-  },
-  selectedDealer: {
-    fontSize: DESIGN.typography.body.fontSize,
-    color: DESIGN.colors.textSecondary,
-    marginTop: DESIGN.spacing.xs,
   },
   section: {
     backgroundColor: DESIGN.colors.surface,
@@ -1360,7 +1348,6 @@ const styles = StyleSheet.create({
     minHeight: DROPDOWN_ROW_HEIGHT,
     justifyContent: "center",
   },
-
   text: {
     fontSize: DESIGN.typography.body.fontSize,
     color: DESIGN.colors.textPrimary,
@@ -1370,7 +1357,6 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.textSecondary,
     marginTop: DESIGN.spacing.xs / 2,
   },
-  // Order Items Styles
   orderItem: {
     backgroundColor: DESIGN.colors.surfaceElevated,
     padding: DESIGN.spacing.sm,
@@ -1398,11 +1384,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  removeButtonText: {
-    color: DESIGN.colors.surface,
-    fontSize: DESIGN.typography.caption.fontSize,
-    fontWeight: DESIGN.typography.subtitle.fontWeight,
-  },
   orderItemDetails: {
     fontSize: DESIGN.typography.body.fontSize,
     color: DESIGN.colors.textSecondary,
@@ -1414,11 +1395,6 @@ const styles = StyleSheet.create({
     marginTop: DESIGN.spacing.xs / 2,
     fontStyle: "italic",
   },
-
-
-
-
-  // Totals Styles
   totalsContainer: {
     marginTop: DESIGN.spacing.md,
     paddingTop: DESIGN.spacing.md,
@@ -1455,11 +1431,6 @@ const styles = StyleSheet.create({
     fontWeight: DESIGN.typography.subtitle.fontWeight,
     color: DESIGN.colors.primary,
   },
-
-
-
-
-  // Button Styles
   addItemButton: {
     backgroundColor: DESIGN.colors.success,
     padding: DESIGN.spacing.md,
@@ -1497,7 +1468,6 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.surface,
     fontSize: DESIGN.typography.body.fontSize,
   },
-  // Existing styles
   dropdown: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1556,7 +1526,59 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: DESIGN.spacing.sm,
   },
+  // File Attachment Styles
+  fileContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: DESIGN.colors.surfaceElevated,
+    borderRadius: DESIGN.borderRadius.sm,
+    padding: DESIGN.spacing.md,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.borderLight,
+  },
+  fileInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  fileName: {
+    flex: 1,
+    marginLeft: DESIGN.spacing.sm,
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.textPrimary,
+    fontWeight: "500",
+  },
+  fileSize: {
+    fontSize: DESIGN.typography.caption.fontSize,
+    color: DESIGN.colors.textSecondary,
+    marginLeft: DESIGN.spacing.sm,
+  },
+  removeButton: {
+    padding: DESIGN.spacing.xs,
+  },
+  uploadButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: DESIGN.colors.surfaceElevated,
+    borderRadius: DESIGN.borderRadius.sm,
+    padding: DESIGN.spacing.md,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.borderLight,
+    borderStyle: "dashed",
+  },
+  uploadButtonText: {
+    marginLeft: DESIGN.spacing.sm,
+    fontSize: DESIGN.typography.body.fontSize,
+    color: DESIGN.colors.primary,
+    fontWeight: "500",
+  },
+  imagePreview: {
+    width: "100%",
+    height: 120,
+    borderRadius: DESIGN.borderRadius.sm,
+    marginBottom: DESIGN.spacing.sm,
+    backgroundColor: DESIGN.colors.surface,
+  },
+
 });
-
-
-

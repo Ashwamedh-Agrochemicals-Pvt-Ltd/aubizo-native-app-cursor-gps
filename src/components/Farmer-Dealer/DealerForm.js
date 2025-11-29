@@ -23,7 +23,7 @@ import logger from "../../utility/logger";
 import LocationService from "../../utility/location";
 import showToast from "../../utility/showToast";
 
-function DealerForm({ location, stateDealerForm }) {
+function DealerForm({ location, stateDealerForm, setfetchDealer }) {
   const abortControllerRef = useRef(null);
 
   const { states, districts, talukas, loadStates, loadDistricts, loadTalukas } =
@@ -31,12 +31,13 @@ function DealerForm({ location, stateDealerForm }) {
 
   const [phoneForOTP, setPhoneForOTP] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasAutoFilled, setHasAutoFilled] = useState(false);
+
 
   const [dropdowns, setDropdowns] = useState({
     state: false,
     district: false,
     taluka: false,
-    agreement: false,
     secondaryPhoneRelation: false,
   });
 
@@ -45,14 +46,12 @@ function DealerForm({ location, stateDealerForm }) {
     district: null,
     taluka: null,
     secondaryPhoneRelation: null,
-    agreement: null,
   });
 
   // Progressive form visibility states
   const [showSecondaryPhone, setShowSecondaryPhone] = useState(false);
   const [showPanGst, setShowPanGst] = useState(false);
   const [showLocation, setShowLocation] = useState(false);
-  const [showAgreement, setShowAgreement] = useState(false);
 
   // Form values state to track changes
   const [formValues, setFormValues] = useState({
@@ -93,12 +92,154 @@ function DealerForm({ location, stateDealerForm }) {
     }
   }, [showPanGst, showLocation]);
 
-  // Show agreement after location is selected
+
+
+  // Add a new state to track the location data to auto-fill
+  const [pendingAutoFill, setPendingAutoFill] = useState(null);
+
+  // First effect: Fetch location once
   useEffect(() => {
-    if (showLocation && formState.state && formState.district && formState.taluka && !showAgreement) {
-      setShowAgreement(true);
+    let isMounted = true;
+
+    const fetchLocationOnce = async () => {
+      if (pendingAutoFill || !isMounted) return;
+
+      try {
+        console.log("🔄 Fetching location...");
+        const result = await LocationService.getCurrentLocationDetails();
+        console.log("📍 Location fetched result:", result);
+
+        if (!isMounted) return;
+
+        if (result?.googleResults) {
+
+          // 👉 BEST RESULT FINDER (paste here)
+          const best =
+            result.googleResults.find((r) =>
+              r.address_components.some((c) =>
+                c.types.includes("administrative_area_level_4")
+              )
+            ) || result.googleResults[0];
+
+          console.log("🌎 Google BEST result:", best);
+
+          const get = (type) =>
+            best.address_components.find((c) => c.types.includes(type))?.long_name || null;
+
+          const autoFillData = {
+            stateName: get("administrative_area_level_1"),
+            districtName: get("administrative_area_level_3"),
+            talukaName:
+              get("administrative_area_level_4") ||
+              get("locality") ||
+              get("sublocality") ||
+              null,
+          };
+
+          console.log("📌 Pending auto-fill data:", autoFillData);
+          setPendingAutoFill(autoFillData);
+        }
+      } catch (error) {
+        console.log("❌ Auto location failed:", error);
+      }
+    };
+
+    fetchLocationOnce();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+
+  // Second effect: Auto-fill state when data is ready
+  useEffect(() => {
+    console.log("👀 State effect triggered", { pendingAutoFill, hasAutoFilled });
+
+    if (!pendingAutoFill || !pendingAutoFill.stateName || hasAutoFilled) return;
+
+    const fillState = async () => {
+      console.log("➡️ Filling State...");
+      console.log("Current States:", states);
+
+      if (states.length === 0) {
+        console.log("⏳ Loading states first...");
+        await loadStates();
+        return;
+      }
+
+      const stateItem = states.find((s) => {
+        const label = s.label || s.name;
+        return label.toLowerCase().includes(pendingAutoFill.stateName.toLowerCase());
+      });
+
+      console.log("🧾 Matched State Item:", stateItem);
+
+      if (stateItem) {
+        const stateValue = stateItem.value || stateItem.id;
+        console.log("✔ Setting State:", stateValue);
+        setFormState((prev) => ({ ...prev, state: stateValue, district: null, taluka: null }));
+        await loadDistricts(stateValue);
+      }
+    };
+
+    fillState();
+  }, [pendingAutoFill, states, hasAutoFilled]);
+
+  // Third effect: Auto-fill district when districts are loaded
+  useEffect(() => {
+    console.log("👀 District effect triggered", { pendingAutoFill, districts, formState });
+
+    if (!pendingAutoFill || !pendingAutoFill.districtName || !formState.state || hasAutoFilled)
+      return;
+
+    if (districts.length === 0) return;
+
+    const districtItem = districts.find((d) => {
+      const label = d.label || d.name;
+      return label.toLowerCase().includes(pendingAutoFill.districtName.toLowerCase());
+    });
+
+    console.log("🧾 Matched District Item:", districtItem);
+
+    if (districtItem) {
+      const districtValue = districtItem.value || districtItem.id;
+      console.log("✔ Setting District:", districtValue);
+      setFormState((prev) => ({ ...prev, district: districtValue, taluka: null }));
+      loadTalukas(districtValue);
     }
-  }, [showLocation, formState.state, formState.district, formState.taluka, showAgreement]);
+  }, [pendingAutoFill, formState.state, districts, hasAutoFilled]);
+
+  // Fourth effect: Auto-fill taluka when talukas are loaded
+  useEffect(() => {
+    console.log("👀 Taluka effect triggered", { pendingAutoFill, talukas, formState });
+
+    if (!pendingAutoFill || !pendingAutoFill.talukaName || !formState.district || hasAutoFilled)
+      return;
+
+    if (talukas.length === 0) return;
+
+    const talukaItem = talukas.find((t) => {
+      const label = t.label || t.name;
+      return label.toLowerCase().includes(pendingAutoFill.talukaName.toLowerCase());
+    });
+
+    console.log("🧾 Matched Taluka Item:", talukaItem);
+
+    if (talukaItem) {
+      const talukaValue = talukaItem.value || talukaItem.id;
+      console.log("✔ Setting Taluka:", talukaValue);
+
+      setFormState((prev) => ({ ...prev, taluka: talukaValue }));
+      setHasAutoFilled(true);
+      setPendingAutoFill(null);
+
+      console.log("🎉 Auto-fill completed!");
+    }
+  }, [pendingAutoFill, formState.district, talukas, hasAutoFilled]);
+
+
+  // Remove the old autoFillLocation callback and its effect
 
   /**
    * Create dealer and handle success/error states
@@ -281,7 +422,6 @@ function DealerForm({ location, stateDealerForm }) {
         secondary_phone_relation: values.secondary_phone_relation,
         pan_number: values.pan_number ? values.pan_number.trim() : "NA",
         gst_number: values.gst_number ? values.gst_number.trim() : "NA",
-        agreement_status: values.agreement_status,
         billing_address: (location || "").trim(),
         shipping_address: (location || "").trim(),
         state_id: state,
@@ -327,7 +467,6 @@ function DealerForm({ location, stateDealerForm }) {
           pan_number: "",
           gst_number: "",
           state: "",
-          agreement_status: "active",
           secondary_phone_relation: "",
         }}
         validationSchema={DealerSchema}
@@ -464,7 +603,6 @@ function DealerForm({ location, stateDealerForm }) {
                             state: false,
                             district: false,
                             taluka: false,
-                            agreement: false,
                           }))
                         }
                         setValue={(callback) =>
@@ -561,7 +699,6 @@ function DealerForm({ location, stateDealerForm }) {
                           state: open,
                           district: false,
                           taluka: false,
-                          agreement: false,
                           secondaryPhoneRelation: false,
                         }));
                         if (open && states.length === 0) await loadStates();
@@ -601,7 +738,6 @@ function DealerForm({ location, stateDealerForm }) {
                           district: open,
                           taluka: false,
                           state: false,
-                          agreement: false,
                           secondaryPhoneRelation: false,
                         }));
                         if (open && formState.state && districts.length === 0) {
@@ -643,7 +779,6 @@ function DealerForm({ location, stateDealerForm }) {
                           taluka: open,
                           district: false,
                           state: false,
-                          agreement: false,
                           secondaryPhoneRelation: false,
                         }));
                         if (open && formState.district && talukas.length === 0)
@@ -664,46 +799,7 @@ function DealerForm({ location, stateDealerForm }) {
                   </View>
 
 
-                  <View style={modernStyles.section}>
-                    <View style={modernStyles.sectionHeader}>
-                      <MaterialCommunityIcons
-                        name="file-check"
-                        size={22}
-                        color={DESIGN.colors.success}
-                      />
-                      <Text style={modernStyles.sectionTitle}>
-                        Agreement
-                      </Text>
-                    </View>
 
-                    <View style={modernStyles.dropdownContainer}>
-                      <Text style={modernStyles.fieldLabel}>Agreement Status *</Text>
-                      <AppDropDownPicker
-                        open={dropdowns.agreement}
-                        value={values.agreement_status}
-                        items={[
-                          { label: "Active", value: "active" },
-                          { label: "Inactive", value: "inactive" },
-                        ]}
-                        setOpen={(open) =>
-                          setDropdowns((prev) => ({
-                            ...prev,
-                            agreement: open,
-                            state: false,
-                            district: false,
-                            taluka: false,
-                            secondaryPhoneRelation: false,
-                          }))
-                        }
-                        setValue={(callback) =>
-                          setFieldValue("agreement_status", callback(values.agreement_status))
-                        }
-                        placeholder="Select agreement status"
-                        zIndex={800}
-                        accessibilityLabel="Agreement status selection dropdown"
-                      />
-                    </View>
-                  </View>
                 </View>
               )}
 
@@ -769,7 +865,6 @@ function DealerForm({ location, stateDealerForm }) {
     showSecondaryPhone,
     showPanGst,
     showLocation,
-    showAgreement
   ]);
 
   return (
@@ -801,6 +896,7 @@ function DealerForm({ location, stateDealerForm }) {
           setCreatedDealerId(null);
           showToast.success('Dealer created successfully!');
         }}
+        setfetchDealer={setfetchDealer}
       />
     </KeyboardAvoidingView>
   );

@@ -38,6 +38,7 @@ function FarmerUpdateScreen() {
   const [selectedCrops, setSelectedCrops] = useState([]);
   const [cropModalVisible, setCropModalVisible] = useState(false);
   const [cropOptions, setCropOptions] = useState([]);
+  const [cropSearchQuery, setCropSearchQuery] = useState('');
 
   const {
     states,
@@ -760,7 +761,10 @@ function FarmerUpdateScreen() {
             <Text style={modernStyles.modalTitle}>Select Crops</Text>
             <TouchableOpacity
               style={modernStyles.modalCloseButton}
-              onPress={() => setCropModalVisible(false)}
+              onPress={() => {
+                setCropSearchQuery('');
+                setCropModalVisible(false);
+              }}
               accessibilityRole="button"
               accessibilityLabel="Close crop selection"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -773,83 +777,121 @@ function FarmerUpdateScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Search Field */}
+          <View style={modernStyles.searchContainer}>
+            <MaterialCommunityIcons
+              name="magnify"
+              size={20}
+              color={DESIGN.colors.textTertiary}
+              style={modernStyles.searchIcon}
+            />
+            <TextInput
+              style={modernStyles.searchInput}
+              placeholder="Search for crops..."
+              placeholderTextColor={DESIGN.colors.textTertiary}
+              onChangeText={(text) => setCropSearchQuery(text)}
+              value={cropSearchQuery}
+              accessibilityLabel="Search crops by name"
+              accessibilityHint="Type to filter crops list"
+            />
+            {cropSearchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setCropSearchQuery('')}
+                style={modernStyles.clearSearchButton}
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+              >
+                <MaterialCommunityIcons
+                  name="close-circle"
+                  size={20}
+                  color={DESIGN.colors.textTertiary}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+
           <ScrollView
             contentContainerStyle={modernStyles.modalContent}
             showsVerticalScrollIndicator={false}
           >
-            {cropOptions.map((crop, index) => {
-              const selected = selectedCrops.find(
-                (c) => c.value === crop.value
-              );
+            {cropOptions
+              .filter(crop =>
+                crop.label.toLowerCase().includes(cropSearchQuery.toLowerCase())
+              )
+              .map((crop, index) => {
+                const selected = selectedCrops.find(
+                  (c) => c.value === crop.value
+                );
 
-              return (
-                <View key={index} style={modernStyles.cropItem}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (selected) {
-                        setSelectedCrops((prev) =>
-                          prev.filter((c) => c.value !== crop.value)
-                        );
-                      } else {
-                        setSelectedCrops((prev) => [
-                          ...prev,
-                          {
-                            label: crop.label,
-                            value: crop.value,
-                            acre: "",
-                          },
-                        ]);
-                      }
-                    }}
-                    style={modernStyles.cropCheckbox}
-                    activeOpacity={0.7}
-                    accessibilityRole="checkbox"
-                    accessibilityLabel={`${selected ? 'Deselect' : 'Select'} ${crop.label}`}
-                    accessibilityState={{ checked: !!selected }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <MaterialCommunityIcons
-                      name={
-                        selected ? "checkbox-marked" : "checkbox-blank-outline"
-                      }
-                      size={24}
-                      color={
-                        selected
-                          ? DESIGN.colors.primary
-                          : DESIGN.colors.textSecondary
-                      }
-                    />
-                    <Text style={modernStyles.cropLabel}>{crop.label}</Text>
-                  </TouchableOpacity>
-
-                  {selected && (
-                    <View style={modernStyles.acreInputContainer}>
-                      <TextInput
-                        style={modernStyles.acreInput}
-                        placeholder="Acre"
-                        keyboardType="numeric"
-                        value={selected.acre}
-                        onChangeText={(text) => {
+                return (
+                  <View key={index} style={modernStyles.cropItem}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (selected) {
                           setSelectedCrops((prev) =>
-                            prev.map((c) =>
-                              c.value === crop.value ? { ...c, acre: text } : c
-                            )
+                            prev.filter((c) => c.value !== crop.value)
                           );
-                        }}
-                        accessibilityLabel={`Acre input for ${crop.label}`}
-                        accessibilityHint="Enter acre value for this crop"
+                        } else {
+                          setSelectedCrops((prev) => [
+                            ...prev,
+                            {
+                              label: crop.label,
+                              value: crop.value,
+                              acre: "",
+                            },
+                          ]);
+                        }
+                      }}
+                      style={modernStyles.cropCheckbox}
+                      activeOpacity={0.7}
+                      accessibilityRole="checkbox"
+                      accessibilityLabel={`${selected ? 'Deselect' : 'Select'} ${crop.label}`}
+                      accessibilityState={{ checked: !!selected }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <MaterialCommunityIcons
+                        name={
+                          selected ? "checkbox-marked" : "checkbox-blank-outline"
+                        }
+                        size={24}
+                        color={
+                          selected
+                            ? DESIGN.colors.primary
+                            : DESIGN.colors.textSecondary
+                        }
                       />
-                    </View>
-                  )}
-                </View>
-              );
-            })}
+                      <Text style={modernStyles.cropLabel}>{crop.label}</Text>
+                    </TouchableOpacity>
+
+                    {selected && (
+                      <View style={modernStyles.acreInputContainer}>
+                        <TextInput
+                          style={modernStyles.acreInput}
+                          placeholder="Acre"
+                          keyboardType="numeric"
+                          value={selected.acre}
+                          onChangeText={(text) => {
+                            setSelectedCrops((prev) =>
+                              prev.map((c) =>
+                                c.value === crop.value ? { ...c, acre: text } : c
+                              )
+                            );
+                          }}
+                          accessibilityLabel={`Acre input for ${crop.label}`}
+                          accessibilityHint="Enter acre value for this crop"
+                        />
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
 
             <View style={modernStyles.modalButtons}>
               <AppButton
                 title="Cancel"
                 style={[modernStyles.modalButton, modernStyles.cancelButton]}
                 onPress={() => {
+                  setCropSearchQuery('');
                   setCropModalVisible(false);
                 }}
               />
@@ -872,6 +914,7 @@ function FarmerUpdateScreen() {
                     return;
                   }
 
+                  setCropSearchQuery('');
                   setCropModalVisible(false);
                 }}
               />
@@ -1053,7 +1096,7 @@ const modernStyles = StyleSheet.create({
   },
 
   modalContent: {
-    padding: DESIGN.spacing.lg,
+    padding: DESIGN.spacing.md,
     paddingBottom: DESIGN.spacing.xl,
   },
 
@@ -1120,6 +1163,29 @@ const modernStyles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     flex: 1,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: DESIGN.colors.surface,
+    marginHorizontal: 16,
+    marginVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: DESIGN.colors.textPrimary,
+  },
+  clearSearchButton: {
+    padding: 4,
   },
 });
 
