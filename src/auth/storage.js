@@ -190,14 +190,14 @@ const isRefreshTokenExpired = (token) => {
     const decoded = jwtDecode(token);
     const currentTime = Math.floor(Date.now() / 1000);
     const expiryTime = decoded.exp;
-    
+
     // No buffer time - check actual expiry
     const isExpired = currentTime >= expiryTime;
-    
+
     if (__DEV__ && isExpired) {
       logger.log(`⚠️ Refresh token is actually expired`);
     }
-    
+
     return isExpired;
   } catch (error) {
     logger.error("❌ Error checking refresh token expiry:", error);
@@ -398,6 +398,7 @@ const clearAll = async () => {
     // Clear SecureStore items
     await removeToken();
     await removeRefreshToken();
+    await AsyncStorage.clear();
 
 
     try {

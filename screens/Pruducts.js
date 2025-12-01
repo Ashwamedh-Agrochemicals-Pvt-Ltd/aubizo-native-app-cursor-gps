@@ -121,7 +121,7 @@ export default function ProductScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadData();
+    await Promise.all([fetchProducts(), fetchCategories()]);
     setRefreshing(false);
   }, []);
 
@@ -178,13 +178,13 @@ export default function ProductScreen() {
     </View>
   );
 
-  // ⭐ FIXED: Header visible even during loading
+  // Show header during initial loading
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: DESIGN.colors.background }} edges={["top"]}>
         <View style={{
           flexDirection: "row",
-          paddingHorizontal: 16,
+          paddingHorizontal: DESIGN.spacing.xl,
           justifyContent: "space-between",
           alignItems: "center",
           paddingVertical: DESIGN.spacing.md,
@@ -192,34 +192,13 @@ export default function ProductScreen() {
           borderBottomColor: DESIGN.colors.border,
         }}>
           <Text style={{ fontSize: 20, fontWeight: "bold" }}>Product List</Text>
-          <FontAwesome name="search" size={24} color="black" />
+          <FontAwesome name="search" size={24} color={DESIGN.colors.textPrimary} />
         </View>
 
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <ActivityIndicator size="large" color={DESIGN.colors.primary} />
         </View>
       </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <TouchableOpacity
-          onPress={loadData}
-          style={{
-            backgroundColor: DESIGN.colors.primary,
-            paddingVertical: DESIGN.spacing.md,
-            paddingHorizontal: DESIGN.spacing.lg,
-            borderRadius: DESIGN.borderRadius.md,
-            ...DESIGN.shadows.medium,
-          }}
-        >
-          <Text style={{ color: DESIGN.colors.surface, fontSize: DESIGN.typography.body.fontSize, fontWeight: DESIGN.typography.subtitle.fontWeight, textAlign: "center" }}>
-            Retry
-          </Text>
-        </TouchableOpacity>
-      </View>
     );
   }
 
@@ -240,9 +219,10 @@ export default function ProductScreen() {
       style={{ flex: 1, backgroundColor: DESIGN.colors.background }}
       edges={["top"]}
     >
+      {/* Header - Always visible */}
       <View style={{
         flexDirection: "row",
-        paddingHorizontal: 16,
+        paddingHorizontal: DESIGN.spacing.lg,
         justifyContent: "space-between",
         alignItems: "center",
         paddingVertical: DESIGN.spacing.md,
@@ -256,6 +236,7 @@ export default function ProductScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Search Bar */}
       {showSearch && (
         <SearchBar
           searchQuery={searchQuery}
@@ -267,21 +248,104 @@ export default function ProductScreen() {
         />
       )}
 
-      <FlatList
-        data={groupedFiltered}
-        renderItem={renderRow}
-        keyExtractor={(_item, index) => `row-${index}`}
-        contentContainerStyle={{ paddingVertical: CARD_MARGIN }}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[DESIGN.colors.primary]}
-            tintColor={DESIGN.colors.primary}
+      {/* Content Area */}
+      {error ? (
+        <View style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          paddingHorizontal: 32
+        }}>
+          <FontAwesome
+            name="exclamation-circle"
+            size={64}
+            color={DESIGN.colors.textSecondary}
+            style={{ marginBottom: 16 }}
           />
-        }
-      />
+          <Text style={{
+            fontSize: 18,
+            fontWeight: "600",
+            color: DESIGN.colors.textPrimary,
+            marginBottom: 8,
+            textAlign: "center"
+          }}>
+            {error}
+          </Text>
+          <Text style={{
+            fontSize: 14,
+            color: DESIGN.colors.textSecondary,
+            textAlign: "center"
+          }}>
+            Pull down to refresh
+          </Text>
+        </View>
+      ) : filtered.length === 0 ? (
+        <View style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          paddingHorizontal: 32
+        }}>
+          <FontAwesome
+            name="inbox"
+            size={64}
+            color={DESIGN.colors.textSecondary}
+            style={{ marginBottom: 16 }}
+          />
+          <Text style={{
+            fontSize: 18,
+            fontWeight: "600",
+            color: DESIGN.colors.textPrimary,
+            marginBottom: 8,
+            textAlign: "center"
+          }}>
+            {searchQuery.trim() ? "No products found" : "No products available"}
+          </Text>
+          <Text style={{
+            fontSize: 14,
+            color: DESIGN.colors.textSecondary,
+            textAlign: "center"
+          }}>
+            {searchQuery.trim()
+              ? "Try adjusting your search"
+              : "Pull down to refresh"}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={groupedFiltered}
+          renderItem={renderRow}
+          keyExtractor={(_item, index) => `row-${index}`}
+          contentContainerStyle={{ paddingVertical: CARD_MARGIN }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[DESIGN.colors.primary]}
+              tintColor={DESIGN.colors.primary}
+            />
+          }
+        />
+      )}
+
+      {/* Pull-to-refresh works in all states when scroll is enabled */}
+      {(error || filtered.length === 0) && (
+        <View style={{ position: "absolute", width: "100%", height: "100%" }}>
+          <FlatList
+            data={[]}
+            renderItem={null}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[DESIGN.colors.primary]}
+                tintColor={DESIGN.colors.primary}
+              />
+            }
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }

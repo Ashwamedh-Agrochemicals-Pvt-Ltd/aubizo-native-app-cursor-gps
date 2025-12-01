@@ -10,6 +10,7 @@ import InputFormField from "../form/appComponents/InputFormText";
 import DESIGN from "../../theme";
 import logger from "../../utility/logger";
 import AppDropDownPicker from "../form/appComponents/AppDropDownPicker";
+import showToast from "../../utility/showToast";
 
 const validationSchema = Yup.object().shape({
   visit_purpose: Yup.string().required("Visit purpose is required"),
@@ -66,6 +67,8 @@ const VisitForm = ({ storageKey, navigateTo }) => {
           index: 1,
           routes: [{ name: "Dashboard" }, { name: navigateTo }],
         });
+
+        showToast.success("Visit ended successfully.", "Success", "top", 2000);
 
       } catch (error) {
         if (error.name === "AbortError") return;

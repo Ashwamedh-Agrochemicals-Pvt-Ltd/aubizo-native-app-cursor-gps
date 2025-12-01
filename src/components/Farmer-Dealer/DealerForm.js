@@ -894,7 +894,7 @@ function DealerForm({ location, stateDealerForm, setfetchDealer }) {
           setOtpModalVisible(false);
           stateDealerForm(false);
           setCreatedDealerId(null);
-          showToast.success('Dealer created successfully!');
+          showToast.success('OTP Verified and Dealer created successfully!', "Success", "top", 3000);
         }}
         setfetchDealer={setfetchDealer}
       />
@@ -903,6 +903,9 @@ function DealerForm({ location, stateDealerForm, setfetchDealer }) {
 }
 
 const modernStyles = StyleSheet.create({
+  container: {
+    paddingBottom: DESIGN.spacing.xxxl,
+  },
   formWrapper: {
     backgroundColor: DESIGN.colors.surface,
     marginHorizontal: DESIGN.spacing.xs,

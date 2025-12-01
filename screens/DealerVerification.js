@@ -154,7 +154,7 @@ const DealerVerificationScreen = () => {
                 console.log('Document picker was cancelled');
                 return;
             }
-            
+
             console.error('Error picking document:', error);
             Alert.alert('Error', 'Failed to select document. Please try again.');
         }
@@ -177,8 +177,11 @@ const DealerVerificationScreen = () => {
 
     const uploadDocument = async (documentType, fileAsset) => {
         try {
+            // Set uploading status immediately
             updateDocumentStatus(documentType.id, 'uploading');
             setUploadProgress(prev => ({ ...prev, [documentType.id]: 0 }));
+
+            console.log('📤 Starting upload for:', documentType.name);
 
             const formData = new FormData();
             formData.append('dealer', dealer);
@@ -207,46 +210,78 @@ const DealerVerificationScreen = () => {
                 name: fileName,
             });
 
+            // 🔥 SIMULATE PROGRESS (since onUploadProgress doesn't work in RN)
             const progressInterval = setInterval(() => {
                 setUploadProgress(prev => {
-                    const current = prev[documentType.id] || 0;
-                    return current < 90 ? { ...prev, [documentType.id]: current + 10 } : prev;
+                    const currentProgress = prev[documentType.id] || 0;
+                    // Increment by 10% every 200ms, but stop at 90%
+                    const newProgress = Math.min(currentProgress + 10, 90);
+                    console.log(`📊 Upload progress: ${newProgress}%`);
+                    return { ...prev, [documentType.id]: newProgress };
                 });
             }, 200);
 
-            const response = await apiClient.post(
-                `dealer/${dealer}/documents/`,
-                formData,
-                { headers: { 'Content-Type': 'multipart/form-data' } }
-            );
+            try {
+                const response = await apiClient.post(
+                    `dealer/${dealer}/documents/`,
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                        timeout: 60000, // 60 second timeout
+                    }
+                );
 
-            clearInterval(progressInterval);
-            setUploadProgress(prev => ({ ...prev, [documentType.id]: 100 }));
+                // Clear the progress interval
+                clearInterval(progressInterval);
 
-            if (response.data) {
-                updateDocumentStatus(documentType.id, 'uploaded', {
-                    document: response.data,
-                });
-                setUploadedDocuments(prev => [...prev, response.data]);
+                // Set to 100% when upload completes
+                setUploadProgress(prev => ({ ...prev, [documentType.id]: 100 }));
+                console.log('✅ Upload complete: 100%');
 
+                // Give a small delay to show 100% before changing status
                 setTimeout(() => {
-                    setUploadProgress(prev => {
-                        const { [documentType.id]: _, ...rest } = prev;
-                        return rest;
-                    });
-                    Alert.alert('Success', 'Document uploaded successfully');
+                    if (response.data) {
+                        updateDocumentStatus(documentType.id, 'uploaded', {
+                            document: response.data,
+                        });
+                        setUploadedDocuments(prev => [...prev, response.data]);
+
+                        Alert.alert('Success', 'Document uploaded successfully!');
+
+                        // Clear progress after successful upload
+                        setTimeout(() => {
+                            setUploadProgress(prev => {
+                                const { [documentType.id]: _, ...rest } = prev;
+                                return rest;
+                            });
+                        }, 1000);
+                    }
                 }, 500);
+
+            } catch (uploadError) {
+                clearInterval(progressInterval);
+                throw uploadError;
             }
+
         } catch (error) {
-            console.error('Upload error:', error);
+            console.error('❌ Upload error:', error);
+
+            // Revert status on error
             updateDocumentStatus(documentType.id, documentType.document ? 'uploaded' : 'pending');
 
+            // Clear progress on error
             setUploadProgress(prev => {
                 const { [documentType.id]: _, ...rest } = prev;
                 return rest;
             });
 
-            Alert.alert('Upload Failed', error.response?.data?.message || 'Failed to upload document');
+            const errorMessage = error.response?.data?.message ||
+                error.response?.data?.detail ||
+                'Failed to upload document. Please try again.';
+
+            Alert.alert('Upload Failed', errorMessage);
         }
     };
 
@@ -357,9 +392,8 @@ const DealerVerificationScreen = () => {
                         </View>
                     </View>
                     <View style={styles.contactInfo}>
-                        {/* Phone Row */}
                         <View style={[styles.contactRow, {
-                            justifyContent: "space-between", // pushes right elements (call button)
+                            justifyContent: "space-between",
                             paddingVertical: 6,
                         }]}>
                             <View style={styles.phoneSection}>
@@ -379,7 +413,6 @@ const DealerVerificationScreen = () => {
                             )}
                         </View>
 
-                        {/* Registration Date Row */}
                         <View style={styles.contactRow}>
                             <MaterialIcons name="calendar-today" size={16} color={DESIGN.colors.textSecondary} />
                             <Text style={styles.contactText}>
@@ -387,7 +420,6 @@ const DealerVerificationScreen = () => {
                             </Text>
                         </View>
                     </View>
-
                 </View>
 
                 {/* Statistics Cards */}
@@ -435,6 +467,7 @@ const DealerVerificationScreen = () => {
                                         ]}
                                         onPress={() => handleDocumentUpload(doc)}
                                         disabled={doc.status === 'uploading'}
+                                        activeOpacity={0.7}
                                     >
                                         <View style={styles.documentLeft}>
                                             <MaterialIcons
@@ -449,9 +482,16 @@ const DealerVerificationScreen = () => {
                                             <View style={styles.documentInfo}>
                                                 <Text style={styles.documentName}>{doc.name}</Text>
                                                 {doc.status === 'uploading' && uploadProgress[doc.id] !== undefined ? (
-                                                    <Text style={styles.uploadingStatusText}>
-                                                        Uploading {uploadProgress[doc.id]}%
-                                                    </Text>
+                                                    <View style={styles.uploadingContainer}>
+                                                        <ActivityIndicator
+                                                            size="small"
+                                                            color={DESIGN.colors.primary}
+                                                            style={{ marginRight: 8 }}
+                                                        />
+                                                        <Text style={styles.uploadingStatusText}>
+                                                            Uploading {uploadProgress[doc.id]}%
+                                                        </Text>
+                                                    </View>
                                                 ) : doc.status === 'rejected' ? (
                                                     <Text style={styles.rejectedStatusText}>
                                                         Rejected - Tap to re-upload
@@ -470,9 +510,15 @@ const DealerVerificationScreen = () => {
                                         )}
                                     </TouchableOpacity>
 
+                                    {/* 🔥 PROGRESS BAR */}
                                     {doc.status === 'uploading' && uploadProgress[doc.id] !== undefined && (
                                         <View style={styles.progressBarContainer}>
-                                            <View style={[styles.progressBarFill, { width: `${uploadProgress[doc.id]}%` }]} />
+                                            <View
+                                                style={[
+                                                    styles.progressBarFill,
+                                                    { width: `${uploadProgress[doc.id]}%` }
+                                                ]}
+                                            />
                                         </View>
                                     )}
                                 </View>
@@ -674,9 +720,6 @@ const styles = StyleSheet.create({
         marginTop: 10,
         color: DESIGN.colors.textSecondary,
     },
-    scrollContent: {
-        paddingBottom: 20,
-    },
     dealerCard: {
         backgroundColor: DESIGN.colors.surface,
         margin: DESIGN.spacing.md,
@@ -727,27 +770,23 @@ const styles = StyleSheet.create({
         marginLeft: 4,
         fontWeight: '500',
     },
-    ccontactInfo: {
+    contactInfo: {
         marginTop: 10,
         gap: 6,
     },
-
     contactRow: {
         flexDirection: "row",
         alignItems: "center",
     },
-
     phoneSection: {
         flexDirection: "row",
         alignItems: "center",
     },
-
     contactText: {
         marginLeft: 6,
         color: DESIGN.colors.textSecondary,
         fontSize: 15,
     },
-
     callButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -763,7 +802,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginLeft: 4,
     },
-
     statsContainer: {
         flexDirection: 'row',
         marginHorizontal: DESIGN.spacing.md,
@@ -852,7 +890,7 @@ const styles = StyleSheet.create({
         ...DESIGN.shadows.subtle,
     },
     documentItemUploading: {
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: DESIGN.colors.primary,
         backgroundColor: '#F5F9FF',
     },
@@ -874,16 +912,20 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '600',
         color: DESIGN.colors.textPrimary,
-        marginBottom: 2,
+        marginBottom: 4,
     },
     documentStatus: {
         fontSize: 12,
         color: DESIGN.colors.textSecondary,
     },
+    uploadingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     uploadingStatusText: {
-        fontSize: 12,
+        fontSize: 13,
         color: DESIGN.colors.primary,
-        fontWeight: '600',
+        fontWeight: '700',
     },
     rejectedStatusText: {
         fontSize: 12,
@@ -891,12 +933,12 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     progressBarContainer: {
-        height: 4,
+        height: 6,
         backgroundColor: '#E0E0E0',
         borderBottomLeftRadius: DESIGN.borderRadius.md,
         borderBottomRightRadius: DESIGN.borderRadius.md,
         overflow: 'hidden',
-        marginTop: -4,
+        marginTop: -6,
     },
     progressBarFill: {
         height: '100%',

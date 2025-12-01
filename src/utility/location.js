@@ -8,11 +8,15 @@ const GOOGLE_API_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
 const GOOGLE_URL = process.env.EXPO_PUBLIC_GOOGLE_URL;
 
-// utility/location.js - Update the getCurrentLocationDetails function
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const getCurrentLocationDetails = async () => {
   try {
     const granted = await requestLocationWhenNeeded();
     if (!granted) return;
+
+    await sleep(2000);
 
     const location = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Highest,
