@@ -53,7 +53,7 @@ const LetterheadAttachment = ({ file, onPress, onRemove }) => (
             </Text>
           )}
         </View>
-        <TouchableOpacity onPress={onRemove} style={styles.removeButton}>
+        <TouchableOpacity onPress={onRemove} style={styles.lremoveButton}>
           <MaterialCommunityIcons name="close-circle" size={24} color={DESIGN.colors.error} />
         </TouchableOpacity>
       </View>
@@ -667,6 +667,7 @@ export default function OrderForm() {
       quantity_unit: quantity.quantity_unit,
       price: priceValue,
       discount: discountValue,
+      gst_rate: gstRate,
       item_total: parseFloat(itemTotal),
       remark: "",
       product_name: selectedProduct.name,
@@ -872,13 +873,16 @@ export default function OrderForm() {
     let totalDiscount = 0;
     let totalTax = 0;
     let grandTotal = 0;
+    const gstRates = new Set();
 
     orderItems.forEach((item) => {
       const itemSubtotal = item.quantity * item.price;
       const discountAmount = itemSubtotal * (item.discount / 100);
       const taxableAmount = itemSubtotal - discountAmount;
-      const gstRateForItem = parseFloat(gstRate) || 0;
+      const gstRateForItem = parseFloat(item.gst_rate) || 0;
       const taxAmount = taxableAmount * (gstRateForItem / 100);
+
+      gstRates.add(gstRateForItem);
 
       subtotal += itemSubtotal;
       totalDiscount += discountAmount;
@@ -891,11 +895,20 @@ export default function OrderForm() {
       }
     });
 
+    let taxLabel = "0%";
+    if (gstRates.size === 1) {
+      const only = Array.from(gstRates)[0];
+      taxLabel = `${only}%`;
+    } else if (gstRates.size > 1) {
+      taxLabel = "Multiple";
+    }
+
     return {
       subtotal: subtotal.toFixed(2),
       totalDiscount: totalDiscount.toFixed(2),
       totalTax: totalTax.toFixed(2),
       grandTotal: grandTotal.toFixed(2),
+      taxLabel,
     };
   };
 
@@ -1075,7 +1088,7 @@ export default function OrderForm() {
                       <Text style={styles.totalValue}>-₹{totals.totalDiscount}</Text>
                     </View>
                     <View style={styles.totalRow}>
-                      <Text style={styles.totalLabel}>Tax (5%):</Text>
+                      <Text style={styles.totalLabel}>Tax ({totals.taxLabel}):</Text>
                       <Text style={styles.totalValue}>₹{totals.totalTax}</Text>
                     </View>
                     <View style={[styles.totalRow, styles.grandTotalRow]}>
@@ -1129,7 +1142,7 @@ export default function OrderForm() {
             {item.data.selectedProduct && item.data.packings.length > 0 && (
               <View style={{ marginBottom: 10 }}>
                 <TouchableOpacity
-                  style={styles.input}
+                  style={[styles.input, { paddingVertical: 9 }]}
                   onPress={() => item.data.setShowPackingList(!item.data.showPackingList)}
                 >
                   <Text style={item.data.selectedPacking ? styles.text : styles.placeholder}>
@@ -1141,7 +1154,7 @@ export default function OrderForm() {
                     {item.data.packings.map((packing) => (
                       <TouchableOpacity
                         key={packing.id}
-                        style={styles.item}
+                        style={[styles.item, { minHeight: 40 }]}
                         onPress={() => item.data.handleSelectPacking(packing)}
                       >
                         <Text style={styles.text}>{packing.packing_size}</Text>
@@ -1273,30 +1286,29 @@ export default function OrderForm() {
   };
 
   return (
-    <View style={{ flex: 1, paddingBottom: insets.bottom }}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
-      >
-        <FlatList
-          style={styles.container}
-          data={renderSections()}
-          keyExtractor={(item) => item.id}
-          renderItem={renderSection}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
-        />
-      </KeyboardAvoidingView>
-    </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
+
+      <FlatList
+        style={styles.container}
+        data={renderSections()}
+        keyExtractor={(item) => item.id}
+        renderItem={renderSection}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + DESIGN.spacing.xs }}
+      />
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: DESIGN.colors.background,
+    backgroundColor: DESIGN.colors.surface,
   },
   section: {
     backgroundColor: DESIGN.colors.surface,
@@ -1526,6 +1538,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: DESIGN.spacing.sm,
   },
+  lremoveButton:{
+    padding:DESIGN.spacing.sm
+  },
   // File Attachment Styles
   fileContainer: {
     flexDirection: "row",
@@ -1553,9 +1568,7 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.textSecondary,
     marginLeft: DESIGN.spacing.sm,
   },
-  removeButton: {
-    padding: DESIGN.spacing.xs,
-  },
+
   uploadButton: {
     flexDirection: "row",
     alignItems: "center",

@@ -1,25 +1,16 @@
 // components/SwipePunchButton.js
 import { forwardRef, useRef, useEffect, useImperativeHandle } from "react";
-import { View, Text, Animated, PanResponder, ActivityIndicator, StyleSheet, TouchableHighlight } from "react-native";
+import { View, Animated, PanResponder, ActivityIndicator, StyleSheet } from "react-native";
 import DESIGN from "../../theme";
-import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
-
-
-
+import { FontAwesome } from "@expo/vector-icons";
 
 const TRACK_WIDTH = 320;
-const THUMB_SIZE = 60;
+const THUMB_SIZE = 55;
 const SWIPE_THRESHOLD = (TRACK_WIDTH - THUMB_SIZE) * 0.6; // 60% of track
-
-
-
 
 const SwipePunchButton = forwardRef(({ onSwipe, loading, hasInpunch }, ref) => {
     const translateX = useRef(new Animated.Value(0)).current;
     const MAX_TRANSLATE = TRACK_WIDTH - THUMB_SIZE;
-
-
-
 
     // Expose reset() to parent
     useImperativeHandle(ref, () => ({
@@ -35,9 +26,6 @@ const SwipePunchButton = forwardRef(({ onSwipe, loading, hasInpunch }, ref) => {
         },
     }), [translateX]);
 
-
-
-
     // When loading becomes false, animate the thumb back (smooth) — keeps UX consistent
     useEffect(() => {
         if (!loading) {
@@ -48,17 +36,17 @@ const SwipePunchButton = forwardRef(({ onSwipe, loading, hasInpunch }, ref) => {
         }
     }, [loading, translateX]);
 
-
-
-
     const labelOpacity = translateX.interpolate({
         inputRange: [0, MAX_TRANSLATE * 0.5, MAX_TRANSLATE],
         outputRange: [1, 0.3, 0],
         extrapolate: "clamp",
     });
 
-
-
+    const thumbBorderRadius = translateX.interpolate({
+        inputRange: [0, 10, MAX_TRANSLATE],
+        outputRange: [0, 4, 4],
+        extrapolate: "clamp",
+    });
 
     const panResponder = useRef(
         PanResponder.create({
@@ -73,9 +61,6 @@ const SwipePunchButton = forwardRef(({ onSwipe, loading, hasInpunch }, ref) => {
             },
             onPanResponderRelease: (_, g) => {
                 if (loading) return;
-
-
-
 
                 if (g.dx > SWIPE_THRESHOLD) {
                     console.log("Swipe threshold reached, calling onSwipe");
@@ -96,41 +81,33 @@ const SwipePunchButton = forwardRef(({ onSwipe, loading, hasInpunch }, ref) => {
     ).current;
 
     return (
-        <TouchableHighlight style={styles.container}>
-            <View style={styles.track}>
-                <Animated.Text style={[styles.trackLabel, { opacity: labelOpacity }]}>
-                    {hasInpunch ? "Swipe to Punch Out" : "Swipe to Punch In"}
-                </Animated.Text>
-                <Animated.View
-                    style={[
-                        styles.thumb,
-                        { transform: [{ translateX }] },
-                    ]}
-                    {...panResponder.panHandlers}
-                >
-                    {loading ? (
-                        <ActivityIndicator size={24} color="#FFF" />
-                    ) : (
-                        <FontAwesome name="chevron-right" size={30} color="#FFF" />
-                    )}
-
-                </Animated.View>
-            </View>
-        </TouchableHighlight>
-
+        <View style={styles.track}>
+            <Animated.Text style={[styles.trackLabel, { opacity: labelOpacity }]}>
+                {hasInpunch ? "Swipe to Punch Out" : "Swipe to Punch In"}
+            </Animated.Text>
+            <Animated.View
+                style={[
+                    styles.thumb,
+                    {
+                        transform: [{ translateX }],
+                        borderRadius: thumbBorderRadius
+                    },
+                ]}
+                {...panResponder.panHandlers}
+            >
+                {loading ? (
+                    <ActivityIndicator size={24} color="#FFF" />
+                ) : (
+                    <FontAwesome name="chevron-right" size={30} color="#FFF" />
+                )}
+            </Animated.View>
+        </View>
     );
 });
 
 export default SwipePunchButton;
 
 const styles = StyleSheet.create({
-    container: {
-        alignItems: "center",
-        paddingHorizontal: DESIGN.spacing.md,
-        paddingVertical: DESIGN.spacing.md,
-        backgroundColor: 'transparent',
-        justifyContent: "center",
-    },
     trackLabel: {
         ...DESIGN.typography.body,
         fontWeight: "600",
@@ -141,19 +118,22 @@ const styles = StyleSheet.create({
     track: {
         width: TRACK_WIDTH,
         height: THUMB_SIZE,
-        backgroundColor: DESIGN.colors.background,
+        backgroundColor: DESIGN.colors.surface,
+        borderColor: DESIGN.colors.border,
+        borderWidth: 1,
         borderRadius: THUMB_SIZE / 2,
         justifyContent: "center",
+        overflow: "hidden", // Important for flat thumb edges
     },
     thumb: {
         position: "absolute",
         width: THUMB_SIZE,
         height: THUMB_SIZE,
-        borderRadius: 30,
         justifyContent: "center",
         alignItems: "center",
         ...DESIGN.shadows.subtle,
         backgroundColor: DESIGN.colors.primary,
+        borderRadius: 0, // Flat thumb
     },
     thumbText: {
         color: DESIGN.colors.surface,
@@ -161,6 +141,3 @@ const styles = StyleSheet.create({
         fontWeight: "bold"
     },
 });
-
-
-

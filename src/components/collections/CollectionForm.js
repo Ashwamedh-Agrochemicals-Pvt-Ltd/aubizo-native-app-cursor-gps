@@ -36,6 +36,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import apiClient from "../../api/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DESIGN from "../../theme";
+import DatePicker from "../DatePicker";
 
 const DROPDOWN_ROW_HEIGHT = 58;
 const MAX_DROPDOWN_HEIGHT = Math.round(Dimensions.get("window").height * 0.5);
@@ -222,38 +223,25 @@ function BankDetailsInput({ paymentMethod, value, onChange }) {
             keyboardType="numeric"
           />
 
-              <TextInput
-                style={styles.input}
-                placeholder="Cheque Number"
-                value={value.cheque_number || ""}
-                onChangeText={(text) =>
-                  onChange({ ...value, cheque_number: text })
-                }
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Cheque Date (YYYY-MM-DD)"
-                value={value.cheque_date || ""}
-                onChangeText={(text) => {
-                  const regex = /^\d{4}-\d{2}-\d{2}$/; 
+          <TextInput
+            style={styles.input}
+            placeholder="Cheque Number"
+            value={value.cheque_number || ""}
+            onChangeText={(text) =>
+              onChange({ ...value, cheque_number: text })
+            }
+          />
+          <DatePicker
+            label="Cheque Date *"
+            value={value.cheque_date || null}
+            mode={"date"}
+            onChange={(date) => onChange({ ...value, cheque_date: date })}
+            placeholder="Select cheque date"
+            minimumDate={new Date()}
+            maximumDate={new Date(new Date().setDate(new Date().getDate() + 90))}
+          />
 
-                  if (!regex.test(text)) {
-                    setError("Please enter date in YYYY-MM-DD format");
-                  } else {
-                    setError("");
-                  }
-
-                  onChange({ ...value, cheque_date: text });
-                }}
-              />
-
-              {error ? (
-                <Text style={{ color: "red", marginTop: 4, marginLeft: 4 }}>
-                  {error}
-                </Text>
-              ) : null}
-
-            </>
+        </>
       )}
 
       {showUPIFields && (
@@ -964,10 +952,9 @@ export default function CollectionForm({
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
-      enabled
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <FlatList
         data={renderSections()}
@@ -1192,8 +1179,6 @@ const PaymentFormSection = ({ data }) => {
         </Text>
       </View>
 
-      <PaymentMethodPicker value={paymentMethod} onChange={setPaymentMethod} />
-
       <AmountInput
         value={paymentAmount}
         onChange={setPaymentAmount}
@@ -1206,6 +1191,8 @@ const PaymentFormSection = ({ data }) => {
         label="Payment Amount"
         placeholder="Enter payment amount"
       />
+
+      <PaymentMethodPicker value={paymentMethod} onChange={setPaymentMethod} />
 
       <BankDetailsInput
         paymentMethod={paymentMethod}
@@ -1384,17 +1371,15 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.textTertiary,
   },
   paymentMethodContainer: {
-    marginBottom: 15,
+    marginBottom: DESIGN.spacing.sm,
   },
   dropdownWrapper: {
     position: "relative",
     zIndex: 10,
   },
-  dropdownContainer: {
-    // Simplified container without absolute positioning constraints
-  },
+
   list: {
-    marginTop: 5,
+
     borderWidth: 1,
     borderColor: DESIGN.colors.border,
     borderRadius: DESIGN.borderRadius.sm,
@@ -1409,6 +1394,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    paddingVertical: DESIGN.spacing.sm
   },
   listNonScrollable: {
     borderWidth: 1,
@@ -1580,6 +1566,7 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.surface,
     ...DESIGN.typography.button,
     fontWeight: "600",
+    fontSize: 18
   },
   submitButtonContent: {
     flexDirection: "row",

@@ -1,5 +1,5 @@
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
-import { useContext, useEffect, useRef, useState, useCallback, use } from "react";
+import { useContext, useEffect, useRef, useState, useCallback } from "react";
 import {
   Alert,
   Text,
@@ -7,12 +7,11 @@ import {
   View,
   ScrollView,
   RefreshControl,
-  Pressable,
-  ActivityIndicator
+  TouchableOpacity,
 } from "react-native";
 import apiClient from "../src/api/client";
 import authContext from "../src/auth/context";
-import authStorage from "../src/auth/storage";
+import authStorage from "../src/auth/storage"
 import { navigation } from "../navigation/NavigationService";
 import styles from "../src/styles/dashboard.style"
 import Location from "../src/utility/location";
@@ -24,19 +23,23 @@ import useDeviceRestrictions from "../src/hooks/useDeviceRestrictions";
 import GenericSettingsModal from "../src/components/GenericSettingsModal";
 import DESIGN from "../src/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import HamburgerButton from "../src/components/HamburgerButton";
-import DrawerOverlay from "../src/components/DrawerOverlay";
-import DrawerMenu from "../src/components/DrawerMenu";
+import DashboardSkeleton from "../src/components/appSkeleton/DashboardSkeleton";
+import { useNavigation } from "@react-navigation/native";
+import { getBrandConfig } from '../src/config/appConfig'
+
+const { brandName } = getBrandConfig();
+
 
 const INPUNCH_URL = process.env.EXPO_PUBLIC_INPUNCH_URL;
 const OUTPUNCH_URL = process.env.EXPO_PUBLIC_OUTPUNCH_URL;
 
 function Dashboard() {
+  const drawerNavigation = useNavigation();
   const [hasInpunch, setHasInpunch] = useState(false);
   const [inpunchId, setInpunchId] = useState(null);
   const [isPunchInLoading, setIsPunchInLoading] = useState(false);
   const [isPunchOutLoading, setIsPunchOutLoading] = useState(false);
-  const { user, setUser } = useContext(authContext);
+  const { user, setUser, username, setUsername } = useContext(authContext);
   const swipeRef = useRef(null);
   const [refreshing, setRefreshing] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
@@ -44,10 +47,9 @@ function Dashboard() {
   const hasInpunchRef = useRef(false);
 
   const inpunchIdRef = useRef(null);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  const [loading, setLoading] = useState(false);
-  const [username, setUsername] = useState("User");
-  const [drawerVisible, setDrawerVisible] = useState(false);
 
   // Get time-based greeting
   const getTimeBasedGreeting = () => {
@@ -61,17 +63,18 @@ function Dashboard() {
     }
   };
 
-  // Create stable function reference for onSwipe
   const onSwipeHandler = useCallback(() => {
-    // Use ref to get the most current state value
-    const currentHasInpunch = hasInpunchRef.current;
+    if (isPunchInLoading || isPunchOutLoading || actionLoading) return;
 
+    const currentHasInpunch = hasInpunchRef.current;
     if (currentHasInpunch) {
       handleOutpunch();
     } else {
       handleInpunch();
     }
-  }, [handleOutpunch, handleInpunch]);
+  }, [hasInpunchRef, handleInpunch, handleOutpunch, isPunchInLoading, isPunchOutLoading, actionLoading]);
+
+
 
   const {
     modalVisible,
@@ -81,17 +84,16 @@ function Dashboard() {
     openSettings,
   } = useDeviceRestrictions();
 
-  const checkPunchStatus = useCallback(async () => {
-    setLoading(true);
+  const checkPunchStatus = useCallback(async (isRefresh = false, isAction = false) => {
+    if (!isRefresh && !isAction) setInitialLoading(true);
     try {
-
       const response = await apiClient.get("track/dashboard/today/");
       setDashboardData(response.data);
 
       const fetchedUsername = response.data.user_name;
       if (fetchedUsername) {
         setUsername(fetchedUsername);
-        await authStorage.saveUsername(fetchedUsername); // save in SecureStore
+        await authStorage.saveUsername(fetchedUsername);
       }
 
       const { punched_in, punched_out, punch_id } = response.data.punch_status;
@@ -128,51 +130,42 @@ function Dashboard() {
       }
     } catch (error) {
       logger.error("Error checking punch status:", error);
-      console.log("Error checking punch status:", error);
-      // Offline fallback: load username from SecureStore
-      const cachedName = await authStorage.getUsername();
-      console.log("Cached username:", cachedName);
-      if (cachedName) setUsername(cachedName);
-      console.log("Using cached username due to error.", use);
     } finally {
-      setLoading(false); // hide loader
+      if (!isRefresh && !isAction) setInitialLoading(false);
     }
-  }, [setUser, hasInpunch]);
+  }, []);
 
   // Initial mount and auth changes trigger
   useEffect(() => {
+
     if (user) {
       const loadCachedUsername = async () => {
         const cachedName = await authStorage.getUsername();
         if (cachedName) setUsername(cachedName);
       };
       loadCachedUsername();
-      // Show loading indicator immediately while fetching punch status
-      setLoading(true);
-      checkPunchStatus();
+      if (user) checkPunchStatus(false, false);
     } else {
       // Clear state when user logs out
       setHasInpunch(false);
       setInpunchId(null);
       storage.remove("punchId");
     }
-  }, [user, checkPunchStatus]);
+  }, [user]);
 
 
   const onRefresh = useCallback(async () => {
-
     setRefreshing(true);
-
-    await checkPunchStatus();
-    // your existing API call
+    await checkPunchStatus(true, false);
     setRefreshing(false);
   }, [checkPunchStatus]);
 
+
   const handleInpunch = useCallback(async () => {
-    if (isPunchInLoading) return; // Prevent double-clicks
+
     const restrictionActive = await checkRestrictions();
     if (restrictionActive) {
-      swipeRef.current?.reset(); // stop swipe if restriction modal is showing
+      swipeRef.current?.reset();
       return;
     }
 
@@ -214,7 +207,7 @@ function Dashboard() {
               inpunchIdRef.current = id; // Update ref
 
               // Refresh status from server to ensure state consistency
-              await checkPunchStatus();
+              await checkPunchStatus(false, true);
 
               // ✅ Success toast (same style as outpunch)
               showToast.success(
@@ -229,7 +222,9 @@ function Dashboard() {
                 "You can only record one inpunch per day"
               );
             } finally {
-              setIsPunchInLoading(false);
+              setIsPunchInLoading(false); // FIX
+              setActionLoading(false);
+              swipeRef.current?.reset();
             }
           },
         },
@@ -244,7 +239,7 @@ function Dashboard() {
   }, [isPunchInLoading, swipeRef, checkPunchStatus, checkRestrictions]);
 
   const handleOutpunch = useCallback(async () => {
-    if (isPunchOutLoading) return; // Prevent double-clicks
+
 
     const restrictionActive = await checkRestrictions();
     if (restrictionActive) {
@@ -283,7 +278,7 @@ function Dashboard() {
               );
 
               // Refresh status from server to ensure consistency
-              await checkPunchStatus();
+              await checkPunchStatus(false, true);
 
               // ✅ Success Toast instead of Alert
               showToast.success(
@@ -304,7 +299,9 @@ function Dashboard() {
               } else {
               }
             } finally {
-              setIsPunchOutLoading(false);
+              setIsPunchOutLoading(false); // FIX
+              setActionLoading(false);
+              swipeRef.current?.reset();
             }
           },
         },
@@ -325,309 +322,274 @@ function Dashboard() {
   ]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {loading && (
-        <View style={styles.loaderOverlay}>
-          <ActivityIndicator size="large" color={DESIGN.colors.primary} />
-        </View>
-      )}
-      <Pressable
-        style={{ flex: 1 }}
+    <View style={styles.container}>
 
-      >
-        {/* Custom Header */}
-        <View style={styles.header}>
-          {/* Gradient Overlay Effect */}
-          <View style={[styles.headerGradientOverlay, { backgroundColor: '#000' }]} />
+      {/* Custom Header */}
+      <View style={styles.header}>
 
-          <View style={styles.headerContent}>
-            {/* Top Row */}
-            <View style={styles.headerTopRow}>
-              <View style={styles.headerBrandSection}>
-                <View>
-                  <Text style={styles.headerTitle}>Aubizo</Text>
-                </View>
+        <View style={styles.headerContent}>
+          {/* Top Row */}
+          <View style={styles.headerTopRow}>
+            <View style={styles.headerBrandSection}>
+              <View>
+                <Text style={styles.headerTitle}>{brandName}</Text>
               </View>
-              <HamburgerButton
-                onPress={() => setDrawerVisible(true)}
-                isActive={drawerVisible}
-              />
             </View>
+            <TouchableOpacity
+              onPress={() => drawerNavigation.openDrawer()}
+              style={{ padding: 8, backgroundColor: 'rgba(38, 84, 55, 0.2)', borderRadius: 5 }}
+            >
+              <Ionicons name="menu" size={28} color={DESIGN.colors.surface} />
+            </TouchableOpacity>
           </View>
         </View>
+      </View>
+      {initialLoading ? (
+        <DashboardSkeleton />
+      ) : (
+        <>
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollViewContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[DESIGN.colors.primary]}
+                tintColor={DESIGN.colors.primary}
+              />
+            }
+          >
+            <View style={styles.mainContent}>
 
-        {/* Scrollable Content */}
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollViewContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[DESIGN.colors.primary]}
-              tintColor={DESIGN.colors.primary}
-            />
-          }
-        >
-
-          <View style={styles.enhancedGreetingCard}>
-            {/* Gradient Background */}
-            <View style={styles.greetingGradientOverlay} />
-
-            {/* Decorative Elements */}
-            <View style={styles.greetingDecorations}>
-              <View style={styles.decorativeCircle1} />
-              <View style={styles.decorativeCircle2} />
-            </View>
-
-            <View style={styles.greetingContent}>
-
-              {/* Welcome Text Section */}
-              <View style={styles.enhancedWelcomeContainer}>
-                <Text style={styles.enhancedWelcomeText}>
-                  {getTimeBasedGreeting()}!
-                </Text>
-                <Text
-                  style={[styles.enhancedUserNameText, { paddingLeft: 8 }]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
+              <View style={styles.welcomeContainer}>
+                <Text style={{
+                  fontSize: 18,
+                  fontWeight: '500',
+                  color: DESIGN.colors.textSecondary,
+                }}>{getTimeBasedGreeting()}!</Text>
+                <Text style={{
+                  fontSize: 22,
+                  fontStyle: "normal",
+                  fontWeight: '500',
+                  color: DESIGN.colors.textPrimary,
+                  paddingLeft: 20,
+                }} numberOfLines={1}>
                   {dashboardData?.user_name || username}
                 </Text>
-
               </View>
 
-            </View>
-
-            {/* Animated Pulse Effect */}
-            <View style={styles.pulseEffect} />
-          </View>
-          {/* Main Content */}
-          <View style={styles.mainContent}>
-
-            {/* Enhanced Greeting Section */}
-
-
-            {/* Visit Overview */}
-            <TouchableHighlight
-              underlayColor="transparent"
-              onPress={() => {
-                if (!dashboardData?.recent_visits?.length) return;
-                navigation.navigate("VisitHistory", {
-                  visits: dashboardData.recent_visits,
-                });
-              }
-              }
-            >
-              <View style={styles.section}>
-                <View style={styles.visitTitleRow}>
-                  <Text style={styles.visitTitleText}>
-                    Visit Overview
-                  </Text>
-                  <View style={styles.sectionBadge}>
-                    <Text style={styles.sectionBadgeText}>
-                      Today
+              {/* Visit Overview */}
+              <TouchableHighlight
+                underlayColor="transparent"
+                onPress={() => {
+                  if (!dashboardData?.recent_visits?.length) return;
+                  navigation.navigate("VisitHistory", {
+                    visits: dashboardData.recent_visits,
+                  });
+                }
+                }
+              >
+                <View style={styles.section}>
+                  <View style={styles.visitTitleRow}>
+                    <Text style={styles.visitTitleText}>
+                      Visit Overview
                     </Text>
-                  </View>
-                </View>
-
-                {/* Chevron in the middle of the card */}
-                {(dashboardData?.visit_summary?.total_visits || 0) > 0 && (
-                  <View style={styles.visitChevronContainer}>
-                    <View style={styles.visitChevron}>
-                      <FontAwesome
-                        name="angle-right"
-                        size={20}
-                        color={DESIGN.colors.textSecondary}
-                      />
+                    <View style={styles.sectionBadge}>
+                      <Text style={styles.sectionBadgeText}>
+                        Today
+                      </Text>
                     </View>
                   </View>
-                )}
 
-                <View style={styles.visitRow}>
-                  <View style={styles.visitItemContainer}>
-                    <Text style={styles.visitCount}>
-                      {dashboardData?.visit_summary?.total_visits || 0}
-                    </Text>
-                    <Text style={styles.visitLabel}>Total Visits</Text>
+                  {/* Chevron in the middle of the card */}
+                  {(dashboardData?.visit_summary?.total_visits || 0) > 0 && (
+                    <View style={styles.visitChevronContainer}>
+                      <View style={styles.visitChevron}>
+                        <FontAwesome
+                          name="angle-right"
+                          size={20}
+                          color={DESIGN.colors.textSecondary}
+                        />
+                      </View>
+                    </View>
+                  )}
+
+                  <View style={styles.visitRow}>
+                    <View style={styles.visitItemContainer}>
+                      <Text style={styles.visitCount}>
+                        {dashboardData?.visit_summary?.total_visits || 0}
+                      </Text>
+                      <Text style={styles.visitLabel}>Total Visits</Text>
+                    </View>
+
+                    <View style={styles.visitDivider} />
+
+                    <View style={styles.visitItemContainer}>
+                      <Text style={styles.visitCount}>
+                        {dashboardData?.visit_summary?.farmer_visits || 0}
+                      </Text>
+                      <Text style={styles.visitLabel}>Farmers</Text>
+                    </View>
+
+                    <View style={styles.visitDivider} />
+
+                    <View style={styles.visitItemContainer}>
+                      <Text style={styles.visitCount}>
+                        {dashboardData?.visit_summary?.dealer_visits || 0}
+                      </Text>
+                      <Text style={styles.visitLabel}>Dealers</Text>
+                    </View>
                   </View>
 
-                  <View style={styles.visitDivider} />
-
-                  <View style={styles.visitItemContainer}>
-                    <Text style={styles.visitCount}>
-                      {dashboardData?.visit_summary?.farmer_visits || 0}
-                    </Text>
-                    <Text style={styles.visitLabel}>Farmers</Text>
-                  </View>
-
-                  <View style={styles.visitDivider} />
-
-                  <View style={styles.visitItemContainer}>
-                    <Text style={styles.visitCount}>
-                      {dashboardData?.visit_summary?.dealer_visits || 0}
-                    </Text>
-                    <Text style={styles.visitLabel}>Dealers</Text>
-                  </View>
-                </View>
-
-              </View>
-            </TouchableHighlight>
-
-            {/* Action Cards */}
-            <View style={styles.actionsGrid}>
-              <TouchableHighlight
-                style={[styles.actionCard, !hasInpunch && styles.actionCardDisabled]}
-                onPress={() => {
-                  if (!hasInpunch) {
-                    Alert.alert("Access Restricted", `You must be punched in to access Farmer Enquiry.`);
-                    return;
-                  }
-                  navigation.navigate("Farmer", { inpunch_id: inpunchId });
-                }}
-                underlayColor={DESIGN.colors.surfaceElevated}
-                activeOpacity={hasInpunch ? 0.7 : 1}
-              >
-                <View style={{ alignItems: "center" }}>
-                  <FontAwesome
-                    name="leaf"
-                    size={DESIGN.iconSize.lg}
-                    color={hasInpunch ? DESIGN.colors.primary : DESIGN.colors.textSecondary}
-                    style={styles.actionIcon}
-                  />
-                  <Text
-                    style={[
-                      styles.actionTitle,
-                      !hasInpunch && styles.actionTitleDisabled,
-                    ]}
-                  >
-                    Farmer Enquiry
-                  </Text>
                 </View>
               </TouchableHighlight>
 
-              <TouchableHighlight
-                style={[styles.actionCard, !hasInpunch && styles.actionCardDisabled]}
-                onPress={() => {
-                  if (!hasInpunch) {
-                    Alert.alert("Access Restricted", `You must be punched in to access Dealer Enquiry.`);
-                    return;
-                  }
-                  navigation.navigate("Dealer");
-                }}
-                underlayColor={DESIGN.colors.surfaceElevated}
-                activeOpacity={hasInpunch ? 0.7 : 1}
-              >
-                <View style={{ alignItems: "center" }}>
-                  <Ionicons
-                    name="storefront-outline"
-                    size={DESIGN.iconSize.lg}
-                    color={hasInpunch ? DESIGN.colors.secondary : DESIGN.colors.textSecondary}
-                    style={styles.actionIcon}
-                  />
-                  <Text
-                    style={[
-                      styles.actionTitle,
-                      !hasInpunch && styles.actionTitleDisabled,
-                    ]}
-                  >
-                    Dealer Enquiry
-                  </Text>
-                </View>
-              </TouchableHighlight>
-            </View>
-
-
-            {/* Activity Section */}
-            <View style={{ marginHorizontal: DESIGN.spacing.sm }}>
-              <View style={styles.activityHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: DESIGN.spacing.sm }}>
-                  <Text style={styles.activityTitle}>Punch Activity</Text>
-                </View>
-                {dashboardData?.punch_status?.punched_out && (
-                  <Text style={styles.activitySubtitle}>
-                    {
-                      (() => {
-                        const totalHours = dashboardData.working_hours;
-                        const hrs = Math.floor(totalHours);
-                        const mins = Math.round((totalHours - hrs) * 60);
-
-                        if (hrs === 0) return `${mins} min`;
-                        return `${hrs}h ${mins}m`;
-                      })()
+              {/* Action Cards */}
+              <View style={styles.actionsGrid}>
+                <TouchableHighlight
+                  style={[styles.actionCard, !hasInpunch && styles.actionCardDisabled]}
+                  onPress={() => {
+                    if (!hasInpunch) {
+                      Alert.alert("Access Restricted", `You must be punched in to access Farmer Enquiry.`);
+                      return;
                     }
-                  </Text>
-                )}
+                    navigation.navigate("Farmer", { inpunch_id: inpunchId });
+                  }}
+                  underlayColor={DESIGN.colors.surfaceElevated}
+                  activeOpacity={hasInpunch ? 0.7 : 1}
+                >
+                  <View style={{ alignItems: "center" }}>
+                    <FontAwesome
+                      name="leaf"
+                      size={DESIGN.iconSize.lg}
+                      color={hasInpunch ? DESIGN.colors.primary : DESIGN.colors.textSecondary}
+                      style={styles.actionIcon}
+                    />
+                    <Text
+                      style={[
+                        styles.actionTitle,
+                        !hasInpunch && styles.actionTitleDisabled,
+                      ]}
+                    >
+                      Farmer Enquiry
+                    </Text>
+                  </View>
+                </TouchableHighlight>
+
+                <TouchableHighlight
+                  style={[styles.actionCard, !hasInpunch && styles.actionCardDisabled]}
+                  onPress={() => {
+                    if (!hasInpunch) {
+                      Alert.alert("Access Restricted", `You must be punched in to access Dealer Enquiry.`);
+                      return;
+                    }
+                    navigation.navigate("Dealer");
+                  }}
+                  underlayColor={DESIGN.colors.surfaceElevated}
+                  activeOpacity={hasInpunch ? 0.7 : 1}
+                >
+                  <View style={{ alignItems: "center" }}>
+                    <Ionicons
+                      name="storefront-outline"
+                      size={DESIGN.iconSize.lg}
+                      color={hasInpunch ? DESIGN.colors.secondary : DESIGN.colors.textSecondary}
+                      style={styles.actionIcon}
+                    />
+                    <Text
+                      style={[
+                        styles.actionTitle,
+                        !hasInpunch && styles.actionTitleDisabled,
+                      ]}
+                    >
+                      Dealer Enquiry
+                    </Text>
+                  </View>
+                </TouchableHighlight>
               </View>
 
 
-              {/* Punch In */}
-              {dashboardData?.punch_status?.punched_in && (
-                <View style={styles.punchSection}>
-                  <View style={styles.punchSectionRow}>
-                    <View style={styles.punchIconWrapper(DESIGN.colors.success)}>
-                      <Ionicons name="arrow-up" size={DESIGN.iconSize.md} color={DESIGN.colors.success} />
-                    </View>
-                    <Text style={styles.punchLabel}> Punch In </Text>
+              {/* Activity Section */}
+              <View style={{ marginHorizontal: DESIGN.spacing.sm }}>
+                <View style={styles.activityHeader}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: DESIGN.spacing.sm }}>
+                    <Text style={styles.activityTitle}>Punch Activity</Text>
                   </View>
-                  <Text style={styles.punchTime}>{dashboardData?.punch_status?.punch_in_time || "--:--"}</Text>
-                </View>
-              )}
+                  {dashboardData?.punch_status?.punched_out && (
+                    <Text style={styles.activitySubtitle}>
+                      {
+                        (() => {
+                          const totalHours = dashboardData.working_hours;
+                          const hrs = Math.floor(totalHours);
+                          const mins = Math.round((totalHours - hrs) * 60);
 
-              {/* Punch Out */}
-              {dashboardData?.punch_status?.punched_out && (
-                <View style={styles.punchSection}>
-                  <View style={styles.punchSectionRow}>
-                    <View style={styles.punchIconWrapper(DESIGN.colors.error)}>
-                      <Ionicons name="arrow-down" size={DESIGN.iconSize.md} color={DESIGN.colors.error} />
-                    </View>
-                    <Text style={styles.punchLabel}> Punch Out </Text>
-                  </View>
-                  <Text style={styles.punchTime}>{dashboardData?.punch_status?.punch_out_time || "--:--"}</Text>
+                          if (hrs === 0) return `${mins} min`;
+                          return `${hrs}h ${mins}m`;
+                        })()
+                      }
+                    </Text>
+                  )}
                 </View>
-              )}
+
+
+                {/* Punch In */}
+                {dashboardData?.punch_status?.punched_in && (
+                  <View style={styles.punchSection}>
+                    <View style={styles.punchSectionRow}>
+                      <View style={styles.punchIconWrapper(DESIGN.colors.success)}>
+                        <Ionicons name="arrow-up" size={DESIGN.iconSize.md} color={DESIGN.colors.success} />
+                      </View>
+                      <Text style={styles.punchLabel}> Punch In </Text>
+                    </View>
+                    <Text style={styles.punchTime}>{dashboardData?.punch_status?.punch_in_time || "--:--"}</Text>
+                  </View>
+                )}
+
+                {/* Punch Out */}
+                {dashboardData?.punch_status?.punched_out && (
+                  <View style={styles.punchSection}>
+                    <View style={styles.punchSectionRow}>
+                      <View style={styles.punchIconWrapper(DESIGN.colors.error)}>
+                        <Ionicons name="arrow-down" size={DESIGN.iconSize.md} color={DESIGN.colors.error} />
+                      </View>
+                      <Text style={styles.punchLabel}> Punch Out </Text>
+                    </View>
+                    <Text style={styles.punchTime}>{dashboardData?.punch_status?.punch_out_time || "--:--"}</Text>
+                  </View>
+                )}
+              </View>
             </View>
+          </ScrollView>
+
+          <View style={{ marginHorizontal: DESIGN.spacing.md, marginBottom: DESIGN.spacing.md, alignItems: 'center', justifyContent: 'center' }}>
+            <SwipePunchButton
+              ref={swipeRef}
+              hasInpunch={hasInpunch}
+              loading={isPunchInLoading || isPunchOutLoading || actionLoading}
+              onSwipe={onSwipeHandler}
+            />
           </View>
-        </ScrollView>
+        </>
+      )}
 
-        {/* Punch Button */}
-        <SwipePunchButton
-          ref={swipeRef}
-          hasInpunch={hasInpunch}
-          loading={isPunchInLoading || isPunchOutLoading}
-          onSwipe={onSwipeHandler}
+      {/* Modal */}
+      {modalVisible && (
+        <GenericSettingsModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          title={modalType === "developer" ? "Developer Mode Detected" : "Location Disabled"}
+          message={
+            modalType === "developer"
+              ? "Your device is in Developer Mode. Disable it to continue."
+              : "Location is turned off. Enable location services to continue."
+          }
+          primaryText="Open Settings"
+          onPrimaryPress={openSettings}
+          secondaryText="Will do it later"
         />
+      )}
 
-        {/* Modal */}
-        {modalVisible && (
-          <GenericSettingsModal
-            visible={modalVisible}
-            onClose={() => setModalVisible(false)}
-            title={modalType === "developer" ? "Developer Mode Detected" : "Location Disabled"}
-            message={
-              modalType === "developer"
-                ? "Your device is in Developer Mode. Disable it to continue."
-                : "Location is turned off. Enable location services to continue."
-            }
-            primaryText="Open Settings"
-            onPrimaryPress={openSettings}
-            secondaryText="Will do it later"
-          />
-        )}
-
-        {/* Drawer Overlay */}
-        <DrawerOverlay
-          visible={drawerVisible}
-          onClose={() => setDrawerVisible(false)}
-        >
-          <DrawerMenu
-            navigation={navigation}
-            onClose={() => setDrawerVisible(false)}
-            username={dashboardData?.user_name || username}
-          />
-        </DrawerOverlay>
-      </Pressable>
     </View>
   );
 

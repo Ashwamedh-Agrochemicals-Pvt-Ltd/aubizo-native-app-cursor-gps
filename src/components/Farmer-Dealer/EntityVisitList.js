@@ -50,7 +50,7 @@ function EntityVisitList({
       }
 
       const visitKeys = ["VISIT_ID_Farmer", "VISIT_ID_Dealer"];
-      const payload = { remark: "-" };
+      const payload = { remark: "-", visit_purpose: "-", };
 
       for (const key of visitKeys) {
         const visitId = await storage.get(key);
@@ -189,13 +189,6 @@ function EntityVisitList({
             </View>
           </View>
         </View>
-
-        {isActive && (
-          <View style={modernStyles.activeIndicator}>
-            <View style={modernStyles.activeDot} />
-            <Text style={modernStyles.activeText}>Active Visit</Text>
-          </View>
-        )}
       </View>
     );
   };
@@ -352,7 +345,7 @@ const modernStyles = StyleSheet.create({
   },
 
   listItem: {
-    paddingHorizontal: DESIGN.spacing.md,
+    paddingHorizontal: DESIGN.spacing.sm,
     paddingVertical: DESIGN.spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: DESIGN.colors.border,
@@ -368,9 +361,9 @@ const modernStyles = StyleSheet.create({
   },
 
   indexBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
     marginRight: DESIGN.spacing.md,

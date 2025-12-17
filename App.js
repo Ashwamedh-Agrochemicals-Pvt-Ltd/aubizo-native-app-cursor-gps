@@ -27,23 +27,29 @@ import authStorage from "./src/auth/storage";
 import useDeviceRestrictions from "./src/hooks/useDeviceRestrictions";
 import showToast from "./src/utility/showToast";
 import { setGlobalUserSetter } from "./src/auth/useAuth";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from "react-native-keyboard-controller";
+import { StatusBar } from "react-native";
+
 
 // ================================================================
 // APP CONFIGURATION
 // ================================================================
 
 // Initialize Sentry for error tracking
-Sentry.init({
-  dsn: 'https://bba03d2bf58eed642001145c9997d48a@o4509722116882432.ingest.de.sentry.io/4510101474181200',
-  sendDefaultPii: true,
-  enableLogs: true,
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1,
-  integrations: [
-    Sentry.mobileReplayIntegration(),
-    Sentry.feedbackIntegration()
-  ],
-});
+if (!__DEV__) {
+  Sentry.init({
+    dsn: 'https://bba03d2bf58eed642001145c9997d48a@o4509722116882432.ingest.de.sentry.io/4510101474181200',
+    sendDefaultPii: true,
+    enableLogs: false,
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1,
+    integrations: [
+      Sentry.mobileReplayIntegration(),
+      Sentry.feedbackIntegration()
+    ],
+  });
+}
 
 // Enable react-native-screens for better performance
 enableScreens();
@@ -131,6 +137,7 @@ const errorStyles = {
 function AppContent() {
   // App state
   const [user, setUser] = useState(null);
+  const [username, setUsername] = useState(null);
   const [isReady, setIsReady] = useState(false);
   const [isHydrating, setIsHydrating] = useState(true);
 
@@ -148,7 +155,7 @@ function AppContent() {
 
   // Back press handling
   const backPressCount = useRef(0);
-  
+
   // AppState for background/foreground detection
   const appState = useRef(AppState.currentState);
 
@@ -187,13 +194,13 @@ function AppContent() {
       // App is coming to foreground from background
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         if (__DEV__) console.log('🔄 App came to foreground, validating tokens...');
-        
+
         if (user) {
           try {
             // Check if tokens are still valid
             const accessToken = await authStorage.getToken();
             const refreshToken = await authStorage.getRefreshToken();
-            
+
             if (!accessToken || !refreshToken) {
               if (__DEV__) console.warn('⚠️ Missing tokens, logging out...');
               showToast.error('Session expired', 'Please login again');
@@ -202,7 +209,7 @@ function AppContent() {
               clearPermissions();
               return;
             }
-            
+
             // Check if refresh token is ACTUALLY expired (no buffer)
             const isRefreshExpired = authStorage.isRefreshTokenExpired(refreshToken);
             if (isRefreshExpired) {
@@ -213,7 +220,7 @@ function AppContent() {
               clearPermissions();
               return;
             }
-            
+
             if (__DEV__) console.log('✅ Tokens validated successfully');
           } catch (error) {
             if (__DEV__) console.error('❌ Token validation failed:', error);
@@ -221,7 +228,7 @@ function AppContent() {
           }
         }
       }
-      
+
       appState.current = nextAppState;
     };
 
@@ -300,31 +307,38 @@ function AppContent() {
     try {
       const accessToken = await authStorage.getToken();
       const refreshToken = await authStorage.getRefreshToken();
-      
+
       // If no tokens exist, user needs to login
       if (!accessToken || !refreshToken) {
         if (__DEV__) console.log('ℹ️ No stored tokens found');
         return;
       }
-      
+
       // Check if refresh token is ACTUALLY expired (no buffer)
       const isRefreshExpired = authStorage.isRefreshTokenExpired(refreshToken);
-      
+
       if (isRefreshExpired) {
         if (__DEV__) console.warn('⚠️ Stored refresh token is expired, clearing...');
         await authStorage.clearAll();
         return;
       }
-      
+
       // Tokens are valid, set user
       if (__DEV__) console.log('✅ Valid tokens found, user authenticated');
       setUser(accessToken);
-      
+
+      // ✅ Load username separately
+      const storedUsername = await authStorage.getUsername();
+      if (storedUsername) {
+        setUsername(storedUsername);
+        if (__DEV__) console.log("Username loaded:", storedUsername);
+      }
+
     } catch (error) {
       if (__DEV__) console.error("Failed to load/validate tokens:", error);
       Sentry.captureException(error);
       // Clear potentially corrupted tokens
-      await authStorage.clearAll().catch(() => {});
+      await authStorage.clearAll().catch(() => { });
     }
   };
 
@@ -339,36 +353,41 @@ function AppContent() {
   }
 
   return (
-    <SafeAreaProvider>
-      <ErrorBoundary>
-        <OfflineNotice />
-        <AuthContext.Provider value={{ user, setUser, isHydrating }}>
-          <NavigationContainer ref={navigation}>
-            {user ? <AppNavigation /> : <AuthNavigator />}
-          </NavigationContainer>
-        </AuthContext.Provider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar backgroundColor="transparent" translucent barStyle="light-content" />
+      <SafeAreaProvider>
+        <ErrorBoundary>
+          <OfflineNotice />
+          <AuthContext.Provider value={{ user, setUser, username, setUsername, isHydrating }}>
+            <NavigationContainer ref={navigation}>
+              {/* <KeyboardProvider statusBarTranslucent={false}> */}
+              {user ? <AppNavigation /> : <AuthNavigator />}
+              {/* </KeyboardProvider> */}
+            </NavigationContainer>
+          </AuthContext.Provider>
+          {/* Device Restrictions Modal */}
+          {modalVisible && (
+            <GenericSettingsModal
+              visible={modalVisible}
+              onClose={() => setModalVisible(false)}
+              title={modalType === "developer" ? "Developer Mode Detected" : "Location Disabled"}
+              message={
+                modalType === "developer"
+                  ? "Your device is in Developer Mode. Disable it to continue."
+                  : "Location is turned off. Enable location services to continue."
+              }
+              primaryText="Open Settings"
+              onPrimaryPress={openSettings}
+              secondaryText="Will do it later"
+            />
+          )}
 
-        {/* Device Restrictions Modal */}
-        {modalVisible && (
-          <GenericSettingsModal
-            visible={modalVisible}
-            onClose={() => setModalVisible(false)}
-            title={modalType === "developer" ? "Developer Mode Detected" : "Location Disabled"}
-            message={
-              modalType === "developer"
-                ? "Your device is in Developer Mode. Disable it to continue."
-                : "Location is turned off. Enable location services to continue."
-            }
-            primaryText="Open Settings"
-            onPrimaryPress={openSettings}
-            secondaryText="Will do it later"
-          />
-        )}
+          {/* Global Toast Notifications */}
+          <Toast />
+        </ErrorBoundary>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
 
-        {/* Global Toast Notifications */}
-        <Toast />
-      </ErrorBoundary>
-    </SafeAreaProvider>
   );
 }
 

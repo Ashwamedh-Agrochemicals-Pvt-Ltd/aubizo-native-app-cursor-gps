@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,8 @@ import {
   StatusBar,
   Dimensions,
   Alert,
-  ActivityIndicator,
   BackHandler,
   RefreshControl,
-  TextInput,
   Animated,
   Platform,
 } from "react-native";
@@ -23,102 +21,13 @@ import apiClient from "../src/api/client";
 import TransactionDetails from "../src/components/collections/TransactionDetails";
 import { useModulePermission } from "../src/hooks/usePermissions";
 import { MODULES } from "../src/auth/permissions";
+import OrderSkeleton from "../src/components/appSkeleton/OrderSkeleton";
+import SearchBar from "../src/components/SearchBar";
 
+const TABS = ["All", "Completed", "Pending"];
 const { width } = Dimensions.get("window");
-const TAB_WIDTH = width / 3;
-const DROPDOWN_ROW_HEIGHT = 56;
-const MAX_DROPDOWN_HEIGHT = Math.round(Dimensions.get("window").height * 0.4);
-
-// Enhanced Search Bar Component with Dealer Dropdown
-const SearchBarWithDropdown = ({
-  searchQuery,
-  setSearchQuery,
-  onClose,
-  dealers,
-  loadingDealer,
-  showDealerList,
-  onSelectDealer,
-}) => (
-  <View style={styles.searchDropdownContainer}>
-    <View style={styles.searchContainer}>
-      <MaterialCommunityIcons
-        name="magnify"
-        size={20}
-        color={DESIGN.colors.textSecondary}
-        style={{ marginRight: DESIGN.spacing.xs }}
-      />
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search dealers by name or shop..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        autoFocus={true}
-        placeholderTextColor={DESIGN.colors.textSecondary}
-      />
-      <TouchableOpacity onPress={onClose}>
-        <MaterialCommunityIcons
-          name="close-circle"
-          size={28}
-          color={DESIGN.colors.textPrimary}
-        />
-      </TouchableOpacity>
-    </View>
-
-    {/* Dealer Dropdown */}
-    {loadingDealer && (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="small" color={DESIGN.colors.primary} />
-        <Text style={styles.loadingText}>Searching dealers...</Text>
-      </View>
-    )}
-
-    {showDealerList && dealers.length > 0 && (
-      <View
-        style={[
-          styles.dealerDropdownList,
-          dealers.length > 3
-            ? styles.scrollableDealerList
-            : styles.listNonScrollable,
-        ]}
-      >
-        {dealers.length > 3 && (
-          <View style={styles.scrollIndicator}>
-            <Text style={styles.scrollIndicatorText}>
-              {dealers.length} dealers found - scroll to see more
-            </Text>
-          </View>
-        )}
-        <FlatList
-          data={dealers}
-          keyExtractor={(item) => (item.id || Math.random()).toString()}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.dealerItem}
-              onPress={() => onSelectDealer(item)}
-            >
-              <Text style={styles.dealerItemText}>
-                {item.shop_name || "Unknown Shop"}
-              </Text>
-              <Text style={styles.dealerItemSubtext}>
-                {`${item.owner_name || "Unknown Owner"} • ${item.phone || "No Phone"
-                  }`}
-              </Text>
-            </TouchableOpacity>
-          )}
-          scrollEnabled={dealers.length > 3}
-          showsVerticalScrollIndicator={dealers.length > 3}
-          nestedScrollEnabled={true}
-          maxToRenderPerBatch={10}
-          windowSize={5}
-          initialNumToRender={4}
-          removeClippedSubviews={false}
-          keyboardShouldPersistTaps="handled"
-        />
-      </View>
-    )}
-
-  </View>
-);
+const TAB_COUNT = TABS.length;
+const TAB_WIDTH = width / TAB_COUNT;
 
 function CollectionScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -130,47 +39,26 @@ function CollectionScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTransactionId, setSelectedTransactionId] = useState(null);
-
-  // Dealer dropdown states
-  const [dealers, setDealers] = useState([]);
-  const [loadingDealer, setLoadingDealer] = useState(false);
-  const [showDealerList, setShowDealerList] = useState(false);
-  const [selectedDealer, setSelectedDealer] = useState(null);
-  const suppressDealerFetchRef = useRef(false);
-  const { canCreate, loading: permissionsLoading } = useModulePermission(MODULES.PAYMENT);
-
-
-
-
-  
+  const { canCreate } = useModulePermission(MODULES.PAYMENT);
   const translateX = useRef(new Animated.Value(0)).current;
+  const [initialLoad, setInitialLoad] = useState(true);
 
-  const TABS = ["All", "Completed", "Pending"];
   const statusMap = {
-    0: "", // All transactions
+    0: "",
     1: "completed",
     2: "pending",
   };
 
-  // Handle hardware back button
+  // 🔙 Handle Back Button
   useFocusEffect(
-    useCallback(() => {
-
+    React.useCallback(() => {
       const onBackPress = () => {
-        if (modalVisible) {
-          setModalVisible(false);
-          return true;
-        }
         if (showSearch) {
           setShowSearch(false);
           setSearchQuery("");
-          setDealers([]);
-          setShowDealerList(false);
-          setSelectedDealer(null);
-          return true;
+          return true; // stop default back
         }
-        navigation.goBack();
-        return true;
+        return false; // allow default back
       };
 
       const subscription = BackHandler.addEventListener(
@@ -178,10 +66,9 @@ function CollectionScreen({ navigation }) {
         onBackPress
       );
 
-      return () => subscription?.remove();
-    }, [navigation, modalVisible, showSearch])
+      return () => subscription.remove();
+    }, [showSearch])
   );
-
 
   useFocusEffect(
     React.useCallback(() => {
@@ -192,77 +79,17 @@ function CollectionScreen({ navigation }) {
     }, [])
   );
 
-  // Fetch dealers based on search query
-  const fetchDealers = async (search) => {
-    if (!search || search.trim().length < 2) {
-      setDealers([]);
-      setShowDealerList(false);
-      return;
-    }
+  // Fetch all transactions (we'll filter client-side for better UX)
+  const fetchTransactions = async (status = "") => {
     try {
-      setLoadingDealer(true);
-      const response = await apiClient.get("/order/api/dealers/search/", {
-        params: { q: search },
-        timeout: 10000, // 10 second timeout
+      if (initialLoad) setLoading(true);
+      // Always fetch all transactions for better filtering experience
+      const response = await apiClient.get("payment/transactions/individual/", {
+        params: { status },
       });
 
-      console.log("Dealer search response:", response.data);
-      if (response.data && response.data.success && response.data.data) {
-        // Handle different possible response structures
-        const dealersData = response.data.data.dealers || response.data.data;
-        const dealersArray = Array.isArray(dealersData) ? dealersData : [];
-        console.log("Found dealers:", dealersArray.length);
-        setDealers(dealersArray);
-        setShowDealerList(true); // Always show the list to display results or "no results"
-      } else {
-        console.log("Dealer search failed:", response.data);
-        setDealers([]);
-        setShowDealerList(true); // Show list to display "no results" message
-      }
-    } catch (error) {
-      console.log("Error fetching dealers", error);
-      setDealers([]);
-      setShowDealerList(false);
-    } finally {
-      setLoadingDealer(false);
-    }
-  };
-
-  // Effect to handle debounced dealer search
-  useEffect(() => {
-    if (suppressDealerFetchRef.current || !showSearch) {
-      return;
-    }
-    const delayDebounce = setTimeout(() => {
-      fetchDealers(searchQuery);
-    }, 400);
-    return () => clearTimeout(delayDebounce);
-  }, [searchQuery, showSearch]);
-
-  // Handle dealer selection from dropdown
-  const handleSelectDealer = (dealer) => {
-    setSelectedDealer(dealer);
-    setSearchQuery(dealer.shop_name || dealer.owner_name || "");
-    setShowDealerList(false);
-    setDealers([]);
-    suppressDealerFetchRef.current = true;
-
-    // Reset suppression after a delay
-    setTimeout(() => {
-      suppressDealerFetchRef.current = false;
-    }, 500);
-  };
-
-  // Fetch all transactions (we'll filter client-side for better UX)
-  const fetchTransactions = async () => {
-    try {
-      setLoading(true);
-      // Always fetch all transactions for better filtering experience
-      const response = await apiClient.get("payment/transactions/individual/");
 
       console.log("API Response:", response.data);
-
-      // Handle the API response structure: { success: true, data: { transactions: [...] } }
       if (
         response.data &&
         response.data.success &&
@@ -300,19 +127,25 @@ function CollectionScreen({ navigation }) {
       Alert.alert("Error", "Failed to load transactions. Please try again.");
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
-  // Load initial data
+
   useEffect(() => {
-    fetchTransactions();
-  }, []);
+    if (showSearch) {
+      fetchTransactions(""); // Always fetch all when searching
+    } else {
+      fetchTransactions(statusMap[activeTab]);
+    }
+  }, [activeTab, showSearch]);
 
   // Handle card press to show details
   const handleCardPress = (transactionId) => {
     setSelectedTransactionId(transactionId);
     setModalVisible(true);
   };
+
 
   // Handle tab press with animation
   const handleTabPress = (index) => {
@@ -326,50 +159,18 @@ function CollectionScreen({ navigation }) {
   // Pull-to-refresh
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchTransactions();
+    await fetchTransactions(statusMap[activeTab]); // fetch current tab data
     setRefreshing(false);
   };
 
-  // Filter data based on status and search/dealer selection
-  const getFilteredTransactions = () => {
-    let filteredData = transactions;
-
-    // Filter by status first
-    const selectedStatus = statusMap[activeTab];
-    if (selectedStatus) {
-      filteredData = filteredData.filter(
-        (transaction) => transaction.status === selectedStatus
-      );
-    }
-
-    // Then filter by search or selected dealer
-    if (showSearch) {
-      if (selectedDealer) {
-        // Filter by selected dealer ID
-        filteredData = filteredData.filter(
-          (transaction) => transaction.dealer_info?.id === selectedDealer.id
-        );
-      } else if (searchQuery.trim()) {
-        // Filter by search query
-        filteredData = filteredData.filter(
-          (transaction) =>
-            transaction.dealer_info?.name
-              ?.toLowerCase()
-              .includes(searchQuery.toLowerCase()) ||
-            transaction.dealer_info?.shop_name
-              ?.toLowerCase()
-              .includes(searchQuery.toLowerCase()) ||
-            transaction.transaction_number
-              ?.toLowerCase()
-              .includes(searchQuery.toLowerCase())
-        );
-      }
-    }
-
-    return filteredData;
-  };
-
-  const dataToRender = getFilteredTransactions();
+  // ✅ Decide which data to render
+  const dataToRender = showSearch
+    ? transactions.filter(
+      (transaction) =>
+        transaction.dealer_info.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        transaction.dealer_info.shop_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    : transactions;
 
   // Render transaction card
   const renderTransactionCard = ({ item }) => (
@@ -429,9 +230,6 @@ function CollectionScreen({ navigation }) {
               if (showSearch) {
                 setShowSearch(false);
                 setSearchQuery("");
-                setDealers([]);
-                setShowDealerList(false);
-                setSelectedDealer(null);
               } else {
                 setShowSearch(true);
               }
@@ -447,21 +245,13 @@ function CollectionScreen({ navigation }) {
         </View>
       </View>
 
-      {/* Show Search OR Tabs */}
       {showSearch ? (
-        <SearchBarWithDropdown
+        <SearchBar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          dealers={dealers}
-          loadingDealer={loadingDealer}
-          showDealerList={showDealerList}
-          onSelectDealer={handleSelectDealer}
           onClose={() => {
             setShowSearch(false);
             setSearchQuery("");
-            setDealers([]);
-            setShowDealerList(false);
-            setSelectedDealer(null);
           }}
         />
       ) : (
@@ -495,12 +285,8 @@ function CollectionScreen({ navigation }) {
       )}
 
       {/* Transaction List */}
-      {loading ? (
-        <ActivityIndicator
-          size="large"
-          color={DESIGN.colors.primary}
-          style={{ marginTop: 20 }}
-        />
+      {initialLoad && loading ? (
+        <OrderSkeleton count={6} />
       ) : (
         <FlatList
           data={dataToRender}
@@ -520,13 +306,11 @@ function CollectionScreen({ navigation }) {
             // Determine empty state based on context
             let iconName, title, subtitle;
 
-            if (showSearch && (searchQuery || selectedDealer)) {
+            if (showSearch && (searchQuery)) {
               // Search mode with query/dealer selected
               iconName = "magnify";
               title = "No collections found";
-              subtitle = selectedDealer
-                ? `No collections for ${selectedDealer.shop_name}`
-                : "Try different search terms";
+              subtitle = "Try different search terms";
             } else if (activeTab === 1) {
               // Completed tab
               iconName = "check-circle-outline";
@@ -679,16 +463,10 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.primary,
     marginVertical: DESIGN.spacing.xs,
     fontWeight: "700",
+    marginTop: DESIGN.spacing.sm,
     fontSize: DESIGN.typography.body.fontSize,
   },
-  shopName: {
-    color: DESIGN.colors.textSecondary,
-    fontSize: DESIGN.typography.caption.fontSize,
-    fontWeight: "500",
-    marginBottom: DESIGN.spacing.xs,
-  },
   ownerName: {
-    marginVertical: DESIGN.spacing.xs,
     fontStyle: "italic",
     fontWeight: "400",
     fontSize: DESIGN.typography.body.fontSize,

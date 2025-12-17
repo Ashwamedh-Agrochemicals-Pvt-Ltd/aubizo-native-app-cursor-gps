@@ -4,58 +4,29 @@ import DESIGN from "../theme";
 export default StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: DESIGN.colors.background,
+    backgroundColor: "#F7F8FA",
+  },
+
+  logo: {
+    width: 320,
+    height: 200,
+    alignSelf: "center",
   },
 
   container: {
     flexGrow: 1,
     justifyContent: "center",
-    paddingHorizontal: DESIGN.spacing.lg,
-    paddingVertical: DESIGN.spacing.lg,
-  },
-
-  keyboardView: {
-    flex: 1,
-  },
-
-  headerContainer: {
-    backgroundColor: DESIGN.colors.primary,
-    paddingBottom: DESIGN.spacing.sm,
-    ...DESIGN.shadows.subtle,
-  },
-
-  headerContent: {
-    height: Platform.OS === 'ios' ? 60 : 70,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: DESIGN.spacing.lg,
-  },
-
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: DESIGN.colors.surface,
-    letterSpacing: 1,
+    paddingHorizontal: DESIGN.spacing.md,
+    paddingVertical: DESIGN.spacing.md,
   },
 
   loginCard: {
-    backgroundColor: DESIGN.colors.surface,
-    borderRadius: DESIGN.borderRadius.xl,
-    paddingHorizontal: DESIGN.spacing.lg,
-    paddingVertical: DESIGN.spacing.lg,
-    width: "100%",
-    ...DESIGN.shadows.medium,
-    borderWidth: 1,
-    borderColor: DESIGN.colors.borderLight,
+    paddingHorizontal: DESIGN.spacing.md,
   },
 
   welcomeSection: {
     alignItems: "center",
     marginBottom: DESIGN.spacing.md,
-    paddingBottom: DESIGN.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: DESIGN.colors.borderLight,
   },
 
   welcomeTitle: {
@@ -64,7 +35,6 @@ export default StyleSheet.create({
     color: DESIGN.colors.textPrimary,
     marginBottom: DESIGN.spacing.xs,
     textAlign: "center",
-    letterSpacing: -0.5,
   },
 
   welcomeSubtitle: {
@@ -73,14 +43,12 @@ export default StyleSheet.create({
     textAlign: "center",
     lineHeight: 24,
     fontWeight: '400',
+    textShadowColor: DESIGN.colors.textSecondary,
+    textShadowRadius: 0.6,
   },
 
   formSection: {
     width: "100%",
-  },
-
-  fieldContainer: {
-    marginBottom: DESIGN.spacing.sm,
   },
 
   fieldLabel: {
@@ -88,40 +56,19 @@ export default StyleSheet.create({
     fontWeight: '600',
     color: DESIGN.colors.textPrimary,
     marginBottom: DESIGN.spacing.sm,
-    letterSpacing: 0.2,
   },
 
-  error: {
-    marginTop: DESIGN.spacing.xs,
-    fontSize: 13,
-    color: '#E53E3E', // Softer red color
-    fontWeight: "500",
-    marginLeft: DESIGN.spacing.sm,
-    opacity: 0.9,
-  },
-
-  // Alternative modern error style
-  errorModern: {
-    marginTop: DESIGN.spacing.xs,
-    fontSize: 13,
-    color: '#DC2626',
-    fontWeight: "500",
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    borderRadius: DESIGN.borderRadius.sm,
-    paddingHorizontal: DESIGN.spacing.sm,
-    paddingVertical: DESIGN.spacing.xs,
-    alignSelf: 'flex-start',
+  inputContainer: {
+    backgroundColor: null,
+    borderRadius: null,
+    borderWidth: null,
+    borderColor: null,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#007955",
   },
 
   eyeIcon: {
     padding: DESIGN.spacing.xs,
-  },
-
-  buttonContainer: {
-    width: "100%",
-    marginTop: DESIGN.spacing.sm,
   },
 
   loadingButton: {
@@ -141,44 +88,52 @@ export default StyleSheet.create({
     marginLeft: DESIGN.spacing.sm,
   },
 
+  buttonContainer: {
+    paddingBottom: DESIGN.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: DESIGN.colors.border,
+  },
+
   submitButton: {
-    backgroundColor: DESIGN.colors.primary,
-    borderRadius: DESIGN.borderRadius.lg,
-    height: 56,
-    justifyContent: "center",
+    backgroundColor: "#007955",
     alignItems: "center",
     ...DESIGN.shadows.medium,
+    ...Platform.select({
+      ios: {
+        shadowColor: DESIGN.colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 10,
+      },
+    }),
   },
 
   submitButtonText: {
     color: DESIGN.colors.surface,
-    fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: 0.5,
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: 1,
   },
 
-  footer: {
+  ssoContainer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     marginTop: DESIGN.spacing.lg,
+    gap: 5,
   },
 
-  footerText: {
+  ssoText: {
     fontSize: 14,
-    color: DESIGN.colors.textSecondary,
-    fontWeight: "400",
+    color: "#007955",
+    fontWeight: "500",
   },
 
-  createAccountText: {
-    fontSize: 14,
-    color: DESIGN.colors.primary,
-    fontWeight: "600",
-  },
   formError: {
-  color: DESIGN.colors.error,
-  fontSize: 14,
-  marginBottom: DESIGN.spacing.md,
-  textAlign: "center",
-},
+    color: DESIGN.colors.error,
+  },
+
 });

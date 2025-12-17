@@ -9,7 +9,7 @@ import apiClient from "../api/client";
 
 let isLoggingOut = false;
 
-export const handleLogout = async (setUser, isSessionExpired = false) => {
+export const handleLogout = async (setUser, setUsername, isSessionExpired = false) => {
     if (isLoggingOut) {
         logger.log("⏸️ Logout already in progress, skipping...");
         return { success: true };
@@ -45,6 +45,8 @@ export const handleLogout = async (setUser, isSessionExpired = false) => {
         // Always clear local storage regardless of API success
         await authStorage.clearAll();
         if (setUser) setUser(null);
+        if (setUsername) setUsername(null);
+
 
         // Show appropriate message
         if (isSessionExpired) {
@@ -60,14 +62,14 @@ export const handleLogout = async (setUser, isSessionExpired = false) => {
     } catch (error) {
         // Even if logout fails, try to clear storage
         logger.error("❌ Logout error:", error);
-        
+
         try {
             await authStorage.clearAll();
             if (setUser) setUser(null);
         } catch (clearError) {
             logger.error("❌ Failed to clear storage during error recovery:", clearError);
         }
-        
+
         showToast.error("Logout completed", "Please login again");
         return { success: false, error };
 

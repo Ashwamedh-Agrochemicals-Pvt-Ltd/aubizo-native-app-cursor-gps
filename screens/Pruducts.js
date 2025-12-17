@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   FlatList,
   Image,
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator,
   RefreshControl,
   Dimensions,
   TextInput,
@@ -16,9 +15,10 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import DESIGN from "../src/theme";
 import { FontAwesome } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ProductSkeleton from "../src/components/appSkeleton/ProductSkeleton";
 
 const PRODUCTELIST_URL = process.env.EXPO_PUBLIC_PRODUCTELIST_URL;
-
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_MARGIN = 16;
 const NUM_COLUMNS = SCREEN_WIDTH > 768 ? 3 : 2;
@@ -81,7 +81,34 @@ export default function ProductScreen() {
     }
   };
 
-  // Back Press Handling
+  const fetchCategories = async () => {
+    try {
+      const res = await apiClient.get("product/categories/");
+      const categoryMap = {};
+      res?.data?.forEach((cat) => {
+        categoryMap[cat.id] = cat.name;
+      });
+      setCategories(categoryMap);
+    } catch (err) { }
+  };
+
+  const loadData = async () => {
+    setLoading(true);
+
+    await Promise.all([fetchProducts(), fetchCategories()]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([fetchProducts(), fetchCategories()]);
+    setRefreshing(false);
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
@@ -97,33 +124,6 @@ export default function ProductScreen() {
       return () => subscription.remove();
     }, [showSearch])
   );
-
-  const fetchCategories = async () => {
-    try {
-      const res = await apiClient.get("product/categories/");
-      const categoryMap = {};
-      res?.data?.forEach((cat) => {
-        categoryMap[cat.id] = cat.name;
-      });
-      setCategories(categoryMap);
-    } catch (err) { }
-  };
-
-  const loadData = async () => {
-    setLoading(true);
-    await Promise.all([fetchProducts(), fetchCategories()]);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await Promise.all([fetchProducts(), fetchCategories()]);
-    setRefreshing(false);
-  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -155,7 +155,7 @@ export default function ProductScreen() {
           }}>
             <View style={{ width: "100%", aspectRatio: 1 }}>
               <Image
-                source={product.image ? { uri: product.image } : require("../assets/images/placeholder.jpg")}
+                source={product.image ? { uri: product.image } : require("../assets/aubizo/images/placeholder.jpg")}
                 style={{ width: "100%", height: "100%", borderRadius: 8 }}
                 resizeMode="cover"
               />
@@ -177,30 +177,6 @@ export default function ProductScreen() {
         ))}
     </View>
   );
-
-  // Show header during initial loading
-  if (loading) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: DESIGN.colors.background }} edges={["top"]}>
-        <View style={{
-          flexDirection: "row",
-          paddingHorizontal: DESIGN.spacing.xl,
-          justifyContent: "space-between",
-          alignItems: "center",
-          paddingVertical: DESIGN.spacing.md,
-          borderBottomWidth: 2,
-          borderBottomColor: DESIGN.colors.border,
-        }}>
-          <Text style={{ fontSize: 20, fontWeight: "bold" }}>Product List</Text>
-          <FontAwesome name="search" size={24} color={DESIGN.colors.textPrimary} />
-        </View>
-
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color={DESIGN.colors.primary} />
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   const flatProducts = groupedProducts.flat();
   const filtered = searchQuery.trim()
@@ -231,25 +207,17 @@ export default function ProductScreen() {
       }}>
         <Text style={{ fontSize: 20, fontWeight: "bold" }}>Product List</Text>
 
-        <TouchableOpacity onPress={() => setShowSearch(!showSearch)}>
-          <FontAwesome name="search" size={24} color="black" />
-        </TouchableOpacity>
+        {!loading && (
+          <TouchableOpacity onPress={() => setShowSearch(!showSearch)}>
+            <FontAwesome name="search" size={24} color="black" />
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Search Bar */}
-      {showSearch && (
-        <SearchBar
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onClose={() => {
-            setShowSearch(false);
-            setSearchQuery("");
-          }}
-        />
-      )}
-
       {/* Content Area */}
-      {error ? (
+      {loading ? (
+        <ProductSkeleton />
+      ) : error ? (
         <View style={{
           flex: 1,
           justifyContent: "center",
@@ -279,72 +247,88 @@ export default function ProductScreen() {
             Pull down to refresh
           </Text>
         </View>
-      ) : filtered.length === 0 ? (
-        <View style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          paddingHorizontal: 32
-        }}>
-          <FontAwesome
-            name="inbox"
-            size={64}
-            color={DESIGN.colors.textSecondary}
-            style={{ marginBottom: 16 }}
-          />
-          <Text style={{
-            fontSize: 18,
-            fontWeight: "600",
-            color: DESIGN.colors.textPrimary,
-            marginBottom: 8,
-            textAlign: "center"
-          }}>
-            {searchQuery.trim() ? "No products found" : "No products available"}
-          </Text>
-          <Text style={{
-            fontSize: 14,
-            color: DESIGN.colors.textSecondary,
-            textAlign: "center"
-          }}>
-            {searchQuery.trim()
-              ? "Try adjusting your search"
-              : "Pull down to refresh"}
-          </Text>
-        </View>
       ) : (
-        <FlatList
-          data={groupedFiltered}
-          renderItem={renderRow}
-          keyExtractor={(_item, index) => `row-${index}`}
-          contentContainerStyle={{ paddingVertical: CARD_MARGIN }}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[DESIGN.colors.primary]}
-              tintColor={DESIGN.colors.primary}
+        <>
+          {/* Search Bar */}
+          {showSearch && (
+            <SearchBar
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onClose={() => {
+                setShowSearch(false);
+                setSearchQuery("");
+              }}
             />
-          }
-        />
-      )}
+          )}
 
-      {/* Pull-to-refresh works in all states when scroll is enabled */}
-      {(error || filtered.length === 0) && (
-        <View style={{ position: "absolute", width: "100%", height: "100%" }}>
-          <FlatList
-            data={[]}
-            renderItem={null}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[DESIGN.colors.primary]}
-                tintColor={DESIGN.colors.primary}
+          {filtered.length === 0 ? (
+            <View style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              paddingHorizontal: 32
+            }}>
+              <FontAwesome
+                name="inbox"
+                size={64}
+                color={DESIGN.colors.textSecondary}
+                style={{ marginBottom: 16 }}
               />
-            }
-          />
-        </View>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: "600",
+                color: DESIGN.colors.textPrimary,
+                marginBottom: 8,
+                textAlign: "center"
+              }}>
+                {searchQuery.trim() ? "No products found" : "No products available"}
+              </Text>
+              <Text style={{
+                fontSize: 14,
+                color: DESIGN.colors.textSecondary,
+                textAlign: "center"
+              }}>
+                {searchQuery.trim()
+                  ? "Try adjusting your search"
+                  : "Pull down to refresh"}
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={groupedFiltered}
+              renderItem={renderRow}
+              keyExtractor={(_item, index) => `row-${index}`}
+              contentContainerStyle={{ paddingVertical: CARD_MARGIN }}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[DESIGN.colors.primary]}
+                  tintColor={DESIGN.colors.primary}
+                />
+              }
+            />
+          )}
+
+          {/* Pull-to-refresh works in all states when scroll is enabled */}
+          {(error || filtered.length === 0) && (
+            <View style={{ position: "absolute", width: "100%", height: "100%" }}>
+              <FlatList
+                data={[]}
+                renderItem={null}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={[DESIGN.colors.primary]}
+                    tintColor={DESIGN.colors.primary}
+                  />
+                }
+              />
+            </View>
+          )}
+        </>
       )}
     </SafeAreaView>
   );

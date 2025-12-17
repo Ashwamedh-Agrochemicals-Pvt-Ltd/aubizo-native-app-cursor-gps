@@ -103,7 +103,7 @@ export default function ProductDetailScreen({ route }) {
             source={
               product.image
                 ? { uri: product.image }
-                : require("../assets/images/placeholder.jpg")
+                : require("../assets/aubizo/images/placeholder.jpg")
             }
             style={styles.image}
             resizeMode="cover"

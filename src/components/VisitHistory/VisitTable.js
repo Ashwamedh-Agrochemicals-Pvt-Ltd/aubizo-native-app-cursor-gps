@@ -69,6 +69,22 @@ const VisitTable = ({ data = [], isLoading = false }) => {
               {item.remark || "N/A"}
             </Text>
           </View>
+          <View style={modernStyles.remarksHeader}>
+            <MaterialCommunityIcons
+              name="note-text"
+              size={16}
+              color={DESIGN.colors.textSecondary}
+            />
+            <Text style={modernStyles.remarksLabel}>Visit Purpose:</Text>
+            <Text
+              style={[
+                modernStyles.remarksText,
+                { fontStyle: isOngoing ? "normal" : "italic" },
+              ]}
+            >
+              {item.visit_purpose_display || "N/A"}
+            </Text>
+          </View>
         </View>
       </View>
     );

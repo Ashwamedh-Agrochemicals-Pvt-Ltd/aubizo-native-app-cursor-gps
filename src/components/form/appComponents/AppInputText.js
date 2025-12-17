@@ -2,21 +2,23 @@ import { StyleSheet, TextInput, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import DESIGN from "../../../theme";
 
-function AppInputText({ icon, placeholder, style, iconStyle, rightIcon, ...otherProps }) {
+function AppInputText({ icon, placeholder, style, iconStyle, rightIcon, ...otherProps }, ref) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       {icon && (
         <MaterialCommunityIcons
           name={icon}
-          size={20}
-          color={DESIGN.colors.textSecondary}
+          size={24}
+          color={"#007955"}
           style={[styles.icon, iconStyle]}
         />
       )}
+
       <TextInput
+        ref={ref}
         placeholder={placeholder}
         placeholderTextColor={DESIGN.colors.textTertiary}
-        style={[styles.input, style]}
+        style={[styles.input]}
         {...otherProps}
       />
       {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
@@ -26,15 +28,14 @@ function AppInputText({ icon, placeholder, style, iconStyle, rightIcon, ...other
 
 const styles = StyleSheet.create({
   container: {
-    height: 56,
-    backgroundColor: DESIGN.colors.surface,
-    borderRadius: DESIGN.borderRadius.lg,
+    height: 50,
+    backgroundColor: DESIGN.colors.background,
+    borderRadius: DESIGN.borderRadius.sm,
     alignItems: "center",
     flexDirection: "row",
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: DESIGN.colors.border,
-    paddingHorizontal: DESIGN.spacing.md,
-    ...DESIGN.shadows.subtle,
+    paddingHorizontal: DESIGN.spacing.sm,
   },
   icon: {
     marginRight: DESIGN.spacing.sm,
@@ -43,8 +44,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: DESIGN.colors.textPrimary,
-    paddingVertical: 0,
-    fontWeight: '400',
   },
   rightIcon: {
     position: "absolute",

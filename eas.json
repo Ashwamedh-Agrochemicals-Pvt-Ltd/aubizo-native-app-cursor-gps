@@ -9,28 +9,49 @@
       "distribution": "internal",
       "channel": "development",
       "env": {
-        "APP_VARIANT": "development"
+        "APP_VARIANT": "development",
+        "APP_BRAND": "aubizo"
       },
       "environment": "development"
-    },
-    "ios-simulator": {
-      "extends": "development",
-      "ios": {
-        "simulator": true
-      }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "APP_VARIANT": "preview"
+        "APP_VARIANT": "preview",
+        "APP_BRAND": "aubizo"
       },
       "environment": "preview"
     },
     "production": {
       "autoIncrement": true,
       "channel": "production",
-      "environment": "production"
+      "environment": "production",
+      "env": {
+        "APP_VARIANT": "production",
+        "APP_BRAND": "aubizo"
+      }
+    },
+    "ashwamedh-development": {
+      "extends": "development",
+      "env": {
+        "APP_VARIANT": "development",
+        "APP_BRAND": "ashwamedh"
+      }
+    },
+    "ashwamedh-preview": {
+      "extends": "preview",
+      "env": {
+        "APP_VARIANT": "preview",
+        "APP_BRAND": "ashwamedh"
+      }
+    },
+    "ashwamedh-production": {
+      "extends": "production",
+      "env": {
+        "APP_VARIANT": "production",
+        "APP_BRAND": "ashwamedh"
+      }
     }
   },
   "submit": {
@@ -39,7 +60,12 @@
         "serviceAccountKeyPath": "./ServiceAccountAubizo.json",
         "track": "production"
       }
+    },
+    "ashwamedh-production": {
+      "android": {
+        "serviceAccountKeyPath": "./ServiceAccountAshwamedh.json",
+        "track": "production"
+      }
     }
-  
   }
 }

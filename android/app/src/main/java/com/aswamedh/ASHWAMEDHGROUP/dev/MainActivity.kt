@@ -1,4 +1,4 @@
-package com.ashwamedhgroup.AUBIZO
+package com.aswamedh.ASHWAMEDHGROUP.dev
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

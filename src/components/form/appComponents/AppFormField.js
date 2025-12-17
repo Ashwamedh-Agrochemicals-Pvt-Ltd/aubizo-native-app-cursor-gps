@@ -4,13 +4,14 @@ import AppErrorMessage from "./AppErrorMeassage";
 import AppInputText from "./AppInputText"
 import DESIGN from "../../../theme";
 
-function AppFormField({ name, ...otherProps }) {
+function AppFormField({ name, innerRef, ...otherProps }) {
   const { handleChange, setFieldTouched, touched, errors } = useFormikContext();
   const [field] = useField(name);
 
   return (
     <View style={styles.container}>
       <AppInputText
+        ref={innerRef}
         onChangeText={handleChange(name)}
         onBlur={() => setFieldTouched(name)}
         value={field.value}

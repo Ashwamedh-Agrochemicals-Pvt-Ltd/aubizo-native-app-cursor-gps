@@ -6,6 +6,7 @@ import { ActivityIndicator, View } from "react-native";
 // React Navigation
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { createDrawerNavigator } from "@react-navigation/drawer";
 import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 
 // Main Screens
@@ -31,6 +32,7 @@ import ProductDetailScreen from "../screens/ProductDetails";
 // Components
 import OrderForm from "../src/components/orders/OrderForm";
 import CollectionForm from "../src/components/collections/CollectionForm";
+import DrawerContent from "../src/components/DrawerMenu"
 
 // Permissions - use context instead of hook for app-level coordination
 import { usePermissionsContext } from "../src/contexts/PermissionsContext";
@@ -38,8 +40,7 @@ import AnalyticsScreen from "../screens/Analytics";
 import DESIGN from "../src/theme";
 import DealerList from "../screens/DealerList";
 import DealerVerification from "../screens/DealerVerification";
-
-import FarmerList from "../screens/FarmerList"
+import FarmerList from "../screens/FarmerList";
 import DealerLedger from "../screens/DealerLedger";
 import HelpSupport from "../screens/Help&Support";
 
@@ -49,11 +50,13 @@ import HelpSupport from "../screens/Help&Support";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const Drawer = createDrawerNavigator();
 
 // Common screen options for all stack navigators
 const COMMON_STACK_OPTIONS = {
   statusBarStyle: "dark",
   statusBarColor: "#FFFFFF",
+
 };
 
 // Tab bar styling constants
@@ -122,7 +125,7 @@ function DashboardStack() {
       <Stack.Screen
         name="Dealer"
         component={DealerScreen}
-        options={{ title: "Dealers" }}
+        options={{ title: "Dealers", }}
       />
       <Stack.Screen
         name="DealerVisit"
@@ -148,7 +151,7 @@ function DashboardStack() {
         component={AnalyticsScreen}
         options={{
           title: "Analytics",
-          headerShown: false // We handle header in the component
+          headerShown: false
         }}
       />
 
@@ -157,7 +160,7 @@ function DashboardStack() {
         component={DealerList}
         options={{
           title: "Dealer List",
-          headerShown: false // We handle header in the component
+          headerShown: false
         }}
       />
 
@@ -166,7 +169,7 @@ function DashboardStack() {
         component={FarmerList}
         options={{
           title: "Farmer List",
-          headerShown: false // We handle header in the component
+          headerShown: false
         }}
       />
 
@@ -175,7 +178,7 @@ function DashboardStack() {
         component={DealerVerification}
         options={{
           title: "Dealer Verification",
-          headerShown: true // We handle header in the component
+          headerShown: true
         }}
       />
 
@@ -184,20 +187,18 @@ function DashboardStack() {
         component={DealerLedger}
         options={{
           title: "Dealer Ledger",
-          headerShown: true // We handle header in the component
+          headerShown: true
         }}
       />
-
 
       <Stack.Screen
         name="Hepl&Support"
         component={HelpSupport}
         options={{
           title: "Help & Support",
-          headerShown: true // We handle header in the component
+          headerShown: true
         }}
       />
-
     </Stack.Navigator>
   );
 }
@@ -219,7 +220,6 @@ function OrdersStack() {
         component={OrderForm}
         options={{
           title: "Create Order",
-          headerShown: true,
           headerBackTitle: "Back"
         }}
       />
@@ -288,27 +288,19 @@ const createTabBarStyle = (totalHeight, safeAreaBottom) => ({
   paddingBottom: safeAreaBottom,
   backgroundColor: TAB_BAR_CONFIG.backgroundColor,
   borderTopWidth: TAB_BAR_CONFIG.borderTopWidth,
-  borderTopLeftRadius: TAB_BAR_CONFIG.borderRadius,
-  borderTopRightRadius: TAB_BAR_CONFIG.borderRadius,
 });
 
 // ================================================================
-// MAIN TAB NAVIGATOR
+// TAB NAVIGATOR (Wrapped in Drawer)
 // ================================================================
 
 /**
- * Main App Navigation Component
  * Bottom Tab Navigator containing all main app sections
  */
-export function AppNavigation() {
+function TabNavigator() {
   const insets = useSafeAreaInsets();
 
-  // Use permissions context for app-level permission coordination
-  // Prevents blank screens by waiting for permissions to load before rendering navigation
   const {
-    loading,
-    isInitialized,
-    showDashboard,
     showProducts,
     showOrders,
     showCollections,
@@ -318,16 +310,6 @@ export function AppNavigation() {
   const totalHeight = TAB_BAR_CONFIG.height + safeAreaBottom;
   const defaultTabBarStyle = createTabBarStyle(totalHeight, safeAreaBottom);
 
-  // Show loading indicator while permissions are being initialized
-  // This prevents blank screens when transitioning between auth states
-  if (loading || !isInitialized) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAFA' }}>
-        <ActivityIndicator size="large" color={DESIGN.colors.primary} />
-      </View>
-    );
-  }
-
   return (
     <Tab.Navigator
       screenOptions={{
@@ -335,6 +317,7 @@ export function AppNavigation() {
         tabBarInactiveTintColor: TAB_BAR_CONFIG.inactiveTintColor,
         tabBarStyle: defaultTabBarStyle,
         headerShown: false,
+        tabBarHideOnKeyboard: true
       }}
     >
       <Tab.Screen
@@ -379,7 +362,6 @@ export function AppNavigation() {
         />
       )}
 
-
       {showOrders && (
         <Tab.Screen
           name="OrdersTab"
@@ -402,7 +384,6 @@ export function AppNavigation() {
             };
           }}
         />
-
       )}
 
       {showCollections && (
@@ -428,8 +409,57 @@ export function AppNavigation() {
           }}
         />
       )}
-
     </Tab.Navigator>
+  );
+}
+
+// ================================================================
+// MAIN DRAWER NAVIGATOR
+// ================================================================
+
+/**
+ * Main App Navigation Component with Drawer
+ */
+export function AppNavigation() {
+  const {
+    loading,
+    isInitialized,
+  } = usePermissionsContext();
+
+  // Show loading indicator while permissions are being initialized
+  if (loading || !isInitialized) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAFA' }}>
+        <ActivityIndicator size="large" color={DESIGN.colors.primary} />
+      </View>
+    );
+  }
+
+  return (
+    <Drawer.Navigator
+      drawerContent={(props) => <DrawerContent {...props} />}
+      screenOptions={{
+        headerShown: false,
+        drawerPosition: "right",
+        drawerType: 'front',
+        drawerStyle: {
+          width: 300,
+          backgroundColor: DESIGN.colors.surface,
+        },
+        overlayColor: 'rgba(0, 0, 0, 0.5)',
+        swipeEnabled: true,
+        swipeEdgeWidth: 50,
+      }}
+    >
+      <Drawer.Screen
+        name="MainTabs"
+        component={TabNavigator}
+        options={{
+          drawerLabel: () => null,
+          drawerItemStyle: { display: 'none' }
+        }}
+      />
+    </Drawer.Navigator>
   );
 }
 

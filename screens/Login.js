@@ -1,15 +1,13 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  ScrollView,
-  StatusBar,
   Text,
   TouchableOpacity,
   View,
+  Image,
+  KeyboardAvoidingView,
   Platform,
+  ScrollView
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import authApi from "../src/api/auth";
 import useAuth from "../src/auth/useAuth";
@@ -20,111 +18,73 @@ import { loginSchema } from "../src/validations/loginSchema";
 import showToast from "../src/utility/showToast";
 import DESIGN from "../src/theme";
 import styles from "../src/styles/login.style";
-
+import { StatusBar } from "expo-status-bar";
 
 function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState("");
   const { logIn } = useAuth();
-  const insets = useSafeAreaInsets();
-
-
-
+  global.usernameRef = useRef(null);
+  global.passwordRef = useRef(null);
 
   const handleSubmit = async ({ username, password }) => {
     setLoading(true);
     setFormError("");
 
-    username = username.trim();
-    password = password.trim();
-
-    console.log("=== LOGIN ATTEMPT ===");
-
-
     try {
-      const response = await authApi.login(username, password);
+      const response = await authApi.login(username.trim(), password.trim());
 
-
-      console.log("\n=== RAW API RESPONSE ===");
-      console.log("Status:", response.status);
-      console.log("Data:", response.data);
-
-
-      if (response.status === 400 || response.data?.status === false) {
+      // If API returns status=false OR 400 error from backend
+      if (!response.data?.status) {
         const errorMessage = response.data?.message || "Invalid credentials";
         setFormError(errorMessage);
+        showToast.error("Login Failed", errorMessage);
         return;
       }
 
-
-      // ✅ Extract BOTH tokens
+      // Success Token Handling
       const accessToken = response.data?.data?.access;
       const refreshToken = response.data?.data?.refresh;
-
-
-      console.log("\n=== TOKENS EXTRACTED ===");
-      console.log("Access Token:", accessToken ? "✅ Present" : "❌ Missing");
-      console.log("Refresh Token:", refreshToken ? "✅ Present" : "❌ Missing");
-
+      const userName = response.data?.data?.user_name;
 
       if (!accessToken || !refreshToken) {
-        console.log("\n❌ TOKENS MISSING");
         setFormError("Something went wrong. Please try again.");
         return;
       }
 
-
-      // ✅ Save tokens
-      console.log("\n✅ LOGIN SUCCESSFUL - Saving tokens...");
-      await logIn(accessToken, refreshToken);
-
-
-      showToast.success("You have logged in successfully.", "✅ Login Successful!");
-
+      await logIn(accessToken, refreshToken, userName);
+      showToast.success("You have logged in successfully.", "Login Successful!");
 
     } catch (error) {
-      console.error("\n=== ERROR OCCURRED ===");
-      console.error("Error:", error);
-      console.error("Response:", error.response?.data);
-      
-      // Extract error message from backend response
-      const errorMessage = 
-        error.response?.data?.message || 
-        error.response?.data?.detail || 
-        error.message || 
-        "Something went wrong. Please try again.";
-      
+      console.log("ERROR FULL:", error);
+
+      let errorMessage = "Something went wrong";
+
+      if (error?.detail?.message) {
+        errorMessage = "Invalid Credentials";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
       setFormError(errorMessage);
       showToast.error("Login Failed", errorMessage);
     } finally {
       setLoading(false);
     }
+
   };
-
-
 
   return (
     <>
-      <StatusBar
-        translucent
-        barStyle="light-content"
-        backgroundColor={Platform.OS === "android" ? DESIGN.colors.primary : "transparent"}
-      />
-
-
+      <StatusBar style="auto" translucent={false} />
       <View style={styles.screen}>
-        <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Aubizo</Text>
-          </View>
-        </View>
-
-
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardView}
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : "height"}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
+
           <ScrollView
             contentContainerStyle={styles.container}
             keyboardShouldPersistTaps="handled"
@@ -132,13 +92,17 @@ function LoginScreen() {
             bounces={false}
           >
             <View style={styles.loginCard}>
+              <Image
+                source={require("../assets/ashwamedh/images/adaptive-icon.png")}
+                style={styles.logo}
+              />
+
               <View style={styles.welcomeSection}>
                 <Text style={styles.welcomeTitle}>Welcome back</Text>
+                <Text style={styles.welcomeSubtitle}>Sign in to Aubizo</Text>
               </View>
 
-
               {formError ? <Text style={styles.formError}>{formError}</Text> : null}
-
 
               <AppForm
                 initialValues={{ username: "", password: "" }}
@@ -149,22 +113,25 @@ function LoginScreen() {
                   <View style={styles.fieldContainer}>
                     <AppFormField
                       name="username"
+                      icon="account"
+                      innerRef={global.usernameRef}
                       placeholder="Enter your username"
                       autoCapitalize="none"
                       autoCorrect={false}
-                      errorstyle={styles.errorModern}
+                      error={false}
+                      style={styles.inputContainer}
                     />
                   </View>
 
-
-                  <View style={styles.fieldContainer}>
+                  <View style={{ marginBottom: DESIGN.spacing.lg }}>
                     <AppFormField
                       name="password"
+                      icon="lock"
+                      innerRef={global.passwordRef}
                       placeholder="Enter your password"
-                      autoCapitalize="none"
-                      autoCorrect={false}
                       secureTextEntry={!showPassword}
-                      errorstyle={styles.errorModern}
+                      error={false}
+                      style={styles.inputContainer}
                       rightIcon={
                         <TouchableOpacity
                           onPress={() => setShowPassword(!showPassword)}
@@ -172,7 +139,7 @@ function LoginScreen() {
                         >
                           <MaterialCommunityIcons
                             name={showPassword ? "eye-off" : "eye"}
-                            size={20}
+                            size={24}
                             color={DESIGN.colors.textSecondary}
                           />
                         </TouchableOpacity>
@@ -180,20 +147,24 @@ function LoginScreen() {
                     />
                   </View>
 
-
                   <View style={styles.buttonContainer}>
-                    {loading ? (
-                      <View style={styles.loadingButton}>
-                        <ActivityIndicator size="small" color={DESIGN.colors.surface} />
-                        <Text style={styles.loadingText}>Signing in...</Text>
-                      </View>
-                    ) : (
-                      <SubmitButton
-                        title="Sign In"
-                        style={styles.submitButton}
-                        textStyle={styles.submitButtonText}
-                      />
-                    )}
+                    <SubmitButton
+                      title={loading ? "Signing in..." : "Sign In"}
+                      loading={loading}
+                      style={styles.submitButton}
+                      styleButtonText={styles.submitButtonText}
+                    />
+                  </View>
+
+                  {/* Secured Info */}
+                  <View style={styles.ssoContainer}>
+                    <MaterialCommunityIcons
+                      name="shield-check-outline"
+                      size={18}
+                      color={"#007955"}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text style={styles.ssoText}>Authorized Staff Login</Text>
                   </View>
                 </View>
               </AppForm>
@@ -204,7 +175,6 @@ function LoginScreen() {
     </>
   );
 }
-
 
 export default LoginScreen;
 

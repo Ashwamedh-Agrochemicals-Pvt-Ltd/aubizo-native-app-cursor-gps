@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
     View,
     Text,
@@ -6,11 +5,13 @@ import {
     ScrollView,
     TouchableOpacity,
     Linking,
-    Alert,
 } from "react-native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import DESIGN from "../src/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getBrandConfig } from '../src/config/appConfig'
+
+const { brandName } = getBrandConfig();
 
 const HelpSupport = () => {
     const insets = useSafeAreaInsets();
@@ -68,7 +69,7 @@ const HelpSupport = () => {
 
                 {/* App Info */}
                 <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
-                    Aubizo App Info
+                    {brandName} App Info
                 </Text>
                 <View style={styles.infoCard}>
                     <Text style={styles.infoText}>Version: v1.0.0</Text>

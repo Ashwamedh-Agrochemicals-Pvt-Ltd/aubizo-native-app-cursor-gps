@@ -4,23 +4,14 @@ export default StyleSheet.create({
   // Container
   container: {
     flex: 1,
-
+    backgroundColor: DESIGN.colors.background,
   },
 
   // Header
   header: {
     backgroundColor: DESIGN.colors.primary,
-    height: "10%",
+    height: "15%",
     position: 'relative',
-  },
-
-  headerGradientOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    opacity: 0.1,
   },
 
   headerContent: {
@@ -116,97 +107,6 @@ export default StyleSheet.create({
     gap: DESIGN.spacing.sm,
   },
 
-  notificationButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: DESIGN.colors.surface + '20',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: DESIGN.colors.surface + '30',
-  },
-
-  // Enhanced Logout Button
-  enhancedLogoutButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    right: DESIGN.spacing.sm,
-    overflow: 'hidden',
-  },
-
-  logoutButtonInner: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-
-    borderColor: DESIGN.colors.surface + '40',
-
-  },
-
-  logoutButtonGlow: {
-    position: 'absolute',
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: DESIGN.colors.surface + '10',
-
-  },
-
-  // Modern Logout Popup
-  modernLogoutPopup: {
-    position: "absolute",
-    top: 60,
-    right: DESIGN.spacing.lg,
-    backgroundColor: DESIGN.colors.surface,
-    borderRadius: DESIGN.borderRadius.lg,
-    elevation: 10,
-    zIndex: 1000,
-  },
-
-  logoutPopupContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: DESIGN.spacing.lg,
-    paddingVertical: DESIGN.spacing.md,
-    gap: DESIGN.spacing.sm,
-  },
-
-  logoutIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: DESIGN.colors.error + '15',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  enhancedLogoutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: DESIGN.colors.error,
-    marginRight: DESIGN.spacing.xs,
-  },
-
-  logoutPopupArrow: {
-    position: 'absolute',
-    top: -8,
-    right: 20,
-    width: 0,
-    height: 0,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderBottomWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: DESIGN.colors.surface,
-  },
-
   // ScrollView
   scrollView: {
     flex: 1,
@@ -221,102 +121,23 @@ export default StyleSheet.create({
     paddingHorizontal: DESIGN.spacing.md,
   },
 
-  // Enhanced Greeting Styles
-  enhancedGreetingCard: {
-    position: 'relative',
-    marginBottom: DESIGN.spacing.md,
-    overflow: 'hidden',
-    backgroundColor: DESIGN.colors.surface,
-  },
-
-  greetingGradientOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: `rgba(231, 185, 236, 0.2)`, // primary color with transparency
-  },
-
-  greetingDecorations: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-
-  decorativeCircle1: {
-    position: 'absolute',
-    top: -20,
-    right: -20,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: `rgba(243, 196, 196, 0.3)`,
-  },
-
-  decorativeCircle2: {
-    position: 'absolute',
-    bottom: -30,
-    left: -15,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: `rgba(253, 203, 5, 0.1)`,
-  },
-
-  greetingContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: DESIGN.spacing.md,
-
-  },
-
-
-  enhancedWelcomeContainer: {
+  welcomeContainer: {
     flex: 1,
-    position: 'relative',
-    marginHorizontal: DESIGN.spacing.md,
+    marginVertical: DESIGN.spacing.md
   },
 
-  enhancedWelcomeText: {
-    fontSize: 16,
+  welcomeText: {
+    fontSize: 18,
     fontWeight: '500',
     color: DESIGN.colors.textSecondary,
-
   },
 
-  enhancedUserNameText: {
+  userNameText: {
     fontSize: 22,
+    fontStyle: "italic",
     fontWeight: '500',
     color: DESIGN.colors.textPrimary,
-
-  },
-
-  pulseEffect: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: `rgba(76, 175, 80, 0.05)`,
-    borderRadius: 24,
-  },
-
-  // Legacy styles (keeping for compatibility)
-  greetingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: DESIGN.spacing.lg,
-    backgroundColor: DESIGN.colors.surface,
-    padding: DESIGN.spacing.md,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    paddingLeft: 20,
   },
 
   welcomeText: {
@@ -336,11 +157,10 @@ export default StyleSheet.create({
     backgroundColor: DESIGN.colors.surface,
     marginBottom: DESIGN.spacing.lg,
     padding: DESIGN.spacing.md,
-    borderRadius: 16,
+    borderRadius: DESIGN.borderRadius.sm,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
     elevation: 4,
     position: "relative",
 
@@ -362,7 +182,7 @@ export default StyleSheet.create({
   visitTitleText: {
     fontSize: 18,
     fontWeight: "600",
-    color: DESIGN.colors.primary,
+    color: DESIGN.colors.textPrimary,
   },
 
   visitChevronContainer: {
@@ -374,12 +194,8 @@ export default StyleSheet.create({
   },
 
   visitChevron: {
-
-    borderRadius: 15,
+    borderRadius: DESIGN.borderRadius.sm,
     padding: DESIGN.spacing.xs,
-
-
-
   },
 
   visitRow: {
@@ -429,7 +245,7 @@ export default StyleSheet.create({
     paddingHorizontal: DESIGN.spacing.md,
     paddingVertical: DESIGN.spacing.xs,
     backgroundColor: DESIGN.colors.primary + "15",
-    borderRadius: 12,
+    borderRadius: DESIGN.borderRadius.md,
     borderWidth: 1,
     borderColor: DESIGN.colors.primary + "30",
   },
@@ -454,28 +270,25 @@ export default StyleSheet.create({
     flex: 1,
     padding: DESIGN.spacing.md,
     backgroundColor: DESIGN.colors.surface,
-    borderRadius: 16,
+    borderRadius: DESIGN.borderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    minHeight: 100,
+    minHeight: 50,
     borderWidth: 1,
-    borderColor: DESIGN.colors.border + "30",
+    borderColor: DESIGN.colors.textPrimary + "30",
   },
 
   actionCardDisabled: {
     backgroundColor: DESIGN.colors.surfaceElevated,
     opacity: 0.6,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.textPrimary + "30",
   },
 
   actionIcon: {
     marginBottom: DESIGN.spacing.md,
     padding: DESIGN.spacing.sm,
-    borderRadius: 12,
+    borderRadius: DESIGN.borderRadius.md,
     backgroundColor: DESIGN.colors.background,
   },
 
@@ -501,18 +314,14 @@ export default StyleSheet.create({
 
   activityTitle: {
     fontSize: 18,
-    fontWeight: "400",
-    color: DESIGN.colors.textSecondary,
+    fontWeight: "500",
+    color: DESIGN.colors.textPrimary,
   },
 
   activitySubtitle: {
-    fontSize: 12,
-    color: DESIGN.colors.textSecondary,
-    fontWeight: "500",
-    backgroundColor: DESIGN.colors.success + "15",
-    paddingHorizontal: DESIGN.spacing.sm,
-    paddingVertical: DESIGN.spacing.xs,
-    borderRadius: 8,
+    borderBottomWidth: 2,
+    borderColor: DESIGN.colors.border,
+    color: DESIGN.colors.primary,
   },
 
   // Punch Section
@@ -520,20 +329,20 @@ export default StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: DESIGN.spacing.sm,
+    marginBottom: DESIGN.spacing.md,
   },
 
   punchSectionRow: {
     flexDirection: "row",
-    gap: DESIGN.spacing.md,
+    gap: DESIGN.spacing.sm,
     alignItems: "center",
   },
 
   punchIconWrapper: (bgColor) => ({
-    height: 40,
-    width: 40,
+    height: 35,
+    width: 35,
     backgroundColor: bgColor + "20",
-    borderRadius: 12,
+    borderRadius: DESIGN.borderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
   }),
@@ -541,20 +350,10 @@ export default StyleSheet.create({
   punchLabel: {
     fontSize: 16,
     color: DESIGN.colors.textPrimary,
-    fontWeight: "500",
   },
 
   punchTime: {
     fontSize: 16,
-    fontWeight: "500",
     color: DESIGN.colors.textPrimary,
   },
-  loaderOverlay: {
-    ...StyleSheet.absoluteFillObject, // fills the entire screen
-    backgroundColor: "rgba(0, 0, 0, 0.2)", // semi-transparent
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 9999, // ensures it appears above all content
-  },
-
 });

@@ -17,13 +17,12 @@ import {
   TouchableOpacity,
   Share,
   Linking,
+  Alert
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import DESIGN from "../../theme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import apiClient from "../../api/client";
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const OrderDetails = ({ orderId, visible, onClose }) => {
   const [loading, setLoading] = useState(false);
@@ -38,11 +37,11 @@ const OrderDetails = ({ orderId, visible, onClose }) => {
       const response = await apiClient.get(`/order/api/individual/orders/${orderId}/`);
       if (response.data.success) {
         setOrder(response.data.data);
+        // Reset selectedFile to null when fetching fresh data
         setSelectedFile(null);
       }
     } catch (error) {
       console.error("Error fetching order details:", error);
-      // Handle error silently or show toast
     } finally {
       setLoading(false);
     }
@@ -126,7 +125,7 @@ ${itemsText}
   };
 
   const uploadLetterhead = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !order) return;
 
     try {
       setUploading(true);
@@ -156,11 +155,15 @@ ${itemsText}
       );
 
       if (response.data.success) {
-        Alert.alert("Success", "Letterhead uploaded successfully!");
-        fetchOrderDetails();
+        setOrder(prevOrder => ({
+          ...prevOrder,
+          letterhead_document: response.data.data?.letterhead_document || "just_uploaded"
+        })); // Wait for refresh
       }
+      // Silently fail on API error (no alert)
     } catch (error) {
-      Alert.alert("Upload Failed", "Please try again.");
+      console.error("Upload error:", error);
+      // Silently fail (no alert)
     } finally {
       setUploading(false);
     }
@@ -170,7 +173,7 @@ ${itemsText}
 
   const openLetterhead = () => {
     if (order?.letterhead_document) {
-      const url = `${apiClient.defaults.baseURL}${order.letterhead_document}`;
+      const url = `${order.letterhead_document}`;
       console.log(url)
       Linking.openURL(url).catch(() => Alert.alert("Error", "Cannot open file"));
     }
@@ -417,14 +420,30 @@ ${itemsText}
                         <TouchableOpacity
                           onPress={uploadLetterhead}
                           disabled={uploading}
-                          style={[styles.uploadButton, { backgroundColor: DESIGN.colors.success, marginTop: 12 }]}
+                          style={[
+                            styles.uploadButton,
+                            {
+                              backgroundColor: uploading
+                                ? DESIGN.colors.textSecondary
+                                : DESIGN.colors.success,
+                              marginTop: 12,
+                              opacity: uploading ? 0.7 : 1,
+                            }
+                          ]}
                         >
                           {uploading ? (
-                            <ActivityIndicator size="small" color="#fff" />
+                            <>
+                              <ActivityIndicator size="small" color="#fff" />
+                              <Text style={[styles.uploadButtonText, { color: "#fff", marginLeft: 8 }]}>
+                                Uploading...
+                              </Text>
+                            </>
                           ) : (
                             <>
                               <MaterialCommunityIcons name="upload" size={24} color="#fff" />
-                              <Text style={[styles.uploadButtonText, { color: "#fff" }]}>Upload Letterhead</Text>
+                              <Text style={[styles.uploadButtonText, { color: "#fff" }]}>
+                                Upload Letterhead
+                              </Text>
                             </>
                           )}
                         </TouchableOpacity>
@@ -618,9 +637,9 @@ const styles = StyleSheet.create({
   fileContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: DESIGN.colors.surfaceElevated,
+    backgroundColor: DESIGN.colors.surface,
     borderRadius: DESIGN.borderRadius.sm,
-    padding: DESIGN.spacing.md,
+    padding: DESIGN.spacing.sm,
     borderWidth: 1,
     borderColor: DESIGN.colors.borderLight,
   },
@@ -643,12 +662,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: DESIGN.colors.surfaceElevated,
+    backgroundColor: DESIGN.colors.surface,
     borderRadius: DESIGN.borderRadius.sm,
     padding: DESIGN.spacing.md,
     borderWidth: 1,
-    borderColor: DESIGN.colors.surface,
-    borderStyle: "dashed",
+    borderColor: DESIGN.colors.border,
+    borderStyle: "solid",
   },
   uploadButtonText: {
     marginLeft: DESIGN.spacing.sm,

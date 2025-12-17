@@ -8,9 +8,7 @@ import {
   Animated,
   Dimensions,
   FlatList,
-  ActivityIndicator,
   RefreshControl,
-  TextInput,
   BackHandler,
   Platform,
   StatusBar,
@@ -18,54 +16,18 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DESIGN from "../src/theme";
 import { navigation } from "../navigation/NavigationService";
-import apiClient from "../src/api/client"; // Your API client
+import apiClient from "../src/api/client";
 import OrderDetails from "../src/components/orders/OrderDetails";
 import { useFocusEffect } from "@react-navigation/native";
 import { useModulePermission } from "../src/hooks/usePermissions";
 import { MODULES } from "../src/auth/permissions";
+import OrderSkeleton from "../src/components/appSkeleton/OrderSkeleton";
+import SearchBar from "../src/components/SearchBar";
 
 const { width } = Dimensions.get("window");
 const TABS = ["All", "Pending", "Dispatched", "Rejected"];
 const TAB_COUNT = TABS.length;
 const TAB_WIDTH = width / TAB_COUNT;
-
-// 🔎 Separate Search Component
-const SearchBar = ({ searchQuery, setSearchQuery, onClose }) => {
-  const inputRef = useRef(null);
-
-
-  useEffect(() => {
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 100); // small delay ensures component is mounted
-  }, []);
-
-  return (
-    <View style={styles.searchContainer}>
-      <MaterialCommunityIcons
-        name="magnify"
-        size={20}
-        color={DESIGN.colors.textSecondary}
-        style={{ marginRight: DESIGN.spacing.xs }}
-      />
-      <TextInput
-        ref={inputRef}
-        style={styles.searchInput}
-        placeholder="Search by Dealer or Shop name..."
-        placeholderTextColor={DESIGN.colors.textSecondary}
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-      />
-      <TouchableOpacity onPress={onClose}>
-        <MaterialCommunityIcons
-          name="close-circle"
-          size={28}
-          color={DESIGN.colors.textPrimary}
-        />
-      </TouchableOpacity>
-    </View>
-  );
-};
 
 function OrderScreen() {
   const [activeTab, setActiveTab] = useState(0);
@@ -74,15 +36,13 @@ function OrderScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
-  const { canCreate, canRead, canUpdate, canDelete, enabled, loading: permissionsLoading } = useModulePermission(MODULES.ORDER);
-
-  // Modal state
+  const { canCreate } = useModulePermission(MODULES.ORDER);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
-
-  // 🔎 Search state
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [initialLoad, setInitialLoad] = useState(true);
+
 
   const handleCardPress = (orderId) => {
     setSelectedOrderId(orderId);
@@ -96,9 +56,9 @@ function OrderScreen() {
         if (showSearch) {
           setShowSearch(false);
           setSearchQuery("");
-          return true; // stop default back
+          return true;
         }
-        return false; // allow default back
+        return false;
       };
 
       const subscription = BackHandler.addEventListener(
@@ -106,11 +66,10 @@ function OrderScreen() {
         onBackPress
       );
 
-      return () => subscription.remove(); // ✅ proper cleanup
+      return () => subscription.remove();
     }, [showSearch])
   );
 
-  // 🔄 Close search when leaving screen
   useFocusEffect(
     React.useCallback(() => {
       return () => {
@@ -120,10 +79,8 @@ function OrderScreen() {
     }, [])
   );
 
-
-
   const statusMap = {
-    0: "", // All
+    0: "",
     1: "processing",
     2: "dispatched",
     3: "cancelled",
@@ -133,7 +90,8 @@ function OrderScreen() {
   // Fetch orders by status
   const fetchOrders = async (status = "") => {
     try {
-      setLoading(true);
+      if (initialLoad) setLoading(true);
+
       const response = await apiClient.get("/order/api/individual/orders/", {
         params: { status },
       });
@@ -144,6 +102,7 @@ function OrderScreen() {
       console.log("Error fetching orders:", error);
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
@@ -297,12 +256,8 @@ function OrderScreen() {
       )}
 
       {/* Order List */}
-      {loading ? (
-        <ActivityIndicator
-          size="large"
-          color={DESIGN.colors.primary}
-          style={{ marginTop: 20 }}
-        />
+      {initialLoad && loading ? (
+        <OrderSkeleton count={6} />
       ) : (
         <FlatList
           data={dataToRender}
@@ -424,24 +379,6 @@ const styles = StyleSheet.create({
     marginLeft: DESIGN.spacing.md,
   },
 
-  // 🔎 SearchBar styles
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: DESIGN.colors.surface,
-    marginVertical: DESIGN.spacing.sm,
-    borderRadius: DESIGN.borderRadius.sm,
-    paddingHorizontal: DESIGN.spacing.sm,
-    marginHorizontal: DESIGN.spacing.md,
-  },
-  searchInput: {
-    flex: 1,
-    height: 48,
-    fontSize: DESIGN.typography.body.fontSize,
-    paddingHorizontal: DESIGN.spacing.sm,
-    color: DESIGN.colors.textPrimary,
-  },
-
   tabRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
@@ -499,16 +436,10 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.primary,
     marginVertical: DESIGN.spacing.xs,
     fontWeight: "700",
+    marginTop: DESIGN.spacing.sm,
     fontSize: DESIGN.typography.body.fontSize,
   },
-  shopName: {
-    color: DESIGN.colors.textSecondary,
-    fontSize: DESIGN.typography.caption.fontSize,
-    fontWeight: "500",
-    marginBottom: DESIGN.spacing.xs,
-  },
   ownerName: {
-    marginVertical: DESIGN.spacing.xs,
     fontStyle: "italic",
     fontWeight: "400",
     fontSize: DESIGN.typography.body.fontSize,

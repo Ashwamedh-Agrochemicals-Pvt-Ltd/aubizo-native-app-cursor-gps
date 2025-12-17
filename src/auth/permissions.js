@@ -45,21 +45,21 @@ class PermissionManager {
    */
   async fetchPermissions() {
     if (this.isLoading) return this.permissions;
-    
+
     try {
       this.isLoading = true;
       const response = await apiClient.get('/api/auth/all-module-permissions/');
-      
+
       if (response.data && response.data.modules) {
         this.permissions = this.parsePermissions(response.data.modules);
         await this.cachePermissions();
         return this.permissions;
       }
-      
+
       throw new Error('Invalid permissions response');
     } catch (error) {
       console.error('Failed to fetch permissions:', error);
-      
+
       // Check if error is 401 (Unauthorized) - session expired
       if (error.response?.status === 401 || error.status === 401) {
         console.warn('⚠️ 401 Unauthorized while fetching permissions - token expired');
@@ -67,7 +67,7 @@ class PermissionManager {
         this.clearPermissions();
         throw new Error('UNAUTHORIZED');
       }
-      
+
       // For other errors, try to load cached permissions
       return await this.loadCachedPermissions();
     } finally {
@@ -80,14 +80,14 @@ class PermissionManager {
    */
   parsePermissions(modules) {
     const parsed = {};
-    
+
     modules.forEach(module => {
       parsed[module.module] = {
         enabled: module.enabled,
         permissions: module.permissions
       };
     });
-    
+
     return parsed;
   }
 
@@ -109,7 +109,7 @@ class PermissionManager {
    */
   compressPermissions(permissions) {
     if (!permissions) return null;
-    
+
     const compressed = {};
     Object.keys(permissions).forEach(module => {
       const moduleData = permissions[module];
@@ -121,7 +121,7 @@ class PermissionManager {
         };
       }
     });
-    
+
     return compressed;
   }
 
@@ -130,7 +130,7 @@ class PermissionManager {
    */
   decompressPermissions(compressed) {
     if (!compressed) return null;
-    
+
     const permissions = {};
     Object.keys(compressed).forEach(module => {
       const moduleData = compressed[module];
@@ -139,7 +139,7 @@ class PermissionManager {
         permissions: moduleData.p
       };
     });
-    
+
     return permissions;
   }
 
@@ -157,7 +157,7 @@ class PermissionManager {
     } catch (error) {
       console.error('Failed to load cached permissions:', error);
     }
-    
+
     // Return default permissions if no cache
     return this.getDefaultPermissions();
   }
@@ -184,10 +184,10 @@ class PermissionManager {
    */
   hasPermission(module, permission = PERMISSIONS.READ) {
     if (!this.permissions) return false;
-    
+
     const modulePerms = this.permissions[module];
     if (!modulePerms || !modulePerms.enabled) return false;
-    
+
     return modulePerms.permissions[permission] === true;
   }
 
@@ -196,7 +196,7 @@ class PermissionManager {
    */
   isModuleEnabled(module) {
     if (!this.permissions) return false;
-    
+
     const modulePerms = this.permissions[module];
     return modulePerms && modulePerms.enabled;
   }
@@ -206,8 +206,8 @@ class PermissionManager {
    */
   getEnabledModules() {
     if (!this.permissions) return [];
-    
-    return Object.keys(this.permissions).filter(module => 
+
+    return Object.keys(this.permissions).filter(module =>
       this.permissions[module].enabled
     );
   }
@@ -225,7 +225,7 @@ class PermissionManager {
    */
   getPermissionSummary() {
     if (!this.permissions) return 'No permissions loaded';
-    
+
     const enabled = this.getEnabledModules();
     return `Enabled modules: ${enabled.join(', ')}`;
   }
@@ -235,13 +235,13 @@ class PermissionManager {
 export const permissionManager = new PermissionManager();
 
 // Convenience functions
-export const hasPermission = (module, permission) => 
+export const hasPermission = (module, permission) =>
   permissionManager.hasPermission(module, permission);
 
-export const isModuleEnabled = (module) => 
+export const isModuleEnabled = (module) =>
   permissionManager.isModuleEnabled(module);
 
-export const getEnabledModules = () => 
+export const getEnabledModules = () =>
   permissionManager.getEnabledModules();
 
 export default permissionManager;

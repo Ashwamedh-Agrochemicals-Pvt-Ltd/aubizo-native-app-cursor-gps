@@ -9,38 +9,39 @@ import {
   Modal,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import useAuth from '../auth/useAuth';
-import { useModulePermission } from '../hooks/usePermissions';
-import { MODULES } from '../auth/permissions';
 import permissionManager from '../auth/permissions';
 import DESIGN from '../theme';
 import showToast from '../utility/showToast';
 import apiClient from '../api/client';
 
-const DrawerMenu = ({ navigation, onClose, username }) => {
-  const insets = useSafeAreaInsets();
-  const { user, logOut } = useAuth();
-  const { canRead: canViewAnalytics } = useModulePermission(MODULES.CORE);
+
+const DrawerContent = (props) => {
+  const { username, logOut } = useAuth();
   const [userRole, setUserRole] = useState(null);
   const [comingSoonModal, setComingSoonModal] = useState({ visible: false, title: '' });
 
-  // Fetch user role from dashboard API
+
+
+
+  // Fetch user role and username from dashboard API
   useEffect(() => {
-    const fetchUserRole = async () => {
+    const fetchUserData = async () => {
       try {
         const response = await apiClient.get('/core/api/dashboard/');
-        if (response.data && response.data.user_role) {
-          setUserRole(response.data.user_role);
+        if (response.data) {
+          if (response.data.user_role) {
+            setUserRole(response.data.user_role);
+          }
         }
       } catch (error) {
-        console.error('Failed to fetch user role:', error);
-        // Default to non-admin if API fails
+        console.error('Failed to fetch user data:', error);
         setUserRole('User');
       }
     };
 
-    fetchUserRole();
+    fetchUserData();
   }, []);
 
   const handleLogout = () => {
@@ -57,10 +58,9 @@ const DrawerMenu = ({ navigation, onClose, username }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Clear permissions from memory before logout
               permissionManager.clearPermissions();
               await logOut();
-
+              props.navigation.closeDrawer();
             } catch (error) {
               showToast.error('Logout failed', 'Please try again');
             }
@@ -75,25 +75,45 @@ const DrawerMenu = ({ navigation, onClose, username }) => {
   };
 
   const handleDealerList = () => {
-    onClose();
-    navigation.navigate('DealerList');
+    props.navigation.closeDrawer();
+    props.navigation.navigate('MainTabs', {
+      screen: 'DashboardTab',
+      params: {
+        screen: 'DealerList'
+      }
+    });
   };
 
   const handleFarmerList = () => {
-    onClose();
-    navigation.navigate('FarmerList');
+    props.navigation.closeDrawer();
+    props.navigation.navigate('MainTabs', {
+      screen: 'DashboardTab',
+      params: {
+        screen: 'FarmerList'
+      }
+    });
   };
 
-
   const handleAnalytics = () => {
-    onClose();
-    navigation.navigate('Analytics');
+    props.navigation.closeDrawer();
+    props.navigation.navigate('MainTabs', {
+      screen: 'DashboardTab',
+      params: {
+        screen: 'Analytics'
+      }
+    });
   };
 
   const handleHelp = () => {
-    onClose();
-    navigation.navigate("Hepl&Support")
+    props.navigation.closeDrawer();
+    props.navigation.navigate('MainTabs', {
+      screen: 'DashboardTab',
+      params: {
+        screen: 'Hepl&Support'
+      }
+    });
   };
+  // ... rest of code ...
 
   const closeComingSoonModal = () => {
     setComingSoonModal({ visible: false, title: '' });
@@ -107,7 +127,6 @@ const DrawerMenu = ({ navigation, onClose, username }) => {
       onPress: handleProfile,
       show: true,
     },
-
     {
       id: 'dealer-list',
       title: 'My Dealer List',
@@ -115,7 +134,6 @@ const DrawerMenu = ({ navigation, onClose, username }) => {
       onPress: handleDealerList,
       show: true,
     },
-
     {
       id: 'Farmer-list',
       title: 'My Farmer List',
@@ -123,7 +141,6 @@ const DrawerMenu = ({ navigation, onClose, username }) => {
       onPress: handleFarmerList,
       show: true,
     },
-
     {
       id: 'help',
       title: 'Help & Support',
@@ -131,18 +148,17 @@ const DrawerMenu = ({ navigation, onClose, username }) => {
       onPress: handleHelp,
       show: true,
     },
-
     {
       id: 'analytics',
       title: 'Analytics',
       icon: 'chart-line',
       onPress: handleAnalytics,
-      show: userRole === 'Admin', // Only show for Admin role
+      show: userRole === 'Admin',
     },
   ];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.userInfo}>
@@ -154,13 +170,13 @@ const DrawerMenu = ({ navigation, onClose, username }) => {
             />
           </View>
           <View style={styles.userDetails}>
-            <Text style={styles.userName}>{username}</Text>
-            <Text style={styles.userRole}>{userRole}</Text>
+            <Text style={styles.userName}>{username || 'User'}</Text>
+            <Text style={styles.userRole}>{userRole || 'Loading...'}</Text>
           </View>
         </View>
         <TouchableOpacity
           style={styles.closeButton}
-          onPress={onClose}
+          onPress={() => props.navigation.closeDrawer()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <MaterialCommunityIcons
@@ -255,7 +271,8 @@ const DrawerMenu = ({ navigation, onClose, username }) => {
           </View>
         </View>
       </Modal>
-    </View>
+
+    </SafeAreaView>
   );
 };
 
@@ -264,24 +281,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: DESIGN.colors.surface,
   },
-
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: DESIGN.spacing.lg,
+    paddingHorizontal: DESIGN.spacing.md,
     paddingVertical: DESIGN.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: DESIGN.colors.border,
     backgroundColor: DESIGN.colors.background,
   },
-
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-
   avatar: {
     width: 48,
     height: 48,
@@ -291,31 +305,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: DESIGN.spacing.md,
   },
-
   userDetails: {
     flex: 1,
   },
-
   userName: {
     ...DESIGN.typography.subtitle,
     color: DESIGN.colors.textPrimary,
     marginBottom: 2,
   },
-
   userRole: {
     ...DESIGN.typography.caption,
     color: DESIGN.colors.textSecondary,
   },
-
   closeButton: {
     padding: DESIGN.spacing.xs,
+    backgroundColor: DESIGN.colors.border,
+    borderRadius: 5
   },
-
   menuContainer: {
     flex: 1,
     paddingTop: DESIGN.spacing.md,
   },
-
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -325,19 +335,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: DESIGN.colors.border,
   },
-
   menuItemContent: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-
   menuItemText: {
     ...DESIGN.typography.body,
     color: DESIGN.colors.textPrimary,
     marginLeft: DESIGN.spacing.md,
   },
-
   footer: {
     paddingHorizontal: DESIGN.spacing.lg,
     paddingVertical: DESIGN.spacing.md,
@@ -345,24 +352,20 @@ const styles = StyleSheet.create({
     borderTopColor: DESIGN.colors.border,
     backgroundColor: DESIGN.colors.background,
   },
-
   appInfo: {
     alignItems: 'center',
     marginBottom: DESIGN.spacing.md,
   },
-
   appName: {
     ...DESIGN.typography.subtitle,
     color: DESIGN.colors.primary,
     fontWeight: '600',
   },
-
   appVersion: {
     ...DESIGN.typography.caption,
     color: DESIGN.colors.textTertiary,
     marginTop: 2,
   },
-
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -371,15 +374,12 @@ const styles = StyleSheet.create({
     paddingVertical: DESIGN.spacing.md,
     borderRadius: DESIGN.borderRadius.md,
   },
-
   logoutText: {
     ...DESIGN.typography.subtitle,
     color: DESIGN.colors.surface,
     marginLeft: DESIGN.spacing.sm,
     fontWeight: '600',
   },
-
-  // Coming Soon Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -387,7 +387,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: DESIGN.spacing.lg,
   },
-
   comingSoonModal: {
     backgroundColor: DESIGN.colors.surface,
     borderRadius: DESIGN.borderRadius.lg,
@@ -397,19 +396,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...DESIGN.shadows.medium,
   },
-
   modalHeader: {
     alignItems: 'center',
     marginBottom: DESIGN.spacing.lg,
   },
-
   modalTitle: {
     ...DESIGN.typography.title,
     color: DESIGN.colors.textPrimary,
     marginTop: DESIGN.spacing.sm,
     fontWeight: '600',
   },
-
   modalMessage: {
     ...DESIGN.typography.body,
     color: DESIGN.colors.textSecondary,
@@ -417,7 +413,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: DESIGN.spacing.xl,
   },
-
   modalButton: {
     backgroundColor: DESIGN.colors.primary,
     paddingHorizontal: DESIGN.spacing.xl,
@@ -426,7 +421,6 @@ const styles = StyleSheet.create({
     minWidth: 120,
     alignItems: 'center',
   },
-
   modalButtonText: {
     ...DESIGN.typography.subtitle,
     color: DESIGN.colors.surface,
@@ -434,4 +428,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DrawerMenu;
+export default DrawerContent;

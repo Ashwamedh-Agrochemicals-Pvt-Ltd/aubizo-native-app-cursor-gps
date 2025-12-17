@@ -22,26 +22,34 @@ export const setGlobalUserSetter = (setter) => {
  * Logout from anywhere (client.js, utils, etc.)
  * @param {boolean} isSessionExpired - If true, shows "Session Expired" message
  */
-export const logoutFromClient = async (isSessionExpired = false) => {
+export const logoutFromClient = async (setUser, setUsername, isSessionExpired = false) => {
   logger.log(`🔵 logoutFromClient called with isSessionExpired: ${isSessionExpired}`);
-  await handleLogout(globalSetUser, isSessionExpired);
+
+  // Call the handler with both setters
+  await handleLogout(setUser, setUsername, isSessionExpired);
+
   logger.log(`🚪 Logout completed (Session Expired: ${isSessionExpired})`);
 };
+
 
 /**
  * Authentication Hook
  */
 const useAuth = () => {
-  const { user, setUser } = useContext(authContext);
+  const { user, setUser, username, setUsername } = useContext(authContext);
+
 
   /**
    * Login user and store tokens
    */
-  const logIn = async (authToken, refreshToken) => {
+  const logIn = async (authToken, refreshToken, name) => {
     try {
       setUser(authToken);
+      setUsername(name);
       await authStorage.storeToken(authToken);
       await authStorage.storeRefreshToken(refreshToken);
+      await authStorage.saveUsername(name);
+
 
       if (__DEV__) {
         const tokenInfo = authStorage.getTokenInfo(authToken);
@@ -60,10 +68,11 @@ const useAuth = () => {
    */
   const logOut = async () => {
     logger.log("🔵 User clicked logout button - calling logoutFromClient(false)");
-    return await logoutFromClient(false);
+    return await logoutFromClient(setUser, setUsername, false);
   };
 
-  return { user, logIn, logOut };
+
+  return { user, username, logIn, logOut, };
 };
 
 export default useAuth;

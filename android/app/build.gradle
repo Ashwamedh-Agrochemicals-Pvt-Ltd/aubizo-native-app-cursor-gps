@@ -88,9 +88,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.ashwamedhgroup.AUBIZO'
+    namespace 'com.aswamedh.ASHWAMEDHGROUP.dev'
     defaultConfig {
-        applicationId 'com.ashwamedhgroup.AUBIZO'
+        applicationId 'com.aswamedh.ASHWAMEDHGROUP.dev'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
