@@ -16,6 +16,8 @@ import storage from "../../utility/storage";
 import apiClient from "../../api/client";
 import useDeviceRestrictions from "../../hooks/useDeviceRestrictions";
 import GenericSettingsModal from "../GenericSettingsModal";
+import { useModulePermission } from "../../hooks/usePermissions";
+import { MODULES } from "../../auth/permissions";
 function EntityVisitList({
   type,
   loading,
@@ -31,6 +33,15 @@ function EntityVisitList({
   const { startVisit, endVisit, activeStartId, visitStatusTrigger } =
     useVisitManager(type);
   const { modalVisible, modalType, setModalVisible, checkRestrictions, openSettings } = useDeviceRestrictions();
+
+  // Determine module permission based on `type` prop
+  let moduleKey = null;
+  if (type && typeof type === 'string') {
+    const t = type.trim().toUpperCase();
+    if (t === 'FARMER') moduleKey = MODULES.FARMER;
+    else if (t === 'DEALER') moduleKey = MODULES.DEALER;
+  }
+  const { canCreate = false, canUpdate = false } = useModulePermission(moduleKey) || {};
 
 
   const renderItem = ({ item, index }) => {
@@ -140,19 +151,21 @@ function EntityVisitList({
             </View>
             {/* Visit Actions */}
             <View style={modernStyles.visitActions}>
-              <TouchableOpacity
-                style={modernStyles.actionButton}
-                onPress={() =>
-                  navigation.navigate(ScreenUpdate, { id: item.id })
-                }
-                activeOpacity={0.7}
-              >
-                <MaterialCommunityIcons
-                  name="square-edit-outline"
-                  size={22}
-                  color={DESIGN.colors.info}
-                />
-              </TouchableOpacity>
+                {canUpdate && (
+                  <TouchableOpacity
+                    style={modernStyles.actionButton}
+                    onPress={() =>
+                      navigation.navigate(ScreenUpdate, { id: item.id })
+                    }
+                    activeOpacity={0.7}
+                  >
+                    <MaterialCommunityIcons
+                      name="square-edit-outline"
+                      size={22}
+                      color={DESIGN.colors.info}
+                    />
+                  </TouchableOpacity>
+                )}
               <TouchableOpacity
                 style={[
                   modernStyles.visitButton,
@@ -253,19 +266,20 @@ function EntityVisitList({
 
       {/* Bottom Add Button */}
       <View style={modernStyles.bottomButtonContainer}>
-        <TouchableOpacity
-          style={modernStyles.addButton}
-          onPress={handleForm}
-          activeOpacity={0.8}
-          disabled={loading}
-        >
-          <MaterialCommunityIcons
-            name="plus"
-            size={24}
-            color={DESIGN.colors.surface}
-          />
-          {/* <Text style={modernStyles.addButtonText}>Add {type}</Text> */}
-        </TouchableOpacity>
+        {canCreate && (
+          <TouchableOpacity
+            style={modernStyles.addButton}
+            onPress={() => handleForm && handleForm()}
+            activeOpacity={0.8}
+            disabled={loading}
+          >
+            <MaterialCommunityIcons
+              name="plus"
+              size={24}
+              color={DESIGN.colors.surface}
+            />
+          </TouchableOpacity>
+        )}
       </View>
       {/* Device restrictions modal */}
       {modalVisible && modalType === "developer" && (

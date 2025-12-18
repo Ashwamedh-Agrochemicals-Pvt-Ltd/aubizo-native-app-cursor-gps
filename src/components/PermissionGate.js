@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useModulePermission } from '../hooks/usePermissions';
 import { MODULES, PERMISSIONS } from '../auth/permissions';
+import { usePermissionsContext } from '../contexts/PermissionsContext';
 import DESIGN from '../theme';
 
 /**
@@ -15,7 +16,8 @@ const PermissionGate = ({
     fallback = null,
     showAccessDenied = false
 }) => {
-    const { enabled, loading } = useModulePermission(module);
+    const ctx = usePermissionsContext();
+    const { loading } = ctx;
 
     // Show loading state
     if (loading) {
@@ -26,9 +28,12 @@ const PermissionGate = ({
         );
     }
 
-    // Check if user has permission
-    const hasAccess = enabled && (permission === PERMISSIONS.READ ||
-        useModulePermission(module)[`can${permission.charAt(0).toUpperCase() + permission.slice(1)}`]);
+    // Admins bypass checks
+    if (ctx.isAdmin && ctx.isAdmin()) return children;
+
+    const enabled = ctx.isModuleEnabled(module);
+    const hasPerm = ctx.hasPermission(module, permission);
+    const hasAccess = enabled && (permission === PERMISSIONS.READ ? true : !!hasPerm);
 
     if (!hasAccess) {
         if (showAccessDenied) {
@@ -57,10 +62,11 @@ export const PermissionButton = ({
     disabled = false,
     ...props
 }) => {
-    const { enabled, loading } = useModulePermission(module);
-
-    const hasAccess = enabled && (permission === PERMISSIONS.READ ||
-        useModulePermission(module)[`can${permission.charAt(0).toUpperCase() + permission.slice(1)}`]);
+    const ctx = usePermissionsContext();
+    const { loading } = ctx;
+    const enabled = ctx.isModuleEnabled(module);
+    const hasPerm = ctx.hasPermission(module, permission);
+    const hasAccess = enabled && (permission === PERMISSIONS.READ ? true : !!hasPerm);
 
     return React.cloneElement(children, {
         ...props,

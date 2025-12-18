@@ -18,7 +18,11 @@ export const MODULES = {
   INVENTORY_WAREHOUSE: 'INVENTORY_WAREHOUSE',
   INVENTORY_BATCH: 'INVENTORY_BATCH',
   DISPATCH: 'DISPATCH',
-  SCHEME: 'SCHEME'
+  SCHEME: 'SCHEME',
+  DEALER_DOCUMENT: 'DEALER_DOCUMENT',
+  DEALER_OTP: 'DEALER_OTP',
+  RBAC: 'RBAC',
+  REPORT: 'REPORT'
 };
 
 export const PERMISSIONS = {
@@ -34,9 +38,33 @@ export const PERMISSIONS = {
   RECONCILE: 'reconcile'
 };
 
+// Scopes for permission applicability
+export const SCOPES = {
+  OWN: 'own',
+  TEAM: 'team',
+  COMPANY: 'company'
+};
+
+// Sources of permission decision
+export const SOURCES = {
+  ADMIN: 'admin',
+  ROLE: 'role',
+  OVERRIDE_ADD: 'override_add',
+  OVERRIDE_REMOVE: 'override_remove'
+};
+
+// Standard permission object format (for reference)
+export const PERMISSION_STRUCTURE = {
+  allowed: false,
+  scope: null,
+  source: null,
+  own_data_only: false
+};
+
 class PermissionManager {
   constructor() {
     this.permissions = null;
+    this.userProfile = null;
     this.isLoading = false;
   }
 
@@ -51,7 +79,19 @@ class PermissionManager {
       const response = await apiClient.get('/api/auth/all-module-permissions/');
 
       if (response.data && response.data.modules) {
+        // If backend returns enhanced structure (action objects), parse accordingly
         this.permissions = this.parsePermissions(response.data.modules);
+
+        // Store user profile if provided by backend (optional)
+        const profile = response.data.user_profile || response.data.userProfile || response.data.user;
+        if (profile) {
+          this.userProfile = profile;
+          try {
+            await authStorage.storeUserProfile(profile);
+          } catch (e) {
+            // ignore storage failures
+          }
+        }
         await this.cachePermissions();
         return this.permissions;
       }
@@ -82,9 +122,29 @@ class PermissionManager {
     const parsed = {};
 
     modules.forEach(module => {
+      // Support both simple boolean-permission maps and enhanced action objects
+      const perms = {};
+      if (module.permissions && typeof module.permissions === 'object') {
+        Object.keys(module.permissions).forEach(action => {
+          const actionVal = module.permissions[action];
+          if (actionVal && typeof actionVal === 'object' && ('allowed' in actionVal || 'scope' in actionVal)) {
+            // Enhanced format
+            perms[action] = {
+              allowed: !!actionVal.allowed,
+              scope: actionVal.scope || null,
+              source: actionVal.source || null,
+              own_data_only: !!actionVal.own_data_only
+            };
+          } else {
+            // Legacy boolean format
+            perms[action] = !!actionVal;
+          }
+        });
+      }
+
       parsed[module.module] = {
-        enabled: module.enabled,
-        permissions: module.permissions
+        enabled: !!module.enabled,
+        permissions: perms
       };
     });
 
@@ -99,6 +159,10 @@ class PermissionManager {
       // Compress permissions data to reduce storage size
       const compressed = this.compressPermissions(this.permissions);
       await authStorage.storePermissions(compressed);
+      // Also persist user profile if available
+      try {
+        if (this.userProfile) await authStorage.storeUserProfile(this.userProfile);
+      } catch (e) {}
     } catch (error) {
       console.error('Failed to cache permissions:', error);
     }
@@ -152,6 +216,11 @@ class PermissionManager {
       if (cached) {
         // Decompress the cached data
         this.permissions = this.decompressPermissions(cached);
+        // Try to load cached user profile as well
+        try {
+          const profile = await authStorage.getUserProfile();
+          if (profile) this.userProfile = profile;
+        } catch (e) {}
         return this.permissions;
       }
     } catch (error) {
@@ -160,6 +229,55 @@ class PermissionManager {
 
     // Return default permissions if no cache
     return this.getDefaultPermissions();
+  }
+
+  /**
+   * Get module permissions object (enhanced) or null
+   */
+  getModulePermissions(moduleName) {
+    if (!this.permissions) return null;
+    return this.permissions[moduleName] || null;
+  }
+
+  /**
+   * Get permission scope for a module.action
+   */
+  getPermissionScope(moduleName, permission = null) {
+    if (!this.permissions) return null;
+    const action = permission || PERMISSIONS.READ;
+    const modulePerms = this.permissions[moduleName];
+    if (!modulePerms || !modulePerms.enabled) return null;
+    const actionPerm = modulePerms.permissions[action];
+    if (!actionPerm) return null;
+    if (typeof actionPerm === 'object') return actionPerm.scope || null;
+    return actionPerm === true ? SCOPES.OWN : null;
+  }
+
+  /**
+   * Get allowed actions list for a module
+   */
+  getAllowedActions(moduleName) {
+    if (!this.permissions) return [];
+    const modulePerms = this.getModulePermissions(moduleName);
+    if (!modulePerms) return [];
+    return Object.keys(modulePerms.permissions).filter(action => {
+      const v = modulePerms.permissions[action];
+      if (typeof v === 'object') return !!v.allowed;
+      return !!v;
+    });
+  }
+
+  /**
+   * Is current user considered admin (fast check)
+   */
+  async isAdmin() {
+    try {
+      if (this.userProfile && this.userProfile.is_admin === true) return true;
+      const stored = await authStorage.getUserProfile();
+      return !!(stored && stored.is_admin === true);
+    } catch (e) {
+      return false;
+    }
   }
 
   /**

@@ -48,11 +48,14 @@ const DealerScreen = () => {
         lon: Number(longitude.toFixed(6)),
       };
 
-      const response = await apiClient.post("track/nearby-dealers/", payload, { timeout: 4000 });
+      const response = await apiClient.post("track/nearby-dealers/", payload, );
 
       if (__DEV__) console.log("[Dealer] Dealer Data:", response.data);
 
       const dealerList = response.data?.dealers || [];
+
+      console.log("Dealerlist", dealerList)
+
       setDealerData(dealerList);
     } catch (error) {
       if (__DEV__) console.error("[Dealer] fetchDealers failed:", error);

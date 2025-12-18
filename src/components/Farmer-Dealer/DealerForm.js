@@ -19,6 +19,8 @@ import DESIGN from "../../theme";
 import AppDropDownPicker from "../form/appComponents/AppDropDownPicker";
 import InputFormField from "../form/appComponents/InputFormText";
 import OTPModal from "./OTPModal";
+import { useModulePermission } from "../../hooks/usePermissions";
+import { MODULES } from "../../auth/permissions";
 import logger from "../../utility/logger";
 import LocationService from "../../utility/location";
 import showToast from "../../utility/showToast";
@@ -63,6 +65,11 @@ function DealerForm({ location, stateDealerForm, setfetchDealer }) {
   // OTP related states
   const [otpModalVisible, setOtpModalVisible] = useState(false);
   const [createdDealerId, setCreatedDealerId] = useState(null);
+  // Dealer OTP permissions
+  const { canCreate: dealerOtpCanCreate = false, canRead: dealerOtpCanRead = false, canUpdate: dealerOtpCanUpdate = false } = useModulePermission(MODULES.DEALER_OTP) || {};
+  // Dealer module permissions
+  const { canUpdate: dealerCanUpdate = false } = useModulePermission(MODULES.DEALER) || {};
+  const otpRequired = dealerCanUpdate && dealerOtpCanCreate && dealerOtpCanUpdate && dealerOtpCanRead;
   const [locationPermission, setLocationPermission] = useState(null);
 
   // Loading states
@@ -264,7 +271,18 @@ function DealerForm({ location, stateDealerForm, setfetchDealer }) {
         logger.info('Dealer created successfully:', { dealerId });
       }
 
-      await sendOTP({ dealerId, phone: payload.phone });
+      // If OTP flow not required, skip OTP and complete creation flow
+      if (!otpRequired) {
+        // refresh parent list, close form and show success
+        try { if (setfetchDealer) setfetchDealer(); } catch (e) { }
+        try { stateDealerForm(false); } catch (e) { }
+        try { setCreatedDealerId(null); } catch (e) { }
+        try { showToast.success('Dealer created successfully!', 'Success', 'top', 3000); } catch (e) { }
+        // navigate to Dealer screen if navigation ref available
+        try { const { navigation } = require('../../../navigation/NavigationService'); if (navigation?.isReady?.()) navigation.navigate('Dealer'); } catch (e) { }
+      } else {
+        await sendOTP({ dealerId, phone: payload.phone });
+      }
 
     } catch (error) {
       if (error.name === 'AbortError') {
@@ -330,12 +348,19 @@ function DealerForm({ location, stateDealerForm, setfetchDealer }) {
         }
       }
 
+      // Only proceed with OTP sending when OTP flow is required
+      if (!otpRequired) {
+        // OTP not required for this user — skip
+        return;
+      }
+
       await apiClient.post(`dealer/${dealerId}/send-otp/`, {}, {
         signal: abortControllerRef.current.signal,
         timeout: 10000,
       });
-
-      setOtpModalVisible(true);
+      if (otpRequired) {
+        setOtpModalVisible(true);
+      }
       if (__DEV__) {
         logger.info('OTP sent successfully');
       }
@@ -349,7 +374,9 @@ function DealerForm({ location, stateDealerForm, setfetchDealer }) {
         logger.error('Error sending OTP:', error);
       }
 
-      setOtpModalVisible(true);
+      if (otpRequired) {
+        setOtpModalVisible(true);
+      }
       Alert.alert("OTP Error", "Failed to send OTP. You can try resending from the modal.");
     } finally {
       setIsSendingOTP(false);
@@ -399,6 +426,17 @@ function DealerForm({ location, stateDealerForm, setfetchDealer }) {
 
     try {
       if (createdDealerId) {
+        // If OTP flow is not required, skip resend and finalize creation
+        if (!otpRequired) {
+          try { if (setfetchDealer) setfetchDealer(); } catch (e) { }
+          try { stateDealerForm(false); } catch (e) { }
+          try { setCreatedDealerId(null); } catch (e) { }
+          try { showToast.success('Dealer created successfully!', 'Success', 'top', 3000); } catch (e) { }
+          try { const { navigation } = require('../../../navigation/NavigationService'); if (navigation?.isReady?.()) navigation.navigate('Dealer'); } catch (e) { }
+          setIsSubmitting(false);
+          return;
+        }
+
         await sendOTP({ dealerId: createdDealerId, phone: values.phone });
         return;
       }
@@ -816,7 +854,11 @@ function DealerForm({ location, stateDealerForm, setfetchDealer }) {
                     disabled={!canSubmit}
                     activeOpacity={0.8}
                     accessibilityRole="button"
-                    accessibilityLabel={createdDealerId ? "Resend OTP" : "Generate OTP"}
+                    accessibilityLabel={
+                      (!otpRequired)
+                        ? 'Create Dealer'
+                        : (createdDealerId ? 'Resend OTP' : 'Generate OTP')
+                    }
                     accessibilityHint="Submits the dealer form"
                     accessibilityState={{ disabled: !canSubmit }}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -834,7 +876,9 @@ function DealerForm({ location, stateDealerForm, setfetchDealer }) {
                           color={DESIGN.colors.surface}
                         />
                         <Text style={modernStyles.submitButtonText}>
-                          {createdDealerId ? "Resend OTP" : "Generate OTP"}
+                          {(!otpRequired)
+                            ? 'Create Dealer'
+                            : (createdDealerId ? 'Resend OTP' : 'Generate OTP')}
                         </Text>
                       </View>
                     )}
@@ -885,19 +929,21 @@ function DealerForm({ location, stateDealerForm, setfetchDealer }) {
         bounces={false}
       />
 
-      <OTPModal
-        visible={otpModalVisible}
-        dealerId={createdDealerId}
-        onClose={() => setOtpModalVisible(false)}
-        phone={phoneForOTP}
-        onVerified={() => {
-          setOtpModalVisible(false);
-          stateDealerForm(false);
-          setCreatedDealerId(null);
-          showToast.success('OTP Verified and Dealer created successfully!', "Success", "top", 3000);
-        }}
-        setfetchDealer={setfetchDealer}
-      />
+      {(otpRequired) && (
+        <OTPModal
+          visible={otpModalVisible}
+          dealerId={createdDealerId}
+          onClose={() => setOtpModalVisible(false)}
+          phone={phoneForOTP}
+          onVerified={() => {
+            setOtpModalVisible(false);
+            stateDealerForm(false);
+            setCreatedDealerId(null);
+            showToast.success('OTP Verified and Dealer created successfully!', "Success", "top", 3000);
+          }}
+          setfetchDealer={setfetchDealer}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 }

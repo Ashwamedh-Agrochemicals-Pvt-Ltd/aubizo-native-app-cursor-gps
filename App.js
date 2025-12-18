@@ -28,7 +28,6 @@ import useDeviceRestrictions from "./src/hooks/useDeviceRestrictions";
 import showToast from "./src/utility/showToast";
 import { setGlobalUserSetter } from "./src/auth/useAuth";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { KeyboardProvider } from "react-native-keyboard-controller";
 import { StatusBar } from "react-native";
 
 
@@ -41,7 +40,7 @@ if (!__DEV__) {
   Sentry.init({
     dsn: 'https://bba03d2bf58eed642001145c9997d48a@o4509722116882432.ingest.de.sentry.io/4510101474181200',
     sendDefaultPii: true,
-    enableLogs: false,
+    enableLogs: true,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1,
     integrations: [

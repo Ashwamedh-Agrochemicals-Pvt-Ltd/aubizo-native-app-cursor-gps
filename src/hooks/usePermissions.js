@@ -33,6 +33,10 @@ export const usePermissions = () => {
       isModuleEnabled: contextPermissions.isModuleEnabled,
       getEnabledModules: contextPermissions.getEnabledModules,
       refreshPermissions: contextPermissions.refreshPermissions,
+      getPermissionScope: contextPermissions.getPermissionScope,
+      getModulePermissions: contextPermissions.getModulePermissions,
+      getAllowedActions: contextPermissions.getAllowedActions,
+      isAdmin: contextPermissions.isAdmin,
       canCreate: (module) => contextPermissions.hasPermission(module, PERMISSIONS.CREATE),
       canRead: (module) => contextPermissions.hasPermission(module, PERMISSIONS.READ),
       canUpdate: (module) => contextPermissions.hasPermission(module, PERMISSIONS.UPDATE),
@@ -78,6 +82,22 @@ export const usePermissions = () => {
     return permissionManager.hasPermission(module, permission);
   };
 
+  const getPermissionScope = (module, permission = null) => {
+    return permissionManager.getPermissionScope(module, permission);
+  };
+
+  const getModulePermissions = (module) => {
+    return permissionManager.getModulePermissions(module);
+  };
+
+  const getAllowedActions = (module) => {
+    return permissionManager.getAllowedActions(module);
+  };
+
+  const isAdmin = async () => {
+    return await permissionManager.isAdmin();
+  };
+
   const isModuleEnabled = (module) => {
     return permissionManager.isModuleEnabled(module);
   };
@@ -98,6 +118,10 @@ export const usePermissions = () => {
     isModuleEnabled,
     getEnabledModules,
     refreshPermissions,
+    getPermissionScope,
+    getModulePermissions,
+    getAllowedActions,
+    isAdmin,
     // Convenience methods for common checks
     canCreate: (module) => hasPermission(module, PERMISSIONS.CREATE),
     canRead: (module) => hasPermission(module, PERMISSIONS.READ),

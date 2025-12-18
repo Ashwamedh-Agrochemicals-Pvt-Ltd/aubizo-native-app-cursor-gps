@@ -39,7 +39,7 @@ const APP_CONFIG = {
     name: "Ashwamedh Group",
     slug: "ashwamedhgroup",
     icons: {
-      icon: "./assets/images/ashwamedh/adaptive-icon.png",
+      icon: "./assets/images/ashwamedh/images/adaptive-icon.png",
       adaptiveForeground: "./assets/ashwamedh/images/adaptive-icon.png",
       splash: {
         light: "./assets/ashwamedh/images/splash-icon-light.png",
@@ -205,7 +205,7 @@ export default ({ config }) => ({
     extra: {
       APP_VARIANT,
       APP_BRAND,
-      // googleApiKey: process.env.GOOGLE_API_KEY,
+      googleApiKey: process.env.GOOGLE_API_KEY,
       eas: {
         projectId: BRAND.easProjectId
       },

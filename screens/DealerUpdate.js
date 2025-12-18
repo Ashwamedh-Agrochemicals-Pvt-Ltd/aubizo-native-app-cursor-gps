@@ -22,6 +22,8 @@ import showToast from "../src/utility/showToast";
 import AppDropDownPicker from "../src/components/form/appComponents/AppDropDownPicker";
 import { DealerSchema } from "../src/validations/DealerSchema";
 import InputFormField from "../src/components/form/appComponents/InputFormText";
+import { useModulePermission } from "../src/hooks/usePermissions";
+import { MODULES } from "../src/auth/permissions";
 
 const STATE_URL = process.env.EXPO_PUBLIC_STATE_URL;
 const DISTRICT_URL = process.env.EXPO_PUBLIC_DISTRICT_URL;
@@ -49,6 +51,10 @@ const DealerUpdateScreen = () => {
   // OTP related states
   const [otpModalVisible, setOtpModalVisible] = useState(false);
   const [phoneForOTP, setPhoneForOTP] = useState("");
+  // Permissions for dealer OTP flow
+  const { canCreate: dealerOtpCanCreate = false, canRead: dealerOtpCanRead = false, canUpdate: dealerOtpCanUpdate = false } = useModulePermission(MODULES.DEALER_OTP) || {};
+  const { canUpdate: dealerCanUpdate = false } = useModulePermission(MODULES.DEALER) || {};
+  const otpRequired = dealerCanUpdate && dealerOtpCanCreate && dealerOtpCanRead && dealerOtpCanUpdate;
 
   const [dropdowns, setDropdowns] = useState({
     state: false,
@@ -309,6 +315,17 @@ const DealerUpdateScreen = () => {
         setPhoneForOTP(resp.data.phone);
       }
 
+      // If OTP flow is not required for this user, treat phone update as verified
+      if (!otpRequired) {
+        if (resp?.data?.phone) {
+          setOriginalPhone(resp.data.phone);
+          setIsPhoneVerified(true);
+        }
+        showToast.success('Phone updated successfully!');
+        phoneInputRef.current?.blur();
+        return;
+      }
+
       // Then send OTP
       await apiClient.post(`dealer/${dealerId}/send-otp/`, {}, {
         signal: abortControllerRef.current.signal,
@@ -466,7 +483,7 @@ const DealerUpdateScreen = () => {
           secondaryPhone: dealer?.secondary_phone === "NA" ? "" : dealer?.secondary_phone || "",
           secondary_phone_relation: dealer?.secondary_phone_relation || "",
           pan_number: dealer?.pan_number === "NA" ? "" : dealer?.pan_number || "",
-          gst_number: dealer?.gst_number === "NA" ? "" : dealer?.gst_number || "",      
+          gst_number: dealer?.gst_number === "NA" ? "" : dealer?.gst_number || "",
         }}
         validationSchema={DealerSchema}
         onSubmit={handleSubmit}
@@ -486,9 +503,7 @@ const DealerUpdateScreen = () => {
 
           // Update verification status when phone changes
           React.useEffect(() => {
-            if (phoneChanged) {
-              setIsPhoneVerified(false);
-            } else {
+            if (!phoneChanged) {
               setIsPhoneVerified(true);
             }
           }, [phoneChanged]);
@@ -553,50 +568,53 @@ const DealerUpdateScreen = () => {
                   <View style={modernStyles.phoneRow}>
                     <InputFormField
                       name={"phone"}
-                      style={[modernStyles.input, modernStyles.phoneInput]}
+                      style={[
+                        modernStyles.input,
+                        otpRequired ? modernStyles.phoneInputWithButton : modernStyles.phoneInputFull,
+                      ]}
                       placeholder="Enter 10-digit phone number"
                       keyboardType="phone-pad"
                       maxLength={10}
-                      accessibilityLabel="Phone number input"
-                      accessibilityHint="Enter 10-digit phone number"
+                   
                     />
-                    <TouchableOpacity
-                      style={[
-                        modernStyles.verifyButton,
-                        (!phoneChanged || isSendingOTP || values.phone.trim().length !== 10) &&
-                        modernStyles.verifyButtonDisabled
-                      ]}
-                      onPress={() => handleVerifyPhone(values.phone)}
-                      disabled={!phoneChanged || isSendingOTP || values.phone.trim().length !== 10}
-                      activeOpacity={0.7}
-                      accessibilityRole="button"
-                      accessibilityLabel="Verify phone number"
-                      accessibilityHint="Sends OTP to verify phone number"
-                    >
-                      {isSendingOTP ? (
-                        <ActivityIndicator size="small" color={DESIGN.colors.surface} />
-                      ) : (
-                        <>
-                          <MaterialCommunityIcons
-                            name="shield-check"
-                            size={16}
-                            color={DESIGN.colors.surface}
-                          />
-                          <Text style={modernStyles.verifyButtonText}>Verify</Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
+
+                    {otpRequired && (
+                      <TouchableOpacity
+                        style={[
+                          modernStyles.verifyButton,
+                          (!phoneChanged || isSendingOTP || values.phone.trim().length !== 10) &&
+                          modernStyles.verifyButtonDisabled
+                        ]}
+                        onPress={() => handleVerifyPhone(values.phone)}
+                        disabled={!phoneChanged || isSendingOTP || values.phone.trim().length !== 10}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel="Verify phone number"
+                        accessibilityHint="Sends OTP to verify phone number"
+                      >
+                        {isSendingOTP ? (
+                          <ActivityIndicator size="small" color={DESIGN.colors.surface} />
+                        ) : (
+                          <>
+                            <MaterialCommunityIcons
+                              name="shield-check"
+                              size={16}
+                              color={DESIGN.colors.surface}
+                            />
+                            <Text style={modernStyles.verifyButtonText}>Verify</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    )}
                   </View>
+
                   {phoneChanged && !isPhoneVerified && (
                     <Text style={modernStyles.warningText}>
                       ⚠️ Phone number changed. Please verify to update.
                     </Text>
                   )}
-                  {phoneChanged && isPhoneVerified && (
-                    <Text style={modernStyles.successText}>
-                      ✓ Phone number verified successfully!
-                    </Text>
-                  )}
+
+
                 </View>
               </View>
 
@@ -621,7 +639,7 @@ const DealerUpdateScreen = () => {
                     placeholder="Enter secondary phone"
                     keyboardType="phone-pad"
                     maxLength={10}
- 
+
                   />
                 </View>
 
@@ -1008,15 +1026,19 @@ const modernStyles = StyleSheet.create({
     color: DESIGN.colors.textPrimary,
     minHeight: 50,
   },
+  phoneInputWithButton: {
+    flex: 1,
+    marginRight: DESIGN.spacing.sm,
+  },
+  phoneInputFull: {
+    width: '100%',
+  },
   phoneRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: DESIGN.spacing.sm,
+    justifyContent: 'space-between',
 
-  },
-  phoneInput: {
-    flex: 1,
-    marginBottom: 0,
+
   },
   verifyButton: {
     backgroundColor: DESIGN.colors.primary,
@@ -1027,8 +1049,7 @@ const modernStyles = StyleSheet.create({
     paddingVertical: DESIGN.spacing.sm,
     borderRadius: DESIGN.borderRadius.sm,
     minHeight: 50,
-    minWidth: 90,
-    gap: DESIGN.spacing.xs,
+
   },
   verifyButtonDisabled: {
     backgroundColor: DESIGN.colors.textTertiary,
@@ -1039,6 +1060,11 @@ const modernStyles = StyleSheet.create({
     color: DESIGN.colors.surface,
     fontWeight: "600",
     fontSize: 14,
+  },
+  infoText: {
+    ...DESIGN.typography.caption,
+    color: DESIGN.colors.textSecondary,
+    marginTop: DESIGN.spacing.xs,
   },
   disabledInput: {
     backgroundColor: DESIGN.colors.surfaceElevated,

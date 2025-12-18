@@ -5,7 +5,6 @@
 
 import axios from "axios";
 import AuthStorage from "../auth/storage";
-import { Alert } from "react-native";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -127,20 +126,20 @@ apiClient.interceptors.response.use(
     // --------------------------------------------------------
     // 2) Network / DNS Errors
     // --------------------------------------------------------
-    if (!error.response || errMsg.includes("network") || errMsg.includes("dns") || errMsg.includes("enotfound")) {
-      setTimeout(() => {
-        Alert.alert(
-          "Network Issue",
-          "सर्व्हरशी कनेक्ट होत नाही. कृपया Wi-Fi/Data off-on करून पुन्हा प्रयत्न करा."
-        );
-      }, 100);
+    // if (!error.response || errMsg.includes("network") || errMsg.includes("dns") || errMsg.includes("enotfound")) {
+    //   setTimeout(() => {
+    //     Alert.alert(
+    //       "Network Issue",
+    //       "सर्व्हरशी कनेक्ट होत नाही. कृपया Wi-Fi/Data off-on करून पुन्हा प्रयत्न करा."
+    //     );
+    //   }, 100);
 
-      return Promise.reject({
-        status: 0,
-        reason: "DNS/Network Error",
-        detail: error.message || "Network Error",
-      });
-    }
+    //   return Promise.reject({
+    //     status: 0,
+    //     reason: "DNS/Network Error",
+    //     detail: error.message || "Network Error",
+    //   });
+    // }
 
     // --------------------------------------------------------
     // 3) CHECK AGAIN → Logout endpoint should not refresh

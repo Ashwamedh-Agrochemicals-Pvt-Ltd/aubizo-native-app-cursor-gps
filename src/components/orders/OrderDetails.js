@@ -1,3 +1,4 @@
+ 
 /**
  * OrderDetails Component
  *
@@ -23,12 +24,15 @@ import * as DocumentPicker from "expo-document-picker";
 import DESIGN from "../../theme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import apiClient from "../../api/client";
+import { useModulePermission } from "../../hooks/usePermissions";
+import { MODULES } from "../../auth/permissions";
 
 const OrderDetails = ({ orderId, visible, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [order, setOrder] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const { canUpdate = false } = useModulePermission(MODULES.ORDER) || {};
 
   const fetchOrderDetails = async () => {
     if (!orderId) return;
@@ -391,8 +395,10 @@ ${itemsText}
                       <Text style={styles.letterheadText}>View Uploaded Letterhead</Text>
                     </TouchableOpacity>
                   ) : (
-                    // Show upload option only when no letterhead exists
-                    <>
+                      // Show upload option only when no letterhead exists — gated by create permission
+                      canUpdate
+ ? (
+                        <>
                       {selectedFile ? (
                         <View style={styles.fileContainer}>
                           <View style={styles.fileInfo}>
@@ -448,7 +454,12 @@ ${itemsText}
                           )}
                         </TouchableOpacity>
                       )}
-                    </>
+                        </>
+                      ) : (
+                        <View style={styles.emptyContainer}>
+                          <Text style={styles.emptyText}>No letterhead available</Text>
+                        </View>
+                      )
                   )}
                 </View>
               </View>

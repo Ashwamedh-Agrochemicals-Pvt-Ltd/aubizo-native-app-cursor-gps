@@ -120,13 +120,13 @@ const DrawerContent = (props) => {
   };
 
   const menuItems = [
-    {
-      id: 'profile',
-      title: 'Profile',
-      icon: 'account-circle',
-      onPress: handleProfile,
-      show: true,
-    },
+    // {
+    //   id: 'profile',
+    //   title: 'Profile',
+    //   icon: 'account-circle',
+    //   onPress: handleProfile,
+    //   show: true,
+    // },
     {
       id: 'dealer-list',
       title: 'My Dealer List',

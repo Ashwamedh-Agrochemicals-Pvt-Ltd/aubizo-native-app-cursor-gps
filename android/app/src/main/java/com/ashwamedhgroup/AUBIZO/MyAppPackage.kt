@@ -1,4 +1,4 @@
-package com.aswamedh.ASHWAMEDHGROUP.dev
+package com.ashwamedhgroup.AUBIZO
 
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule

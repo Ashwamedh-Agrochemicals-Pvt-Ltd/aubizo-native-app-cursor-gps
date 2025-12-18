@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback } from 'react';
-import { permissionManager, MODULES } from '../auth/permissions';
+import { permissionManager, MODULES, SCOPES } from '../auth/permissions';
 import authStorage from '../auth/storage';
 import showToast from '../utility/showToast';
 
@@ -7,6 +7,7 @@ const PermissionsContext = createContext();
 
 export const PermissionsProvider = ({ children }) => {
   const [permissions, setPermissions] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -17,6 +18,17 @@ export const PermissionsProvider = ({ children }) => {
       setError(null);
       const userPermissions = await permissionManager.fetchPermissions();
       setPermissions(userPermissions);
+      // capture user profile if permission manager provided it or storage has it
+      try {
+        if (permissionManager.userProfile) {
+          setUserProfile(permissionManager.userProfile);
+        } else {
+          const stored = await authStorage.getUserProfile();
+          if (stored) setUserProfile(stored);
+        }
+      } catch (e) {
+        // ignore
+      }
     } catch (err) {
       console.error('Failed to load permissions:', err);
       
@@ -50,6 +62,7 @@ export const PermissionsProvider = ({ children }) => {
 
   const clearPermissions = useCallback(() => {
     setPermissions(null);
+    setUserProfile(null);
     setError(null);
     setIsInitialized(false);
   }, []);
@@ -66,6 +79,22 @@ export const PermissionsProvider = ({ children }) => {
     return permissionManager.hasPermission(module, permission);
   };
 
+  const getPermissionScope = (module, permission = null) => {
+    return permissionManager.getPermissionScope(module, permission);
+  };
+
+  const getModulePermissions = (module) => {
+    return permissionManager.getModulePermissions(module);
+  };
+
+  const getAllowedActions = (module) => {
+    return permissionManager.getAllowedActions(module);
+  };
+
+  const isAdmin = () => {
+    return !!(userProfile && userProfile.is_admin === true) || !!(permissionManager.userProfile && permissionManager.userProfile?.is_admin === true);
+  };
+
   const value = {
     permissions,
     loading,
@@ -76,6 +105,10 @@ export const PermissionsProvider = ({ children }) => {
     clearPermissions,
     isModuleEnabled,
     getEnabledModules,
+    getPermissionScope,
+    getModulePermissions,
+    getAllowedActions,
+    isAdmin,
     hasPermission,
     showDashboard: true,
     showProducts: isModuleEnabled(MODULES.PRODUCT),

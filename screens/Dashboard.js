@@ -26,9 +26,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DashboardSkeleton from "../src/components/appSkeleton/DashboardSkeleton";
 import { useNavigation } from "@react-navigation/native";
 import { getBrandConfig } from '../src/config/appConfig'
-
-const { brandName } = getBrandConfig();
-
+import { useModulePermission } from "../src/hooks/usePermissions";
+import { MODULES } from "../src/auth/permissions";
 
 const INPUNCH_URL = process.env.EXPO_PUBLIC_INPUNCH_URL;
 const OUTPUNCH_URL = process.env.EXPO_PUBLIC_OUTPUNCH_URL;
@@ -44,6 +43,9 @@ function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const insets = useSafeAreaInsets();
+  const { brandName } = getBrandConfig();
+  const { canRead: canReadFarmers, canCreate: canCreateFarmers } = useModulePermission(MODULES.FARMER) || {};
+  const { canRead: canReadDealers, canCreate: canCreateDealers } = useModulePermission(MODULES.DEALER) || {};
   const hasInpunchRef = useRef(false);
 
   const inpunchIdRef = useRef(null);
@@ -455,7 +457,11 @@ function Dashboard() {
                       Alert.alert("Access Restricted", `You must be punched in to access Farmer Enquiry.`);
                       return;
                     }
-                    navigation.navigate("Farmer", { inpunch_id: inpunchId });
+                    if (!canReadFarmers) {
+                      Alert.alert("Access Restricted", `You do not have permission to view Farmers.`);
+                      return;
+                    }
+                    navigation.navigate("Farmer", { inpunch_id: inpunchId, canCreate: !!canCreateFarmers });
                   }}
                   underlayColor={DESIGN.colors.surfaceElevated}
                   activeOpacity={hasInpunch ? 0.7 : 1}
@@ -485,7 +491,11 @@ function Dashboard() {
                       Alert.alert("Access Restricted", `You must be punched in to access Dealer Enquiry.`);
                       return;
                     }
-                    navigation.navigate("Dealer");
+                    if (!canReadDealers) {
+                      Alert.alert("Access Restricted", `You do not have permission to view Dealers.`);
+                      return;
+                    }
+                    navigation.navigate("Dealer", { canCreate: !!canCreateDealers });
                   }}
                   underlayColor={DESIGN.colors.surfaceElevated}
                   activeOpacity={hasInpunch ? 0.7 : 1}

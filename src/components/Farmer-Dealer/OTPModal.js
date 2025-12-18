@@ -95,9 +95,11 @@ function OTPModal({ visible, dealerId, onClose, onVerified, phone, setfetchDeale
       const resp = await apiClient.post(`dealer/${dealerId}/verify-otp/`, { otp: code });
 
       if (resp?.data?.is_phone_verified === true) {
-        setfetchDealer();               // refresh dealer list
+        if (typeof setfetchDealer === 'function') {
+          try { setfetchDealer(); } catch (e) { console.warn('setfetchDealer threw', e); }
+        }
         if (typeof onVerified === "function") onVerified();
-        onClose();                      // auto close modal
+        if (typeof onClose === 'function') onClose();
         return;
       }
 

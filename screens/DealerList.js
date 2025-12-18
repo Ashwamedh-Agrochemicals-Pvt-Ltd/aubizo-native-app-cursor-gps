@@ -1,10 +1,12 @@
 import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, TextInput, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, TextInput, FlatList, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DESIGN from '../src/theme';
 import { navigation } from '../navigation/NavigationService';
 import apiClient from '../src/api/client';
+import { useModulePermission } from '../src/hooks/usePermissions';
+import { MODULES } from '../src/auth/permissions';
 
 // Updated TABS to include Blacklisted
 const TABS = ["All", "Registered", "Unregistered", "Blacklisted"];
@@ -60,6 +62,10 @@ function DealerList(props) {
     };
 
     const [dealers, setDealers] = useState([]);
+
+    // Permission checks (evaluate once per render)
+    const { canRead: dealerDocCanRead = false, canCreate: dealerDocCanCreate = false } = useModulePermission(MODULES.DEALER_DOCUMENT) || {};
+    const { canRead: paymentCanRead = false } = useModulePermission(MODULES.PAYMENT) || {};
 
     const statusMap = {
         "All": "",
@@ -145,7 +151,13 @@ function DealerList(props) {
     }, [activeTab, showSearch]);
 
     const handleOnPress = (dealer) => {
-        navigation.navigate('DealerVerification', { dealer: dealer.id });
+        // Require at least view or create permission for dealer documents to proceed
+        if (!dealerDocCanRead && !dealerDocCanCreate) {
+            // Alert.alert('Access Restricted', 'You do not have permission to view or manage dealer documents.');
+            return;
+        }
+
+        navigation.navigate('DealerVerification', { dealer: dealer.id, dealerDocCanRead: dealerDocCanRead, dealerDocCanCreate: dealerDocCanCreate });
     }
 
     const query = searchQuery?.toLowerCase() || '';
@@ -237,22 +249,26 @@ function DealerList(props) {
                     </View>
                 </View>
 
-                {/* Right Section - Arrow */}
-                <Ionicons name="chevron-forward" size={20} color={DESIGN.colors.textTertiary} />
+                {/* Right Section - Arrow (only show if user can view/manage dealer documents) */}
+                {(dealerDocCanRead || dealerDocCanCreate) && (
+                    <Ionicons name="chevron-forward" size={20} color={DESIGN.colors.textTertiary} />
+                )}
             </TouchableOpacity>
 
             {/* Bottom Section - Vertical Line, Note Icon and View Ledger - Separate Touchable */}
-            <TouchableOpacity
-                style={styles.ledgerSection}
-                onPress={() => handleViewLedger(dealer)}
-                activeOpacity={0.7}
-            >
-                <View style={styles.verticalLine} />
-                <View style={styles.ledgerContainer}>
-                    <MaterialIcons name="receipt-long" size={25} color={DESIGN.colors.textSecondary} />
-                    <Text style={styles.ledgerText}>View Ledger</Text>
-                </View>
-            </TouchableOpacity>
+            {paymentCanRead && (
+              <TouchableOpacity
+                  style={styles.ledgerSection}
+                  onPress={() => handleViewLedger(dealer)}
+                  activeOpacity={0.7}
+              >
+                  <View style={styles.verticalLine} />
+                  <View style={styles.ledgerContainer}>
+                      <MaterialIcons name="receipt-long" size={25} color={DESIGN.colors.textSecondary} />
+                      <Text style={styles.ledgerText}>View Ledger</Text>
+                  </View>
+              </TouchableOpacity>
+            )}
         </View>
     );
 

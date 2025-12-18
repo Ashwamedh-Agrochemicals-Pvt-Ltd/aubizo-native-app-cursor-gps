@@ -19,6 +19,9 @@ import showToast from "../src/utility/showToast";
 import DESIGN from "../src/theme";
 import styles from "../src/styles/login.style";
 import { StatusBar } from "expo-status-bar";
+import { getBrandConfig } from "../src/config/appConfig";
+
+const { brandName, logo } = getBrandConfig();
 
 function LoginScreen() {
   const [loading, setLoading] = useState(false);
@@ -92,14 +95,11 @@ function LoginScreen() {
             bounces={false}
           >
             <View style={styles.loginCard}>
-              <Image
-                source={require("../assets/ashwamedh/images/adaptive-icon.png")}
-                style={styles.logo}
-              />
+              <Image source={logo} style={styles.logo} />
 
               <View style={styles.welcomeSection}>
                 <Text style={styles.welcomeTitle}>Welcome back</Text>
-                <Text style={styles.welcomeSubtitle}>Sign in to Aubizo</Text>
+                <Text style={styles.welcomeSubtitle}>Sign in to {brandName}</Text>
               </View>
 
               {formError ? <Text style={styles.formError}>{formError}</Text> : null}

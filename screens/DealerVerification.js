@@ -18,6 +18,8 @@ import DESIGN from '../src/theme';
 import { useRoute } from '@react-navigation/native';
 import apiClient from '../src/api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useModulePermission } from '../src/hooks/usePermissions';
+import { MODULES } from '../src/auth/permissions';
 
 const DealerVerificationScreen = () => {
     const route = useRoute();
@@ -30,6 +32,9 @@ const DealerVerificationScreen = () => {
     const [viewingDocument, setViewingDocument] = useState(null);
     const [documentModalVisible, setDocumentModalVisible] = useState(false);
     const [uploadProgress, setUploadProgress] = useState({});
+
+    // Dealer document permissions
+    const { canCreate: dealerDocCanCreate = false, canRead: dealerDocCanRead = false } = useModulePermission(MODULES.DEALER_DOCUMENT) || {};
 
     const fetchDealerDetails = async () => {
         try {
@@ -438,19 +443,21 @@ const DealerVerificationScreen = () => {
                     </View>
                 </View>
 
-                {/* Instructions */}
-                <View style={styles.instructionsCard}>
-                    <View style={styles.instructionsHeader}>
-                        <MaterialIcons name="info" size={20} color={DESIGN.colors.info} />
-                        <Text style={styles.instructionsTitle}>How to Upload</Text>
-                    </View>
-                    <Text style={styles.instructionItem}>• Tap on any document type to upload</Text>
-                    <Text style={styles.instructionItem}>• Select the document and confirm</Text>
-                    <Text style={styles.instructionItem}>• Wait for verification approval</Text>
-                </View>
+                {/* Instructions (only shown when upload permission exists) */}
+                {dealerDocCanCreate && (
+                  <View style={styles.instructionsCard}>
+                      <View style={styles.instructionsHeader}>
+                          <MaterialIcons name="info" size={20} color={DESIGN.colors.info} />
+                          <Text style={styles.instructionsTitle}>How to Upload</Text>
+                      </View>
+                      <Text style={styles.instructionItem}>• Tap on any document type to upload</Text>
+                      <Text style={styles.instructionItem}>• Select the document and confirm</Text>
+                      <Text style={styles.instructionItem}>• Wait for verification approval</Text>
+                  </View>
+                )}
 
-                {/* Pending Documents */}
-                {pendingDocuments.length > 0 && (
+                {/* Pending Documents (Upload) */}
+                {dealerDocCanCreate && pendingDocuments.length > 0 && (
                     <>
                         <View style={styles.sectionHeader}>
                             <Text style={styles.sectionTitle}>Documents to Upload</Text>
@@ -527,8 +534,8 @@ const DealerVerificationScreen = () => {
                     </>
                 )}
 
-                {/* Uploaded Documents */}
-                {currentUploadedDocs.length > 0 && (
+                {/* Uploaded Documents (View) */}
+                {dealerDocCanRead && currentUploadedDocs.length > 0 && (
                     <>
                         <View style={styles.sectionHeader}>
                             <Text style={styles.sectionTitle}>Uploaded Documents</Text>

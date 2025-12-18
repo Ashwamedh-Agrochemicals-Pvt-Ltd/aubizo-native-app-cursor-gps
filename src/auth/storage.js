@@ -14,6 +14,7 @@ const ACCESS_TOKEN_KEY = "authToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
 const USERNAME_KEY = "username";
 const PERMISSIONS_KEY = "userPermissions";
+const USER_PROFILE_KEY = "userProfile";
 
 
 // ✅ Store access token
@@ -388,6 +389,52 @@ const removePermissions = async () => {
   }
 };
 
+// -------------------------
+// User profile storage
+// -------------------------
+const storeUserProfile = async (profile) => {
+  try {
+    if (!profile) return false;
+    await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+    logger.log('✅ User profile stored');
+    return true;
+  } catch (error) {
+    logger.error('❌ Error storing user profile:', error);
+    return false;
+  }
+};
+
+const getUserProfile = async () => {
+  try {
+    const raw = await AsyncStorage.getItem(USER_PROFILE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    logger.error('❌ Error getting user profile:', error);
+    return null;
+  }
+};
+
+const removeUserProfile = async () => {
+  try {
+    await AsyncStorage.removeItem(USER_PROFILE_KEY);
+    logger.log('✅ User profile removed');
+    return true;
+  } catch (error) {
+    logger.error('❌ Error removing user profile:', error);
+    return false;
+  }
+};
+
+const isAdmin = async () => {
+  try {
+    const profile = await getUserProfile();
+    return !!(profile && profile.is_admin === true);
+  } catch (error) {
+    logger.error('❌ Error checking admin flag:', error);
+    return false;
+  }
+};
+
 
 // ✅ Clear all secure auth data
 const clearAll = async () => {
@@ -453,6 +500,10 @@ export default {
   removePermissions,
   clearAll,
   migratePermissionsToAsync,
+  storeUserProfile,
+  getUserProfile,
+  removeUserProfile,
+  isAdmin,
 };
 
 
